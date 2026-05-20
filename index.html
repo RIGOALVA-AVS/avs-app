@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a1628">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AVS">
+<title>AVS — Viaje Seguro Pura Vida</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --avs-green: #00d4aa;
+  --avs-green-dark: #00a882;
+  --avs-bg: #0a1628;
+  --avs-surface: #111d35;
+  --avs-card: #172040;
+  --avs-border: rgba(0,212,170,0.15);
+  --avs-text: #f0f4f8;
+  --avs-muted: #7a8fa6;
+  --avs-danger: #e24b4a;
+  --avs-amber: #f5a623;
+  --radius: 16px;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--avs-bg); font-family: var(--font-body); color: var(--avs-text); }
+
+/* SCREENS */
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+.screen.active { opacity: 1; pointer-events: all; }
+
+/* ===== SPLASH ===== */
+#splash { background: var(--avs-bg); align-items: center; justify-content: center; gap: 16px; }
+.splash-logo { font-family: var(--font-display); font-size: 52px; font-weight: 700; color: var(--avs-green); letter-spacing: -2px; }
+.splash-sub { font-size: 14px; color: var(--avs-muted); letter-spacing: 3px; text-transform: uppercase; }
+.splash-spinner { width: 32px; height: 32px; border: 2px solid var(--avs-border); border-top-color: var(--avs-green); border-radius: 50%; animation: spin 0.8s linear infinite; margin-top: 24px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== LOGIN ===== */
+#login { background: var(--avs-bg); justify-content: flex-end; }
+.login-hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 40px 24px 0; }
+.login-logo { font-family: var(--font-display); font-size: 42px; font-weight: 700; color: var(--avs-green); }
+.login-tagline { font-size: 13px; color: var(--avs-muted); text-align: center; letter-spacing: 2px; text-transform: uppercase; }
+.login-map-preview { width: 200px; height: 120px; background: var(--avs-surface); border-radius: var(--radius); border: 1px solid var(--avs-border); margin-top: 24px; position: relative; overflow: hidden; }
+.map-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(0,212,170,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,170,0.05) 1px, transparent 1px); background-size: 20px 20px; }
+.map-pin-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 12px; height: 12px; background: var(--avs-green); border-radius: 50%; box-shadow: 0 0 0 6px rgba(0,212,170,0.2); }
+.login-sheet { background: var(--avs-surface); border-radius: 24px 24px 0 0; padding: 28px 24px 40px; border-top: 1px solid var(--avs-border); }
+.login-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+.login-desc { font-size: 13px; color: var(--avs-muted); margin-bottom: 24px; }
+.input-group { margin-bottom: 14px; }
+.input-label { font-size: 11px; color: var(--avs-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.input-field { width: 100%; background: var(--avs-card); border: 1px solid var(--avs-border); border-radius: 12px; padding: 14px 16px; color: var(--avs-text); font-size: 15px; font-family: var(--font-body); outline: none; transition: border-color 0.2s; }
+.input-field:focus { border-color: var(--avs-green); }
+.input-field::placeholder { color: var(--avs-muted); }
+.btn-primary { width: 100%; background: var(--avs-green); color: var(--avs-bg); border: none; border-radius: 14px; padding: 16px; font-size: 15px; font-weight: 600; font-family: var(--font-display); cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 8px; }
+.btn-primary:active { transform: scale(0.98); background: var(--avs-green-dark); }
+.btn-outline { width: 100%; background: transparent; color: var(--avs-green); border: 1px solid var(--avs-border); border-radius: 14px; padding: 14px; font-size: 14px; font-family: var(--font-body); cursor: pointer; margin-top: 10px; }
+.login-switch { text-align: center; margin-top: 16px; font-size: 13px; color: var(--avs-muted); }
+.login-switch a { color: var(--avs-green); cursor: pointer; text-decoration: none; }
+
+/* ===== PASAJERO HOME ===== */
+#pasajero { background: var(--avs-bg); }
+.app-header { display: flex; justify-content: space-between; align-items: center; padding: 48px 20px 12px; }
+.header-logo { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--avs-green); }
+.header-avatar { width: 36px; height: 36px; background: var(--avs-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--avs-bg); font-family: var(--font-display); cursor: pointer; }
+.map-container { flex: 1; background: var(--avs-surface); position: relative; overflow: hidden; }
+.map-visual { width: 100%; height: 100%; background: #0d1f14; position: relative; }
+.map-grid-overlay { position: absolute; inset: 0; background-image: linear-gradient(rgba(0,212,170,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,170,0.04) 1px, transparent 1px); background-size: 30px 30px; }
+.map-road-h { position: absolute; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.08); }
+.map-road-v { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.06); }
+.user-pin { position: absolute; top: 48%; left: 50%; transform: translate(-50%,-50%); }
+.pin-pulse { position: absolute; top: -14px; left: -14px; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,212,170,0.15); animation: pulse 2s infinite; }
+.pin-core { width: 14px; height: 14px; background: var(--avs-green); border-radius: 50%; border: 3px solid white; position: relative; z-index: 1; }
+@keyframes pulse { 0%,100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.5); opacity: 0; } }
+.map-badge { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(10,22,40,0.85); border: 1px solid var(--avs-border); border-radius: 20px; padding: 5px 14px; font-size: 12px; color: var(--avs-text); backdrop-filter: blur(8px); white-space: nowrap; }
+.bottom-panel { background: var(--avs-surface); border-radius: 24px 24px 0 0; padding: 16px 20px 32px; border-top: 1px solid var(--avs-border); }
+.panel-handle { width: 36px; height: 3px; background: var(--avs-border); border-radius: 2px; margin: 0 auto 18px; }
+.panel-label { font-size: 11px; color: var(--avs-muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+.dest-input { display: flex; align-items: center; gap: 12px; background: var(--avs-card); border: 1px solid var(--avs-border); border-radius: 14px; padding: 14px 16px; cursor: pointer; transition: border-color 0.2s; }
+.dest-input:hover { border-color: var(--avs-green); }
+.dest-dots { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.dot-g { width: 8px; height: 8px; background: var(--avs-green); border-radius: 50%; }
+.dot-r { width: 8px; height: 8px; background: var(--avs-danger); border-radius: 50%; }
+.dot-line { width: 1.5px; height: 10px; background: var(--avs-muted); }
+.dest-texts { flex: 1; }
+.dest-from { font-size: 12px; color: var(--avs-muted); margin-bottom: 2px; }
+.dest-to { font-size: 14px; color: var(--avs-muted); }
+.fare-section { margin-top: 14px; }
+.fare-chips { display: flex; gap: 8px; }
+.fare-chip { flex: 1; background: var(--avs-card); border: 1px solid var(--avs-border); border-radius: 12px; padding: 10px 8px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.fare-chip.sel { border-color: var(--avs-green); background: rgba(0,212,170,0.08); }
+.fare-amount { font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--avs-text); }
+.fare-type { font-size: 10px; color: var(--avs-muted); margin-top: 2px; }
+.bottom-nav { display: flex; background: var(--avs-bg); border-top: 1px solid var(--avs-border); padding: 8px 0 20px; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; cursor: pointer; }
+.nav-icon { font-size: 20px; color: var(--avs-muted); }
+.nav-icon.active { color: var(--avs-green); }
+.nav-label { font-size: 10px; color: var(--avs-muted); }
+.nav-label.active { color: var(--avs-green); }
+
+/* ===== BUSCAR CONDUCTOR ===== */
+#buscando { background: var(--avs-bg); align-items: center; justify-content: center; gap: 20px; padding: 40px 24px; }
+.buscando-anim { width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--avs-border); display: flex; align-items: center; justify-content: center; position: relative; }
+.buscando-ring1 { position: absolute; inset: -16px; border-radius: 50%; border: 1px solid rgba(0,212,170,0.2); animation: expand 2s infinite; }
+.buscando-ring2 { position: absolute; inset: -32px; border-radius: 50%; border: 1px solid rgba(0,212,170,0.1); animation: expand 2s 0.5s infinite; }
+@keyframes expand { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(1.2); opacity: 0; } }
+.buscando-icon { font-size: 48px; }
+.buscando-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; text-align: center; }
+.buscando-sub { font-size: 14px; color: var(--avs-muted); text-align: center; }
+.trip-summary { width: 100%; background: var(--avs-surface); border: 1px solid var(--avs-border); border-radius: var(--radius); padding: 16px; }
+.trip-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+.trip-dot-g { width: 8px; height: 8px; background: var(--avs-green); border-radius: 50%; flex-shrink: 0; }
+.trip-dot-r { width: 8px; height: 8px; background: var(--avs-danger); border-radius: 50%; flex-shrink: 0; }
+.trip-place { font-size: 14px; color: var(--avs-text); }
+.trip-divider { width: 1.5px; height: 16px; background: var(--avs-muted); margin-left: 3px; }
+.fare-badge { background: rgba(0,212,170,0.1); border: 1px solid var(--avs-border); border-radius: 20px; padding: 4px 14px; font-size: 13px; color: var(--avs-green); font-family: var(--font-display); font-weight: 600; }
+.btn-cancel { background: transparent; border: 1px solid rgba(226,75,74,0.3); color: var(--avs-danger); border-radius: 14px; padding: 14px; font-size: 14px; font-family: var(--font-body); cursor: pointer; width: 100%; margin-top: 8px; }
+
+/* ===== CONDUCTOR ASIGNADO ===== */
+#conductor-asignado { background: var(--avs-bg); }
+.trip-map { flex: 1; background: var(--avs-surface); position: relative; overflow: hidden; }
+.route-line { position: absolute; top: 30%; left: 20%; right: 20%; height: 2px; background: var(--avs-green); opacity: 0.6; transform: rotate(8deg); }
+.conductor-sheet { background: var(--avs-surface); border-radius: 24px 24px 0 0; padding: 20px 20px 32px; border-top: 1px solid var(--avs-border); }
+.conductor-card { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.conductor-avatar { width: 52px; height: 52px; background: var(--avs-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--avs-bg); }
+.conductor-info { flex: 1; }
+.conductor-name { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+.conductor-stars { font-size: 12px; color: var(--avs-amber); }
+.conductor-plate { font-size: 12px; color: var(--avs-muted); margin-top: 2px; }
+.eta-badge { background: rgba(0,212,170,0.1); border: 1px solid var(--avs-border); border-radius: 12px; padding: 8px 14px; text-align: center; }
+.eta-num { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--avs-green); }
+.eta-label { font-size: 10px; color: var(--avs-muted); }
+.action-row { display: flex; gap: 10px; margin-top: 8px; }
+.btn-action { flex: 1; background: var(--avs-card); border: 1px solid var(--avs-border); border-radius: 12px; padding: 14px; font-size: 13px; color: var(--avs-text); font-family: var(--font-body); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+/* ===== CONDUCTOR PANEL ===== */
+#conductor { background: var(--avs-bg); }
+.conductor-header { padding: 48px 20px 16px; display: flex; justify-content: space-between; align-items: flex-start; }
+.conductor-greeting { font-size: 13px; color: var(--avs-muted); }
+.conductor-hname { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+.toggle-disp { display: flex; align-items: center; gap: 10px; background: var(--avs-surface); border: 1px solid var(--avs-border); border-radius: 20px; padding: 8px 14px; cursor: pointer; }
+.toggle-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--avs-danger); transition: background 0.3s; }
+.toggle-dot.on { background: var(--avs-green); }
+.toggle-label { font-size: 12px; color: var(--avs-muted); }
+.saldo-card { margin: 0 20px 16px; background: var(--avs-surface); border: 1px solid var(--avs-border); border-radius: var(--radius); padding: 16px; }
+.saldo-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.saldo-label { font-size: 12px; color: var(--avs-muted); }
+.saldo-amount { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--avs-green); }
+.saldo-bar-bg { height: 6px; background: var(--avs-card); border-radius: 3px; overflow: hidden; }
+.saldo-bar-fill { height: 100%; background: var(--avs-green); border-radius: 3px; width: 65%; transition: width 0.5s; }
+.recarga-chips { display: flex; gap: 8px; margin-top: 12px; }
+.recarga-chip { flex: 1; background: var(--avs-card); border: 1px solid var(--avs-border); border-radius: 10px; padding: 8px; text-align: center; cursor: pointer; font-size: 12px; color: var(--avs-text); font-family: var(--font-display); transition: all 0.2s; }
+.recarga-chip:hover { border-color: var(--avs-green); color: var(--avs-green); }
+.solicitudes-section { flex: 1; overflow-y: auto; padding: 0 20px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.section-title { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+.badge-new { background: var(--avs-green); color: var(--avs-bg); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+.solicitud-card { background: var(--avs-surface); border: 1px solid var(--avs-border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; transition: border-color 0.2s; }
+.solicitud-card:hover { border-color: var(--avs-green); }
+.sol-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.sol-pasajero { font-size: 14px; font-weight: 500; }
+.sol-tarifa { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--avs-green); }
+.sol-route { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.sol-place { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--avs-muted); }
+.sol-place.dest { color: var(--avs-text); }
+.sol-actions { display: flex; gap: 8px; }
+.btn-aceptar { flex: 2; background: var(--avs-green); color: var(--avs-bg); border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; font-family: var(--font-display); cursor: pointer; }
+.btn-rechazar { flex: 1; background: transparent; color: var(--avs-muted); border: 1px solid var(--avs-border); border-radius: 10px; padding: 12px; font-size: 13px; font-family: var(--font-body); cursor: pointer; }
+
+/* ===== PERFIL ===== */
+#perfil { background: var(--avs-bg); padding: 48px 20px 32px; overflow-y: auto; }
+.perfil-header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
+.perfil-avatar { width: 64px; height: 64px; background: var(--avs-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--avs-bg); }
+.perfil-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+.perfil-role { font-size: 13px; color: var(--avs-muted); margin-top: 2px; }
+.perfil-section { margin-bottom: 20px; }
+.perfil-section-title { font-size: 11px; color: var(--avs-muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.perfil-item { display: flex; align-items: center; justify-content: space-between; background: var(--avs-surface); border: 1px solid var(--avs-border); border-radius: 12px; padding: 14px 16px; margin-bottom: 6px; cursor: pointer; }
+.perfil-item-left { display: flex; align-items: center; gap: 12px; }
+.perfil-item-icon { font-size: 18px; color: var(--avs-green); }
+.perfil-item-text { font-size: 14px; }
+.perfil-item-arrow { font-size: 16px; color: var(--avs-muted); }
+.btn-logout { width: 100%; background: transparent; border: 1px solid rgba(226,75,74,0.3); color: var(--avs-danger); border-radius: 14px; padding: 14px; font-size: 14px; font-family: var(--font-body); cursor: pointer; margin-top: 8px; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--avs-surface); border: 1px solid var(--avs-border); border-radius: 20px; padding: 10px 20px; font-size: 13px; color: var(--avs-text); opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div class="screen active" id="splash">
+  <div class="splash-logo">AVS</div>
+  <div class="splash-sub">Viaje Seguro Pura Vida</div>
+  <div class="splash-spinner"></div>
+</div>
+
+<!-- LOGIN -->
+<div class="screen" id="login">
+  <div class="login-hero">
+    <div class="login-logo">AVS</div>
+    <div class="login-tagline">Viaje Seguro · Pura Vida · Atenas</div>
+    <div class="login-map-preview">
+      <div class="map-grid"></div>
+      <div class="map-pin-center"></div>
+    </div>
+  </div>
+  <div class="login-sheet">
+    <div class="login-title">Bienvenido</div>
+    <div class="login-desc">Ingresá con tu número de teléfono</div>
+    <div class="input-group">
+      <div class="input-label">Teléfono</div>
+      <input class="input-field" type="tel" placeholder="8888-8888" id="login-phone">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Nombre</div>
+      <input class="input-field" type="text" placeholder="Tu nombre completo" id="login-name">
+    </div>
+    <button class="btn-primary" onclick="doLogin('pasajero')">Entrar como Pasajero</button>
+    <button class="btn-outline" onclick="doLogin('conductor')">Entrar como Conductor</button>
+    <div class="login-switch">¿Primera vez? <a onclick="showToast('Registro próximamente')">Registrarse</a></div>
+  </div>
+</div>
+
+<!-- PASAJERO HOME -->
+<div class="screen" id="pasajero">
+  <div class="app-header">
+    <div class="header-logo">AVS</div>
+    <div class="header-avatar" id="user-initials" onclick="showScreen('perfil')">RA</div>
+  </div>
+  <div class="map-container">
+    <div class="map-visual">
+      <div class="map-grid-overlay"></div>
+      <div class="map-road-h" style="top:30%"></div>
+      <div class="map-road-h" style="top:55%"></div>
+      <div class="map-road-h" style="top:75%"></div>
+      <div class="map-road-v" style="left:25%"></div>
+      <div class="map-road-v" style="left:60%"></div>
+      <div class="user-pin">
+        <div class="pin-pulse"></div>
+        <div class="pin-core"></div>
+      </div>
+      <div class="map-badge">📍 Atenas, Alajuela</div>
+    </div>
+  </div>
+  <div class="bottom-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-label">¿A dónde vas?</div>
+    <div class="dest-input" onclick="openDestino()">
+      <div class="dest-dots">
+        <div class="dot-g"></div>
+        <div class="dot-line"></div>
+        <div class="dot-r"></div>
+      </div>
+      <div class="dest-texts">
+        <div class="dest-from">Mi ubicación actual</div>
+        <div class="dest-to" id="dest-display">Escribe tu destino...</div>
+      </div>
+    </div>
+    <div class="fare-section">
+      <div class="panel-label" style="margin-top:14px">Tarifa sugerida</div>
+      <div class="fare-chips">
+        <div class="fare-chip sel" onclick="selectFare(this,'1500')">
+          <div class="fare-amount">₡1.500</div>
+          <div class="fare-type">Económico</div>
+        </div>
+        <div class="fare-chip" onclick="selectFare(this,'2500')">
+          <div class="fare-amount">₡2.500</div>
+          <div class="fare-type">Estándar</div>
+        </div>
+        <div class="fare-chip" onclick="selectFare(this,'4000')">
+          <div class="fare-amount">₡4.000</div>
+          <div class="fare-type">Premium</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary" style="margin-top:14px" onclick="solicitarViaje()">Solicitar Viaje</button>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="showScreen('pasajero')">
+      <span class="nav-icon active">🏠</span>
+      <span class="nav-label active">Inicio</span>
+    </div>
+    <div class="nav-item" onclick="showToast('Mis viajes próximamente')">
+      <span class="nav-icon">🗺️</span>
+      <span class="nav-label">Mis Viajes</span>
+    </div>
+    <div class="nav-item" onclick="showToast('Billetera próximamente')">
+      <span class="nav-icon">💳</span>
+      <span class="nav-label">Billetera</span>
+    </div>
+    <div class="nav-item" onclick="showScreen('perfil')">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">Perfil</span>
+    </div>
+  </div>
+</div>
+
+<!-- BUSCANDO CONDUCTOR -->
+<div class="screen" id="buscando">
+  <div class="buscando-anim">
+    <div class="buscando-ring1"></div>
+    <div class="buscando-ring2"></div>
+    <div class="buscando-icon">🚗</div>
+  </div>
+  <div class="buscando-title">Buscando conductor...</div>
+  <div class="buscando-sub">Estamos encontrando el mejor conductor cerca de vos</div>
+  <div class="trip-summary" id="trip-summary">
+    <div class="trip-row">
+      <div class="trip-dot-g"></div>
+      <div class="trip-place">Mi ubicación actual</div>
+    </div>
+    <div style="width:1.5px;height:14px;background:var(--avs-muted);margin-left:3px;margin:4px 0 4px 3px"></div>
+    <div class="trip-row">
+      <div class="trip-dot-r"></div>
+      <div class="trip-place" id="buscando-dest">Hospital de Atenas</div>
+    </div>
+    <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;color:var(--avs-muted)">Tarifa ofrecida</span>
+      <span class="fare-badge" id="buscando-fare">₡2.500</span>
+    </div>
+  </div>
+  <button class="btn-cancel" onclick="cancelarViaje()">Cancelar solicitud</button>
+</div>
+
+<!-- CONDUCTOR ASIGNADO -->
+<div class="screen" id="conductor-asignado">
+  <div class="app-header">
+    <div class="header-logo">AVS</div>
+    <div style="font-size:13px;color:var(--avs-green)">En camino</div>
+  </div>
+  <div class="trip-map">
+    <div class="map-visual" style="height:100%">
+      <div class="map-grid-overlay"></div>
+      <div class="map-road-h" style="top:40%"></div>
+      <div class="map-road-h" style="top:65%"></div>
+      <div class="map-road-v" style="left:35%"></div>
+      <div class="route-line"></div>
+      <div class="user-pin" style="top:60%;left:35%">
+        <div class="pin-pulse"></div>
+        <div class="pin-core"></div>
+      </div>
+      <div style="position:absolute;top:35%;left:55%;transform:translate(-50%,-50%)">
+        <div style="width:14px;height:14px;background:var(--avs-amber);border-radius:50%;border:3px solid white"></div>
+      </div>
+    </div>
+  </div>
+  <div class="conductor-sheet">
+    <div class="conductor-card">
+      <div class="conductor-avatar" id="cond-initials">RA</div>
+      <div class="conductor-info">
+        <div class="conductor-name" id="cond-name">Rigoberto Alvarado</div>
+        <div class="conductor-stars">★★★★★ 5.0</div>
+        <div class="conductor-plate" id="cond-plate">BPJ207 · Toyota Corolla</div>
+      </div>
+      <div class="eta-badge">
+        <div class="eta-num">4</div>
+        <div class="eta-label">min</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="btn-action" onclick="showToast('Llamando al conductor...')">📞 Llamar</button>
+      <button class="btn-action" onclick="showToast('Chat próximamente')">💬 Chat</button>
+      <button class="btn-action" onclick="finalizarViaje()">✅ Finalizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL CONDUCTOR -->
+<div class="screen" id="conductor">
+  <div class="conductor-header">
+    <div>
+      <div class="conductor-greeting">Buenos días,</div>
+      <div class="conductor-hname" id="cond-hname">Rigoberto</div>
+    </div>
+    <div class="toggle-disp" onclick="toggleDisponible(this)">
+      <div class="toggle-dot" id="disp-dot"></div>
+      <div class="toggle-label" id="disp-label">Desconectado</div>
+    </div>
+  </div>
+  <div class="saldo-card">
+    <div class="saldo-row">
+      <div>
+        <div class="saldo-label">Saldo AVS disponible</div>
+        <div class="saldo-amount">₡6.500</div>
+      </div>
+      <div style="font-size:12px;color:var(--avs-muted);text-align:right">
+        <div>Comisión por viaje</div>
+        <div style="color:var(--avs-text);font-weight:500">₡300</div>
+      </div>
+    </div>
+    <div class="saldo-bar-bg"><div class="saldo-bar-fill"></div></div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px">
+      <span style="font-size:11px;color:var(--avs-muted)">₡0</span>
+      <span style="font-size:11px;color:var(--avs-muted)">₡10.000</span>
+    </div>
+    <div style="font-size:11px;color:var(--avs-muted);margin-top:4px">Recargá para seguir activo</div>
+    <div class="recarga-chips">
+      <div class="recarga-chip" onclick="showToast('Recarga ₡5.000 — SINPE próximamente')">₡5.000</div>
+      <div class="recarga-chip" onclick="showToast('Recarga ₡10.000 — SINPE próximamente')">₡10.000</div>
+      <div class="recarga-chip" onclick="showToast('Recarga ₡20.000 — SINPE próximamente')">₡20.000</div>
+    </div>
+  </div>
+  <div class="solicitudes-section">
+    <div class="section-header">
+      <div class="section-title">Solicitudes activas</div>
+      <div class="badge-new">1 nueva</div>
+    </div>
+    <div class="solicitud-card">
+      <div class="sol-header">
+        <div class="sol-pasajero">👤 María González</div>
+        <div class="sol-tarifa">₡2.500</div>
+      </div>
+      <div class="sol-route">
+        <div class="sol-place"><span style="color:var(--avs-green)">●</span> Parque Central Atenas</div>
+        <div style="width:1.5px;height:10px;background:var(--avs-muted);margin-left:5px"></div>
+        <div class="sol-place dest"><span style="color:var(--avs-danger)">●</span> Hospital de Atenas</div>
+      </div>
+      <div style="font-size:12px;color:var(--avs-muted);margin-bottom:12px">3.2 km · ~8 min</div>
+      <div class="sol-actions">
+        <button class="btn-aceptar" onclick="aceptarViaje()">Aceptar viaje</button>
+        <button class="btn-rechazar" onclick="showToast('Solicitud rechazada')">Rechazar</button>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="showScreen('conductor')">
+      <span class="nav-icon active">🏠</span>
+      <span class="nav-label active">Inicio</span>
+    </div>
+    <div class="nav-item" onclick="showToast('Historial próximamente')">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">Historial</span>
+    </div>
+    <div class="nav-item" onclick="showToast('Ganancias próximamente')">
+      <span class="nav-icon">💰</span>
+      <span class="nav-label">Ganancias</span>
+    </div>
+    <div class="nav-item" onclick="showScreen('perfil')">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">Perfil</span>
+    </div>
+  </div>
+</div>
+
+<!-- PERFIL -->
+<div class="screen" id="perfil">
+  <div class="perfil-header">
+    <div class="perfil-avatar" id="perfil-initials">RA</div>
+    <div>
+      <div class="perfil-name" id="perfil-name">Rigoberto Alvarado</div>
+      <div class="perfil-role" id="perfil-role">Pasajero · Atenas</div>
+    </div>
+  </div>
+  <div class="perfil-section">
+    <div class="perfil-section-title">Mi cuenta</div>
+    <div class="perfil-item" onclick="showToast('Editar perfil próximamente')">
+      <div class="perfil-item-left"><span class="perfil-item-icon">👤</span><span class="perfil-item-text">Datos personales</span></div>
+      <span class="perfil-item-arrow">›</span>
+    </div>
+    <div class="perfil-item" onclick="showToast('Historial de viajes próximamente')">
+      <div class="perfil-item-left"><span class="perfil-item-icon">🗺️</span><span class="perfil-item-text">Historial de viajes</span></div>
+      <span class="perfil-item-arrow">›</span>
+    </div>
+    <div class="perfil-item" onclick="showToast('Métodos de pago próximamente')">
+      <div class="perfil-item-left"><span class="perfil-item-icon">💳</span><span class="perfil-item-text">Métodos de pago</span></div>
+      <span class="perfil-item-arrow">›</span>
+    </div>
+  </div>
+  <div class="perfil-section">
+    <div class="perfil-section-title">Soporte</div>
+    <div class="perfil-item" onclick="showToast('Soporte por WhatsApp próximamente')">
+      <div class="perfil-item-left"><span class="perfil-item-icon">💬</span><span class="perfil-item-text">Contactar soporte</span></div>
+      <span class="perfil-item-arrow">›</span>
+    </div>
+    <div class="perfil-item" onclick="showToast('Términos y condiciones próximamente')">
+      <div class="perfil-item-left"><span class="perfil-item-icon">📄</span><span class="perfil-item-text">Términos y condiciones</span></div>
+      <span class="perfil-item-arrow">›</span>
+    </div>
+  </div>
+  <button class="btn-logout" onclick="showScreen('login')">Cerrar sesión</button>
+  <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--avs-muted)">AVS v1.0 · Atenas, Alajuela · Costa Rica</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+let currentUser = { name: '', role: '', fare: '2500', dest: '' };
+let disponible = false;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function doLogin(role) {
+  const phone = document.getElementById('login-phone').value;
+  const name = document.getElementById('login-name').value || 'Usuario';
+  if (!phone) { showToast('Ingresá tu número de teléfono'); return; }
+  currentUser.name = name;
+  currentUser.role = role;
+  const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('user-initials').textContent = initials;
+  document.getElementById('perfil-initials').textContent = initials;
+  document.getElementById('perfil-name').textContent = name;
+  document.getElementById('perfil-role').textContent = (role === 'conductor' ? 'Conductor' : 'Pasajero') + ' · Atenas';
+  document.getElementById('cond-hname').textContent = name.split(' ')[0];
+  showScreen(role === 'conductor' ? 'conductor' : 'pasajero');
+}
+
+function selectFare(el, fare) {
+  document.querySelectorAll('.fare-chip').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  currentUser.fare = fare;
+}
+
+function openDestino() {
+  const dest = prompt('¿A dónde vas?', '');
+  if (dest) {
+    document.getElementById('dest-display').textContent = dest;
+    document.getElementById('dest-display').style.color = 'var(--avs-text)';
+    currentUser.dest = dest;
+  }
+}
+
+function solicitarViaje() {
+  if (!currentUser.dest) { showToast('Ingresá tu destino primero'); return; }
+  document.getElementById('buscando-dest').textContent = currentUser.dest;
+  const fmtFare = parseInt(currentUser.fare).toLocaleString('es-CR');
+  document.getElementById('buscando-fare').textContent = '₡' + fmtFare;
+  showScreen('buscando');
+  setTimeout(() => {
+    showScreen('conductor-asignado');
+    showToast('¡Conductor encontrado!');
+  }, 4000);
+}
+
+function cancelarViaje() {
+  showScreen('pasajero');
+  showToast('Solicitud cancelada');
+}
+
+function aceptarViaje() {
+  showToast('Viaje aceptado — en camino al pasajero');
+  setTimeout(() => showScreen('conductor'), 1500);
+}
+
+function finalizarViaje() {
+  showToast('¡Viaje finalizado! Calificá tu experiencia');
+  setTimeout(() => showScreen('pasajero'), 2000);
+}
+
+function toggleDisponible(el) {
+  disponible = !disponible;
+  document.getElementById('disp-dot').classList.toggle('on', disponible);
+  document.getElementById('disp-label').textContent = disponible ? 'Disponible' : 'Desconectado';
+  showToast(disponible ? 'Estás disponible para viajes' : 'Te desconectaste');
+}
+
+setTimeout(() => showScreen('login'), 2000);
+</script>
+</body>
+</html>
