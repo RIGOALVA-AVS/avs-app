@@ -6,573 +6,576 @@
 <meta name="theme-color" content="#0a1628">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="AVS">
 <title>AVS — Viaje Seguro Pura Vida</title>
-<link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --avs-green: #00d4aa;
-  --avs-green-dark: #00a882;
-  --avs-bg: #0a1628;
-  --avs-surface: #111d35;
-  --avs-card: #172040;
-  --avs-border: rgba(0,212,170,0.15);
-  --avs-text: #f0f4f8;
-  --avs-muted: #7a8fa6;
-  --avs-danger: #e24b4a;
-  --avs-amber: #f5a623;
-  --radius: 16px;
-  --font-display: 'Syne', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
+  --g: #00d4aa; --gd: #00a882; --bg: #0a1628; --sf: #111d35;
+  --cd: #172040; --bd: rgba(0,212,170,0.15); --tx: #f0f4f8;
+  --mt: #7a8fa6; --rd: #e24b4a; --am: #f5a623;
+  --font-d: 'Syne', sans-serif; --font-b: 'DM Sans', sans-serif;
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; overflow: hidden; background: var(--avs-bg); font-family: var(--font-body); color: var(--avs-text); }
-
-/* SCREENS */
-.screen { position: fixed; inset: 0; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); font-family: var(--font-b); color: var(--tx); }
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
 .screen.active { opacity: 1; pointer-events: all; }
 
-/* ===== SPLASH ===== */
-#splash { background: var(--avs-bg); align-items: center; justify-content: center; gap: 16px; }
-.splash-logo { font-family: var(--font-display); font-size: 52px; font-weight: 700; color: var(--avs-green); letter-spacing: -2px; }
-.splash-sub { font-size: 14px; color: var(--avs-muted); letter-spacing: 3px; text-transform: uppercase; }
-.splash-spinner { width: 32px; height: 32px; border: 2px solid var(--avs-border); border-top-color: var(--avs-green); border-radius: 50%; animation: spin 0.8s linear infinite; margin-top: 24px; }
+#splash { background: var(--bg); align-items: center; justify-content: center; gap: 16px; }
+.spl-logo { font-family: var(--font-d); font-size: 52px; font-weight: 700; color: var(--g); }
+.spl-sub { font-size: 13px; color: var(--mt); letter-spacing: 3px; text-transform: uppercase; }
+.spl-spin { width: 32px; height: 32px; border: 2px solid var(--bd); border-top-color: var(--g); border-radius: 50%; animation: spin 0.8s linear infinite; margin-top: 20px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ===== LOGIN ===== */
-#login { background: var(--avs-bg); justify-content: flex-end; }
-.login-hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 40px 24px 0; }
-.login-logo { font-family: var(--font-display); font-size: 42px; font-weight: 700; color: var(--avs-green); }
-.login-tagline { font-size: 13px; color: var(--avs-muted); text-align: center; letter-spacing: 2px; text-transform: uppercase; }
-.login-map-preview { width: 200px; height: 120px; background: var(--avs-surface); border-radius: var(--radius); border: 1px solid var(--avs-border); margin-top: 24px; position: relative; overflow: hidden; }
-.map-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(0,212,170,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,170,0.05) 1px, transparent 1px); background-size: 20px 20px; }
-.map-pin-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 12px; height: 12px; background: var(--avs-green); border-radius: 50%; box-shadow: 0 0 0 6px rgba(0,212,170,0.2); }
-.login-sheet { background: var(--avs-surface); border-radius: 24px 24px 0 0; padding: 28px 24px 40px; border-top: 1px solid var(--avs-border); }
-.login-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; margin-bottom: 6px; }
-.login-desc { font-size: 13px; color: var(--avs-muted); margin-bottom: 24px; }
-.input-group { margin-bottom: 14px; }
-.input-label { font-size: 11px; color: var(--avs-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
-.input-field { width: 100%; background: var(--avs-card); border: 1px solid var(--avs-border); border-radius: 12px; padding: 14px 16px; color: var(--avs-text); font-size: 15px; font-family: var(--font-body); outline: none; transition: border-color 0.2s; }
-.input-field:focus { border-color: var(--avs-green); }
-.input-field::placeholder { color: var(--avs-muted); }
-.btn-primary { width: 100%; background: var(--avs-green); color: var(--avs-bg); border: none; border-radius: 14px; padding: 16px; font-size: 15px; font-weight: 600; font-family: var(--font-display); cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 8px; }
-.btn-primary:active { transform: scale(0.98); background: var(--avs-green-dark); }
-.btn-outline { width: 100%; background: transparent; color: var(--avs-green); border: 1px solid var(--avs-border); border-radius: 14px; padding: 14px; font-size: 14px; font-family: var(--font-body); cursor: pointer; margin-top: 10px; }
-.login-switch { text-align: center; margin-top: 16px; font-size: 13px; color: var(--avs-muted); }
-.login-switch a { color: var(--avs-green); cursor: pointer; text-decoration: none; }
+#login { background: var(--bg); justify-content: flex-end; }
+.lhero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 40px 24px 0; }
+.llogo { font-family: var(--font-d); font-size: 42px; font-weight: 700; color: var(--g); }
+.ltag { font-size: 12px; color: var(--mt); letter-spacing: 2px; text-transform: uppercase; }
+.lmap { width: 200px; height: 100px; border-radius: 16px; border: 1px solid var(--bd); margin-top: 20px; overflow: hidden; background: #0d1f14; display: flex; align-items: center; justify-content: center; }
+.lmap-dot { width: 12px; height: 12px; background: var(--g); border-radius: 50%; box-shadow: 0 0 0 8px rgba(0,212,170,0.2); }
+.lsheet { background: var(--sf); border-radius: 24px 24px 0 0; padding: 28px 24px 40px; border-top: 1px solid var(--bd); }
+.ltit { font-family: var(--font-d); font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+.ldesc { font-size: 13px; color: var(--mt); margin-bottom: 20px; }
+.ilabel { font-size: 11px; color: var(--mt); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.ifield { width: 100%; background: var(--cd); border: 1px solid var(--bd); border-radius: 12px; padding: 14px 16px; color: var(--tx); font-size: 15px; font-family: var(--font-b); outline: none; margin-bottom: 12px; }
+.ifield:focus { border-color: var(--g); }
+.ifield::placeholder { color: var(--mt); }
+.btnp { width: 100%; background: var(--g); color: var(--bg); border: none; border-radius: 14px; padding: 16px; font-size: 15px; font-weight: 600; font-family: var(--font-d); cursor: pointer; margin-top: 4px; }
+.btno { width: 100%; background: transparent; color: var(--g); border: 1px solid var(--bd); border-radius: 14px; padding: 14px; font-size: 14px; cursor: pointer; margin-top: 10px; }
+.lsw { text-align: center; margin-top: 14px; font-size: 13px; color: var(--mt); }
+.lsw a { color: var(--g); cursor: pointer; }
 
-/* ===== PASAJERO HOME ===== */
-#pasajero { background: var(--avs-bg); }
-.app-header { display: flex; justify-content: space-between; align-items: center; padding: 48px 20px 12px; }
-.header-logo { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--avs-green); }
-.header-avatar { width: 36px; height: 36px; background: var(--avs-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--avs-bg); font-family: var(--font-display); cursor: pointer; }
-.map-container { flex: 1; background: var(--avs-surface); position: relative; overflow: hidden; }
-.map-visual { width: 100%; height: 100%; background: #0d1f14; position: relative; }
-.map-grid-overlay { position: absolute; inset: 0; background-image: linear-gradient(rgba(0,212,170,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,170,0.04) 1px, transparent 1px); background-size: 30px 30px; }
-.map-road-h { position: absolute; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.08); }
-.map-road-v { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.06); }
-.user-pin { position: absolute; top: 48%; left: 50%; transform: translate(-50%,-50%); }
-.pin-pulse { position: absolute; top: -14px; left: -14px; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,212,170,0.15); animation: pulse 2s infinite; }
-.pin-core { width: 14px; height: 14px; background: var(--avs-green); border-radius: 50%; border: 3px solid white; position: relative; z-index: 1; }
-@keyframes pulse { 0%,100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.5); opacity: 0; } }
-.map-badge { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(10,22,40,0.85); border: 1px solid var(--avs-border); border-radius: 20px; padding: 5px 14px; font-size: 12px; color: var(--avs-text); backdrop-filter: blur(8px); white-space: nowrap; }
-.bottom-panel { background: var(--avs-surface); border-radius: 24px 24px 0 0; padding: 16px 20px 32px; border-top: 1px solid var(--avs-border); }
-.panel-handle { width: 36px; height: 3px; background: var(--avs-border); border-radius: 2px; margin: 0 auto 18px; }
-.panel-label { font-size: 11px; color: var(--avs-muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
-.dest-input { display: flex; align-items: center; gap: 12px; background: var(--avs-card); border: 1px solid var(--avs-border); border-radius: 14px; padding: 14px 16px; cursor: pointer; transition: border-color 0.2s; }
-.dest-input:hover { border-color: var(--avs-green); }
-.dest-dots { display: flex; flex-direction: column; gap: 3px; align-items: center; }
-.dot-g { width: 8px; height: 8px; background: var(--avs-green); border-radius: 50%; }
-.dot-r { width: 8px; height: 8px; background: var(--avs-danger); border-radius: 50%; }
-.dot-line { width: 1.5px; height: 10px; background: var(--avs-muted); }
-.dest-texts { flex: 1; }
-.dest-from { font-size: 12px; color: var(--avs-muted); margin-bottom: 2px; }
-.dest-to { font-size: 14px; color: var(--avs-muted); }
-.fare-section { margin-top: 14px; }
-.fare-chips { display: flex; gap: 8px; }
-.fare-chip { flex: 1; background: var(--avs-card); border: 1px solid var(--avs-border); border-radius: 12px; padding: 10px 8px; text-align: center; cursor: pointer; transition: all 0.2s; }
-.fare-chip.sel { border-color: var(--avs-green); background: rgba(0,212,170,0.08); }
-.fare-amount { font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--avs-text); }
-.fare-type { font-size: 10px; color: var(--avs-muted); margin-top: 2px; }
-.bottom-nav { display: flex; background: var(--avs-bg); border-top: 1px solid var(--avs-border); padding: 8px 0 20px; }
-.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; cursor: pointer; }
-.nav-icon { font-size: 20px; color: var(--avs-muted); }
-.nav-icon.active { color: var(--avs-green); }
-.nav-label { font-size: 10px; color: var(--avs-muted); }
-.nav-label.active { color: var(--avs-green); }
+#pasajero { background: var(--bg); }
+.ahdr { display: flex; justify-content: space-between; align-items: center; padding: 48px 20px 12px; }
+.alogo { font-family: var(--font-d); font-size: 20px; font-weight: 700; color: var(--g); }
+.aavt { width: 36px; height: 36px; background: var(--g); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--bg); cursor: pointer; }
+.mapc { flex: 1; position: relative; overflow: hidden; }
+#gmap { width: 100%; height: 100%; background: #0d1f14; }
+.mbadge { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(10,22,40,0.85); border: 1px solid var(--bd); border-radius: 20px; padding: 5px 14px; font-size: 12px; color: var(--tx); white-space: nowrap; z-index: 10; }
+.bpanel { background: var(--sf); border-radius: 24px 24px 0 0; padding: 16px 20px 8px; border-top: 1px solid var(--bd); }
+.bhandle { width: 36px; height: 3px; background: var(--bd); border-radius: 2px; margin: 0 auto 16px; }
+.plabel { font-size: 11px; color: var(--mt); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.dfrom { display: flex; align-items: center; gap: 12px; background: var(--cd); border: 1px solid var(--bd); border-radius: 14px; padding: 12px 16px; margin-bottom: 8px; }
+.dotg { width: 8px; height: 8px; background: var(--g); border-radius: 50%; flex-shrink: 0; }
+.dotr { width: 8px; height: 8px; background: var(--rd); border-radius: 50%; flex-shrink: 0; }
+.ftxt { font-size: 13px; color: var(--mt); }
+.acwrap { display: flex; align-items: center; gap: 12px; background: var(--cd); border: 1px solid var(--bd); border-radius: 14px; padding: 12px 16px; margin-bottom: 8px; }
+.acwrap:focus-within { border-color: var(--g); }
+.acwrap input { flex: 1; background: transparent; border: none; outline: none; color: var(--tx); font-size: 14px; font-family: var(--font-b); }
+.acwrap input::placeholder { color: var(--mt); }
+.tinfo { background: var(--cd); border: 1px solid var(--bd); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; display: none; }
+.tinfo.show { display: flex; justify-content: space-around; }
+.tiitem { text-align: center; }
+.tilbl { font-size: 10px; color: var(--mt); }
+.tival { font-size: 15px; font-weight: 600; color: var(--g); font-family: var(--font-d); }
+.fchips { display: flex; gap: 8px; margin-bottom: 8px; }
+.fchip { flex: 1; background: var(--cd); border: 1px solid var(--bd); border-radius: 12px; padding: 10px 8px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.fchip.sel { border-color: var(--g); background: rgba(0,212,170,0.08); }
+.famt { font-family: var(--font-d); font-size: 13px; font-weight: 600; }
+.ftyp { font-size: 10px; color: var(--mt); margin-top: 2px; }
+.bnav { display: flex; background: var(--bg); border-top: 1px solid var(--bd); padding: 8px 0 20px; }
+.nitem { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; cursor: pointer; }
+.nico { font-size: 20px; color: var(--mt); }
+.nico.on { color: var(--g); }
+.nlbl { font-size: 10px; color: var(--mt); }
+.nlbl.on { color: var(--g); }
 
-/* ===== BUSCAR CONDUCTOR ===== */
-#buscando { background: var(--avs-bg); align-items: center; justify-content: center; gap: 20px; padding: 40px 24px; }
-.buscando-anim { width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--avs-border); display: flex; align-items: center; justify-content: center; position: relative; }
-.buscando-ring1 { position: absolute; inset: -16px; border-radius: 50%; border: 1px solid rgba(0,212,170,0.2); animation: expand 2s infinite; }
-.buscando-ring2 { position: absolute; inset: -32px; border-radius: 50%; border: 1px solid rgba(0,212,170,0.1); animation: expand 2s 0.5s infinite; }
-@keyframes expand { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(1.2); opacity: 0; } }
-.buscando-icon { font-size: 48px; }
-.buscando-title { font-family: var(--font-display); font-size: 22px; font-weight: 600; text-align: center; }
-.buscando-sub { font-size: 14px; color: var(--avs-muted); text-align: center; }
-.trip-summary { width: 100%; background: var(--avs-surface); border: 1px solid var(--avs-border); border-radius: var(--radius); padding: 16px; }
-.trip-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
-.trip-dot-g { width: 8px; height: 8px; background: var(--avs-green); border-radius: 50%; flex-shrink: 0; }
-.trip-dot-r { width: 8px; height: 8px; background: var(--avs-danger); border-radius: 50%; flex-shrink: 0; }
-.trip-place { font-size: 14px; color: var(--avs-text); }
-.trip-divider { width: 1.5px; height: 16px; background: var(--avs-muted); margin-left: 3px; }
-.fare-badge { background: rgba(0,212,170,0.1); border: 1px solid var(--avs-border); border-radius: 20px; padding: 4px 14px; font-size: 13px; color: var(--avs-green); font-family: var(--font-display); font-weight: 600; }
-.btn-cancel { background: transparent; border: 1px solid rgba(226,75,74,0.3); color: var(--avs-danger); border-radius: 14px; padding: 14px; font-size: 14px; font-family: var(--font-body); cursor: pointer; width: 100%; margin-top: 8px; }
+#buscando { background: var(--bg); align-items: center; justify-content: center; gap: 20px; padding: 40px 24px; }
+.banim { width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--bd); display: flex; align-items: center; justify-content: center; position: relative; }
+.bring1 { position: absolute; inset: -16px; border-radius: 50%; border: 1px solid rgba(0,212,170,0.2); animation: exp 2s infinite; }
+.bring2 { position: absolute; inset: -32px; border-radius: 50%; border: 1px solid rgba(0,212,170,0.1); animation: exp 2s 0.5s infinite; }
+@keyframes exp { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(1.2); opacity: 0; } }
+.bico { font-size: 48px; }
+.btit { font-family: var(--font-d); font-size: 22px; font-weight: 600; text-align: center; }
+.bsub { font-size: 14px; color: var(--mt); text-align: center; }
+.tsum { width: 100%; background: var(--sf); border: 1px solid var(--bd); border-radius: 16px; padding: 16px; }
+.fbadge { background: rgba(0,212,170,0.1); border: 1px solid var(--bd); border-radius: 20px; padding: 4px 14px; font-size: 13px; color: var(--g); font-family: var(--font-d); font-weight: 600; }
+.bcancel { background: transparent; border: 1px solid rgba(226,75,74,0.3); color: var(--rd); border-radius: 14px; padding: 14px; font-size: 14px; cursor: pointer; width: 100%; margin-top: 8px; }
 
-/* ===== CONDUCTOR ASIGNADO ===== */
-#conductor-asignado { background: var(--avs-bg); }
-.trip-map { flex: 1; background: var(--avs-surface); position: relative; overflow: hidden; }
-.route-line { position: absolute; top: 30%; left: 20%; right: 20%; height: 2px; background: var(--avs-green); opacity: 0.6; transform: rotate(8deg); }
-.conductor-sheet { background: var(--avs-surface); border-radius: 24px 24px 0 0; padding: 20px 20px 32px; border-top: 1px solid var(--avs-border); }
-.conductor-card { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-.conductor-avatar { width: 52px; height: 52px; background: var(--avs-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--avs-bg); }
-.conductor-info { flex: 1; }
-.conductor-name { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
-.conductor-stars { font-size: 12px; color: var(--avs-amber); }
-.conductor-plate { font-size: 12px; color: var(--avs-muted); margin-top: 2px; }
-.eta-badge { background: rgba(0,212,170,0.1); border: 1px solid var(--avs-border); border-radius: 12px; padding: 8px 14px; text-align: center; }
-.eta-num { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--avs-green); }
-.eta-label { font-size: 10px; color: var(--avs-muted); }
-.action-row { display: flex; gap: 10px; margin-top: 8px; }
-.btn-action { flex: 1; background: var(--avs-card); border: 1px solid var(--avs-border); border-radius: 12px; padding: 14px; font-size: 13px; color: var(--avs-text); font-family: var(--font-body); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+#casignado { background: var(--bg); }
+.tmap { flex: 1; position: relative; overflow: hidden; }
+#rmap { width: 100%; height: 100%; background: #0d1f14; }
+.csheet { background: var(--sf); border-radius: 24px 24px 0 0; padding: 20px 20px 32px; border-top: 1px solid var(--bd); }
+.ccard { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.cavt { width: 52px; height: 52px; background: var(--g); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-d); font-size: 18px; font-weight: 700; color: var(--bg); }
+.cinfo { flex: 1; }
+.cname { font-family: var(--font-d); font-size: 16px; font-weight: 600; }
+.cstars { font-size: 12px; color: var(--am); }
+.cplate { font-size: 12px; color: var(--mt); margin-top: 2px; }
+.etab { background: rgba(0,212,170,0.1); border: 1px solid var(--bd); border-radius: 12px; padding: 8px 14px; text-align: center; }
+.etanum { font-family: var(--font-d); font-size: 20px; font-weight: 700; color: var(--g); }
+.etalbl { font-size: 10px; color: var(--mt); }
+.arow { display: flex; gap: 10px; }
+.bact { flex: 1; background: var(--cd); border: 1px solid var(--bd); border-radius: 12px; padding: 14px; font-size: 13px; color: var(--tx); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-/* ===== CONDUCTOR PANEL ===== */
-#conductor { background: var(--avs-bg); }
-.conductor-header { padding: 48px 20px 16px; display: flex; justify-content: space-between; align-items: flex-start; }
-.conductor-greeting { font-size: 13px; color: var(--avs-muted); }
-.conductor-hname { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
-.toggle-disp { display: flex; align-items: center; gap: 10px; background: var(--avs-surface); border: 1px solid var(--avs-border); border-radius: 20px; padding: 8px 14px; cursor: pointer; }
-.toggle-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--avs-danger); transition: background 0.3s; }
-.toggle-dot.on { background: var(--avs-green); }
-.toggle-label { font-size: 12px; color: var(--avs-muted); }
-.saldo-card { margin: 0 20px 16px; background: var(--avs-surface); border: 1px solid var(--avs-border); border-radius: var(--radius); padding: 16px; }
-.saldo-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.saldo-label { font-size: 12px; color: var(--avs-muted); }
-.saldo-amount { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--avs-green); }
-.saldo-bar-bg { height: 6px; background: var(--avs-card); border-radius: 3px; overflow: hidden; }
-.saldo-bar-fill { height: 100%; background: var(--avs-green); border-radius: 3px; width: 65%; transition: width 0.5s; }
-.recarga-chips { display: flex; gap: 8px; margin-top: 12px; }
-.recarga-chip { flex: 1; background: var(--avs-card); border: 1px solid var(--avs-border); border-radius: 10px; padding: 8px; text-align: center; cursor: pointer; font-size: 12px; color: var(--avs-text); font-family: var(--font-display); transition: all 0.2s; }
-.recarga-chip:hover { border-color: var(--avs-green); color: var(--avs-green); }
-.solicitudes-section { flex: 1; overflow-y: auto; padding: 0 20px; }
-.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.section-title { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
-.badge-new { background: var(--avs-green); color: var(--avs-bg); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
-.solicitud-card { background: var(--avs-surface); border: 1px solid var(--avs-border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; transition: border-color 0.2s; }
-.solicitud-card:hover { border-color: var(--avs-green); }
-.sol-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.sol-pasajero { font-size: 14px; font-weight: 500; }
-.sol-tarifa { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--avs-green); }
-.sol-route { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-.sol-place { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--avs-muted); }
-.sol-place.dest { color: var(--avs-text); }
-.sol-actions { display: flex; gap: 8px; }
-.btn-aceptar { flex: 2; background: var(--avs-green); color: var(--avs-bg); border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; font-family: var(--font-display); cursor: pointer; }
-.btn-rechazar { flex: 1; background: transparent; color: var(--avs-muted); border: 1px solid var(--avs-border); border-radius: 10px; padding: 12px; font-size: 13px; font-family: var(--font-body); cursor: pointer; }
+#conductor { background: var(--bg); }
+.chdr { padding: 48px 20px 16px; display: flex; justify-content: space-between; align-items: flex-start; }
+.cgreet { font-size: 13px; color: var(--mt); }
+.chname { font-family: var(--font-d); font-size: 20px; font-weight: 700; }
+.tdisp { display: flex; align-items: center; gap: 10px; background: var(--sf); border: 1px solid var(--bd); border-radius: 20px; padding: 8px 14px; cursor: pointer; }
+.tdot { width: 10px; height: 10px; border-radius: 50%; background: var(--rd); transition: background 0.3s; }
+.tdot.on { background: var(--g); }
+.tlbl { font-size: 12px; color: var(--mt); }
+.scrd { margin: 0 20px 16px; background: var(--sf); border: 1px solid var(--bd); border-radius: 16px; padding: 16px; }
+.srow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.slbl { font-size: 12px; color: var(--mt); }
+.samt { font-family: var(--font-d); font-size: 24px; font-weight: 700; color: var(--g); }
+.sbg { height: 6px; background: var(--cd); border-radius: 3px; overflow: hidden; }
+.sfill { height: 100%; background: var(--g); border-radius: 3px; width: 65%; }
+.rchips { display: flex; gap: 8px; margin-top: 12px; }
+.rchip { flex: 1; background: var(--cd); border: 1px solid var(--bd); border-radius: 10px; padding: 8px; text-align: center; cursor: pointer; font-size: 12px; font-family: var(--font-d); transition: all 0.2s; }
+.rchip:hover { border-color: var(--g); color: var(--g); }
+.ssec { flex: 1; overflow-y: auto; padding: 0 20px; }
+.shdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.stit { font-family: var(--font-d); font-size: 15px; font-weight: 600; }
+.snew { background: var(--g); color: var(--bg); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+.scard { background: var(--sf); border: 1px solid var(--bd); border-radius: 16px; padding: 16px; margin-bottom: 10px; }
+.shd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.spas { font-size: 14px; font-weight: 500; }
+.star { font-family: var(--font-d); font-size: 16px; font-weight: 700; color: var(--g); }
+.sroute { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.spl { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--mt); }
+.sact { display: flex; gap: 8px; }
+.bacp { flex: 2; background: var(--g); color: var(--bg); border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; font-family: var(--font-d); cursor: pointer; }
+.brec { flex: 1; background: transparent; color: var(--mt); border: 1px solid var(--bd); border-radius: 10px; padding: 12px; font-size: 13px; cursor: pointer; }
+.nolist { text-align: center; padding: 40px 20px; color: var(--mt); font-size: 14px; }
 
-/* ===== PERFIL ===== */
-#perfil { background: var(--avs-bg); padding: 48px 20px 32px; overflow-y: auto; }
-.perfil-header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
-.perfil-avatar { width: 64px; height: 64px; background: var(--avs-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--avs-bg); }
-.perfil-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
-.perfil-role { font-size: 13px; color: var(--avs-muted); margin-top: 2px; }
-.perfil-section { margin-bottom: 20px; }
-.perfil-section-title { font-size: 11px; color: var(--avs-muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
-.perfil-item { display: flex; align-items: center; justify-content: space-between; background: var(--avs-surface); border: 1px solid var(--avs-border); border-radius: 12px; padding: 14px 16px; margin-bottom: 6px; cursor: pointer; }
-.perfil-item-left { display: flex; align-items: center; gap: 12px; }
-.perfil-item-icon { font-size: 18px; color: var(--avs-green); }
-.perfil-item-text { font-size: 14px; }
-.perfil-item-arrow { font-size: 16px; color: var(--avs-muted); }
-.btn-logout { width: 100%; background: transparent; border: 1px solid rgba(226,75,74,0.3); color: var(--avs-danger); border-radius: 14px; padding: 14px; font-size: 14px; font-family: var(--font-body); cursor: pointer; margin-top: 8px; }
+#perfil { background: var(--bg); padding: 48px 20px 32px; overflow-y: auto; }
+.phdr { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
+.pavt { width: 64px; height: 64px; background: var(--g); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-d); font-size: 24px; font-weight: 700; color: var(--bg); }
+.pname { font-family: var(--font-d); font-size: 20px; font-weight: 700; }
+.prole { font-size: 13px; color: var(--mt); margin-top: 2px; }
+.psec { margin-bottom: 20px; }
+.pstit { font-size: 11px; color: var(--mt); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.pitem { display: flex; align-items: center; justify-content: space-between; background: var(--sf); border: 1px solid var(--bd); border-radius: 12px; padding: 14px 16px; margin-bottom: 6px; cursor: pointer; }
+.pil { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.blogout { width: 100%; background: transparent; border: 1px solid rgba(226,75,74,0.3); color: var(--rd); border-radius: 14px; padding: 14px; font-size: 14px; cursor: pointer; margin-top: 8px; }
 
-/* TOAST */
-.toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--avs-surface); border: 1px solid var(--avs-border); border-radius: 20px; padding: 10px 20px; font-size: 13px; color: var(--avs-text); opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap; }
+.pac-container { background: var(--sf) !important; border: 1px solid var(--bd) !important; border-radius: 12px !important; box-shadow: none !important; }
+.pac-item { color: var(--tx) !important; padding: 10px 14px !important; border-top: 1px solid var(--bd) !important; }
+.pac-item:hover { background: var(--cd) !important; }
+.pac-matched { color: var(--g) !important; }
+
+.toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--sf); border: 1px solid var(--bd); border-radius: 20px; padding: 10px 20px; font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
-<!-- SPLASH -->
 <div class="screen active" id="splash">
-  <div class="splash-logo">AVS</div>
-  <div class="splash-sub">Viaje Seguro Pura Vida</div>
-  <div class="splash-spinner"></div>
+  <div class="spl-logo">AVS</div>
+  <div class="spl-sub">Viaje Seguro Pura Vida</div>
+  <div class="spl-spin"></div>
 </div>
 
-<!-- LOGIN -->
 <div class="screen" id="login">
-  <div class="login-hero">
-    <div class="login-logo">AVS</div>
-    <div class="login-tagline">Viaje Seguro · Pura Vida · Atenas</div>
-    <div class="login-map-preview">
-      <div class="map-grid"></div>
-      <div class="map-pin-center"></div>
-    </div>
+  <div class="lhero">
+    <div class="llogo">AVS</div>
+    <div class="ltag">Viaje Seguro · Pura Vida · Atenas</div>
+    <div class="lmap"><div class="lmap-dot"></div></div>
   </div>
-  <div class="login-sheet">
-    <div class="login-title">Bienvenido</div>
-    <div class="login-desc">Ingresá con tu número de teléfono</div>
-    <div class="input-group">
-      <div class="input-label">Teléfono</div>
-      <input class="input-field" type="tel" placeholder="8888-8888" id="login-phone">
-    </div>
-    <div class="input-group">
-      <div class="input-label">Nombre</div>
-      <input class="input-field" type="text" placeholder="Tu nombre completo" id="login-name">
-    </div>
-    <button class="btn-primary" onclick="doLogin('pasajero')">Entrar como Pasajero</button>
-    <button class="btn-outline" onclick="doLogin('conductor')">Entrar como Conductor</button>
-    <div class="login-switch">¿Primera vez? <a onclick="showToast('Registro próximamente')">Registrarse</a></div>
+  <div class="lsheet">
+    <div class="ltit">Bienvenido</div>
+    <div class="ldesc">Ingresá con tu número de teléfono</div>
+    <div class="ilabel">Teléfono</div>
+    <input class="ifield" type="tel" placeholder="8888-8888" id="lphone">
+    <div class="ilabel">Nombre</div>
+    <input class="ifield" type="text" placeholder="Tu nombre completo" id="lname">
+    <button class="btnp" onclick="doLogin('pasajero')">Entrar como Pasajero</button>
+    <button class="btno" onclick="doLogin('conductor')">Entrar como Conductor</button>
+    <div class="lsw">¿Primera vez? <a onclick="toast('Registro próximamente')">Registrarse</a></div>
   </div>
 </div>
 
-<!-- PASAJERO HOME -->
 <div class="screen" id="pasajero">
-  <div class="app-header">
-    <div class="header-logo">AVS</div>
-    <div class="header-avatar" id="user-initials" onclick="showScreen('perfil')">RA</div>
+  <div class="ahdr">
+    <div class="alogo">AVS</div>
+    <div class="aavt" id="uinit" onclick="go('perfil')">RA</div>
   </div>
-  <div class="map-container">
-    <div class="map-visual">
-      <div class="map-grid-overlay"></div>
-      <div class="map-road-h" style="top:30%"></div>
-      <div class="map-road-h" style="top:55%"></div>
-      <div class="map-road-h" style="top:75%"></div>
-      <div class="map-road-v" style="left:25%"></div>
-      <div class="map-road-v" style="left:60%"></div>
-      <div class="user-pin">
-        <div class="pin-pulse"></div>
-        <div class="pin-core"></div>
-      </div>
-      <div class="map-badge">📍 Atenas, Alajuela</div>
-    </div>
+  <div class="mapc">
+    <div id="gmap"></div>
+    <div class="mbadge" id="mbadge">📍 Atenas, Alajuela</div>
   </div>
-  <div class="bottom-panel">
-    <div class="panel-handle"></div>
-    <div class="panel-label">¿A dónde vas?</div>
-    <div class="dest-input" onclick="openDestino()">
-      <div class="dest-dots">
-        <div class="dot-g"></div>
-        <div class="dot-line"></div>
-        <div class="dot-r"></div>
-      </div>
-      <div class="dest-texts">
-        <div class="dest-from">Mi ubicación actual</div>
-        <div class="dest-to" id="dest-display">Escribe tu destino...</div>
-      </div>
+  <div class="bpanel">
+    <div class="bhandle"></div>
+    <div class="plabel">¿A dónde vas?</div>
+    <div class="dfrom"><div class="dotg"></div><div class="ftxt" id="otxt">Mi ubicación actual</div></div>
+    <div class="acwrap"><div class="dotr"></div><input type="text" id="dac" placeholder="Escribe tu destino..." autocomplete="off"></div>
+    <div class="tinfo" id="tinfo">
+      <div class="tiitem"><div class="tilbl">Distancia</div><div class="tival" id="tdist">—</div></div>
+      <div class="tiitem"><div class="tilbl">Tiempo</div><div class="tival" id="tdur">—</div></div>
+      <div class="tiitem"><div class="tilbl">Tarifa</div><div class="tival" id="tfare">—</div></div>
     </div>
-    <div class="fare-section">
-      <div class="panel-label" style="margin-top:14px">Tarifa sugerida</div>
-      <div class="fare-chips">
-        <div class="fare-chip sel" onclick="selectFare(this,'1500')">
-          <div class="fare-amount">₡1.500</div>
-          <div class="fare-type">Económico</div>
-        </div>
-        <div class="fare-chip" onclick="selectFare(this,'2500')">
-          <div class="fare-amount">₡2.500</div>
-          <div class="fare-type">Estándar</div>
-        </div>
-        <div class="fare-chip" onclick="selectFare(this,'4000')">
-          <div class="fare-amount">₡4.000</div>
-          <div class="fare-type">Premium</div>
-        </div>
-      </div>
+    <div class="plabel">Tarifa sugerida</div>
+    <div class="fchips">
+      <div class="fchip sel" onclick="selFareChip(this,1800)"><div class="famt">₡1.800</div><div class="ftyp">Económico</div></div>
+      <div class="fchip" onclick="selFareChip(this,2200)"><div class="famt">₡2.200</div><div class="ftyp">Estándar</div></div>
+      <div class="fchip" onclick="selFareChip(this,2800)"><div class="famt">₡2.800</div><div class="ftyp">Premium</div></div>
     </div>
-    <button class="btn-primary" style="margin-top:14px" onclick="solicitarViaje()">Solicitar Viaje</button>
+    <button class="btnp" style="margin-top:8px" onclick="solicitar()">Solicitar Viaje</button>
   </div>
-  <div class="bottom-nav">
-    <div class="nav-item" onclick="showScreen('pasajero')">
-      <span class="nav-icon active">🏠</span>
-      <span class="nav-label active">Inicio</span>
-    </div>
-    <div class="nav-item" onclick="showToast('Mis viajes próximamente')">
-      <span class="nav-icon">🗺️</span>
-      <span class="nav-label">Mis Viajes</span>
-    </div>
-    <div class="nav-item" onclick="showToast('Billetera próximamente')">
-      <span class="nav-icon">💳</span>
-      <span class="nav-label">Billetera</span>
-    </div>
-    <div class="nav-item" onclick="showScreen('perfil')">
-      <span class="nav-icon">👤</span>
-      <span class="nav-label">Perfil</span>
-    </div>
+  <div class="bnav">
+    <div class="nitem"><span class="nico on">🏠</span><span class="nlbl on">Inicio</span></div>
+    <div class="nitem" onclick="toast('Próximamente')"><span class="nico">🗺️</span><span class="nlbl">Mis Viajes</span></div>
+    <div class="nitem" onclick="toast('Próximamente')"><span class="nico">💳</span><span class="nlbl">Billetera</span></div>
+    <div class="nitem" onclick="go('perfil')"><span class="nico">👤</span><span class="nlbl">Perfil</span></div>
   </div>
 </div>
 
-<!-- BUSCANDO CONDUCTOR -->
 <div class="screen" id="buscando">
-  <div class="buscando-anim">
-    <div class="buscando-ring1"></div>
-    <div class="buscando-ring2"></div>
-    <div class="buscando-icon">🚗</div>
-  </div>
-  <div class="buscando-title">Buscando conductor...</div>
-  <div class="buscando-sub">Estamos encontrando el mejor conductor cerca de vos</div>
-  <div class="trip-summary" id="trip-summary">
-    <div class="trip-row">
-      <div class="trip-dot-g"></div>
-      <div class="trip-place">Mi ubicación actual</div>
-    </div>
-    <div style="width:1.5px;height:14px;background:var(--avs-muted);margin-left:3px;margin:4px 0 4px 3px"></div>
-    <div class="trip-row">
-      <div class="trip-dot-r"></div>
-      <div class="trip-place" id="buscando-dest">Hospital de Atenas</div>
-    </div>
+  <div class="banim"><div class="bring1"></div><div class="bring2"></div><div class="bico">🚗</div></div>
+  <div class="btit">Buscando conductor...</div>
+  <div class="bsub">Encontrando el mejor conductor cerca de vos</div>
+  <div class="tsum">
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 0"><div style="width:8px;height:8px;background:var(--g);border-radius:50%"></div><span id="bori">Mi ubicación</span></div>
+    <div style="width:2px;height:12px;background:var(--mt);margin:4px 0 4px 3px"></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 0"><div style="width:8px;height:8px;background:var(--rd);border-radius:50%"></div><span id="bdst">Destino</span></div>
     <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:13px;color:var(--avs-muted)">Tarifa ofrecida</span>
-      <span class="fare-badge" id="buscando-fare">₡2.500</span>
+      <span style="font-size:13px;color:var(--mt)">Tarifa ofrecida</span>
+      <span class="fbadge" id="bfare">₡2.200</span>
     </div>
   </div>
-  <button class="btn-cancel" onclick="cancelarViaje()">Cancelar solicitud</button>
+  <button class="bcancel" onclick="cancelar()">Cancelar solicitud</button>
 </div>
 
-<!-- CONDUCTOR ASIGNADO -->
-<div class="screen" id="conductor-asignado">
-  <div class="app-header">
-    <div class="header-logo">AVS</div>
-    <div style="font-size:13px;color:var(--avs-green)">En camino</div>
-  </div>
-  <div class="trip-map">
-    <div class="map-visual" style="height:100%">
-      <div class="map-grid-overlay"></div>
-      <div class="map-road-h" style="top:40%"></div>
-      <div class="map-road-h" style="top:65%"></div>
-      <div class="map-road-v" style="left:35%"></div>
-      <div class="route-line"></div>
-      <div class="user-pin" style="top:60%;left:35%">
-        <div class="pin-pulse"></div>
-        <div class="pin-core"></div>
+<div class="screen" id="casignado">
+  <div class="ahdr"><div class="alogo">AVS</div><div style="font-size:13px;color:var(--g)">En camino</div></div>
+  <div class="tmap"><div id="rmap"></div></div>
+  <div class="csheet">
+    <div class="ccard">
+      <div class="cavt" id="cinit">RA</div>
+      <div class="cinfo">
+        <div class="cname" id="cnom">Rigoberto Alvarado</div>
+        <div class="cstars">★★★★★ 5.0</div>
+        <div class="cplate">BPJ207 · Toyota Corolla</div>
       </div>
-      <div style="position:absolute;top:35%;left:55%;transform:translate(-50%,-50%)">
-        <div style="width:14px;height:14px;background:var(--avs-amber);border-radius:50%;border:3px solid white"></div>
-      </div>
+      <div class="etab"><div class="etanum">4</div><div class="etalbl">min</div></div>
     </div>
-  </div>
-  <div class="conductor-sheet">
-    <div class="conductor-card">
-      <div class="conductor-avatar" id="cond-initials">RA</div>
-      <div class="conductor-info">
-        <div class="conductor-name" id="cond-name">Rigoberto Alvarado</div>
-        <div class="conductor-stars">★★★★★ 5.0</div>
-        <div class="conductor-plate" id="cond-plate">BPJ207 · Toyota Corolla</div>
-      </div>
-      <div class="eta-badge">
-        <div class="eta-num">4</div>
-        <div class="eta-label">min</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <button class="btn-action" onclick="showToast('Llamando al conductor...')">📞 Llamar</button>
-      <button class="btn-action" onclick="showToast('Chat próximamente')">💬 Chat</button>
-      <button class="btn-action" onclick="finalizarViaje()">✅ Finalizar</button>
+    <div class="arow">
+      <button class="bact" onclick="toast('Llamando...')">📞 Llamar</button>
+      <button class="bact" onclick="toast('Chat próximamente')">💬 Chat</button>
+      <button class="bact" onclick="finalizar()">✅ Finalizar</button>
     </div>
   </div>
 </div>
 
-<!-- PANEL CONDUCTOR -->
 <div class="screen" id="conductor">
-  <div class="conductor-header">
-    <div>
-      <div class="conductor-greeting">Buenos días,</div>
-      <div class="conductor-hname" id="cond-hname">Rigoberto</div>
-    </div>
-    <div class="toggle-disp" onclick="toggleDisponible(this)">
-      <div class="toggle-dot" id="disp-dot"></div>
-      <div class="toggle-label" id="disp-label">Desconectado</div>
+  <div class="chdr">
+    <div><div class="cgreet">Buenos días,</div><div class="chname" id="chnom">Rigoberto</div></div>
+    <div class="tdisp" onclick="toggleDisp(this)">
+      <div class="tdot" id="ddot"></div>
+      <div class="tlbl" id="dlbl">Desconectado</div>
     </div>
   </div>
-  <div class="saldo-card">
-    <div class="saldo-row">
-      <div>
-        <div class="saldo-label">Saldo AVS disponible</div>
-        <div class="saldo-amount">₡6.500</div>
-      </div>
-      <div style="font-size:12px;color:var(--avs-muted);text-align:right">
-        <div>Comisión por viaje</div>
-        <div style="color:var(--avs-text);font-weight:500">₡300</div>
-      </div>
+  <div class="scrd">
+    <div class="srow">
+      <div><div class="slbl">Saldo AVS disponible</div><div class="samt">₡6.500</div></div>
+      <div style="font-size:12px;color:var(--mt);text-align:right"><div>Comisión/viaje</div><div style="color:var(--tx);font-weight:500">₡300</div></div>
     </div>
-    <div class="saldo-bar-bg"><div class="saldo-bar-fill"></div></div>
-    <div style="display:flex;justify-content:space-between;margin-top:6px">
-      <span style="font-size:11px;color:var(--avs-muted)">₡0</span>
-      <span style="font-size:11px;color:var(--avs-muted)">₡10.000</span>
-    </div>
-    <div style="font-size:11px;color:var(--avs-muted);margin-top:4px">Recargá para seguir activo</div>
-    <div class="recarga-chips">
-      <div class="recarga-chip" onclick="showToast('Recarga ₡5.000 — SINPE próximamente')">₡5.000</div>
-      <div class="recarga-chip" onclick="showToast('Recarga ₡10.000 — SINPE próximamente')">₡10.000</div>
-      <div class="recarga-chip" onclick="showToast('Recarga ₡20.000 — SINPE próximamente')">₡20.000</div>
+    <div class="sbg"><div class="sfill"></div></div>
+    <div class="rchips">
+      <div class="rchip" onclick="toast('SINPE próximamente')">₡5.000</div>
+      <div class="rchip" onclick="toast('SINPE próximamente')">₡10.000</div>
+      <div class="rchip" onclick="toast('SINPE próximamente')">₡20.000</div>
     </div>
   </div>
-  <div class="solicitudes-section">
-    <div class="section-header">
-      <div class="section-title">Solicitudes activas</div>
-      <div class="badge-new">1 nueva</div>
-    </div>
-    <div class="solicitud-card">
-      <div class="sol-header">
-        <div class="sol-pasajero">👤 María González</div>
-        <div class="sol-tarifa">₡2.500</div>
-      </div>
-      <div class="sol-route">
-        <div class="sol-place"><span style="color:var(--avs-green)">●</span> Parque Central Atenas</div>
-        <div style="width:1.5px;height:10px;background:var(--avs-muted);margin-left:5px"></div>
-        <div class="sol-place dest"><span style="color:var(--avs-danger)">●</span> Hospital de Atenas</div>
-      </div>
-      <div style="font-size:12px;color:var(--avs-muted);margin-bottom:12px">3.2 km · ~8 min</div>
-      <div class="sol-actions">
-        <button class="btn-aceptar" onclick="aceptarViaje()">Aceptar viaje</button>
-        <button class="btn-rechazar" onclick="showToast('Solicitud rechazada')">Rechazar</button>
-      </div>
-    </div>
+  <div class="ssec">
+    <div class="shdr"><div class="stit">Solicitudes activas</div><div class="snew" id="snew">0</div></div>
+    <div id="slist"><div class="nolist">🚗 Activá tu disponibilidad para recibir viajes</div></div>
   </div>
-  <div class="bottom-nav">
-    <div class="nav-item" onclick="showScreen('conductor')">
-      <span class="nav-icon active">🏠</span>
-      <span class="nav-label active">Inicio</span>
-    </div>
-    <div class="nav-item" onclick="showToast('Historial próximamente')">
-      <span class="nav-icon">📋</span>
-      <span class="nav-label">Historial</span>
-    </div>
-    <div class="nav-item" onclick="showToast('Ganancias próximamente')">
-      <span class="nav-icon">💰</span>
-      <span class="nav-label">Ganancias</span>
-    </div>
-    <div class="nav-item" onclick="showScreen('perfil')">
-      <span class="nav-icon">👤</span>
-      <span class="nav-label">Perfil</span>
-    </div>
+  <div class="bnav">
+    <div class="nitem"><span class="nico on">🏠</span><span class="nlbl on">Inicio</span></div>
+    <div class="nitem" onclick="toast('Próximamente')"><span class="nico">📋</span><span class="nlbl">Historial</span></div>
+    <div class="nitem" onclick="toast('Próximamente')"><span class="nico">💰</span><span class="nlbl">Ganancias</span></div>
+    <div class="nitem" onclick="go('perfil')"><span class="nico">👤</span><span class="nlbl">Perfil</span></div>
   </div>
 </div>
 
-<!-- PERFIL -->
 <div class="screen" id="perfil">
-  <div class="perfil-header">
-    <div class="perfil-avatar" id="perfil-initials">RA</div>
-    <div>
-      <div class="perfil-name" id="perfil-name">Rigoberto Alvarado</div>
-      <div class="perfil-role" id="perfil-role">Pasajero · Atenas</div>
-    </div>
+  <div class="phdr">
+    <div class="pavt" id="pinit">RA</div>
+    <div><div class="pname" id="pnom">Usuario</div><div class="prole" id="prol">Pasajero · Atenas</div></div>
   </div>
-  <div class="perfil-section">
-    <div class="perfil-section-title">Mi cuenta</div>
-    <div class="perfil-item" onclick="showToast('Editar perfil próximamente')">
-      <div class="perfil-item-left"><span class="perfil-item-icon">👤</span><span class="perfil-item-text">Datos personales</span></div>
-      <span class="perfil-item-arrow">›</span>
-    </div>
-    <div class="perfil-item" onclick="showToast('Historial de viajes próximamente')">
-      <div class="perfil-item-left"><span class="perfil-item-icon">🗺️</span><span class="perfil-item-text">Historial de viajes</span></div>
-      <span class="perfil-item-arrow">›</span>
-    </div>
-    <div class="perfil-item" onclick="showToast('Métodos de pago próximamente')">
-      <div class="perfil-item-left"><span class="perfil-item-icon">💳</span><span class="perfil-item-text">Métodos de pago</span></div>
-      <span class="perfil-item-arrow">›</span>
-    </div>
+  <div class="psec">
+    <div class="pstit">Mi cuenta</div>
+    <div class="pitem" onclick="toast('Próximamente')"><div class="pil"><span>👤</span><span>Datos personales</span></div><span>›</span></div>
+    <div class="pitem" onclick="toast('Próximamente')"><div class="pil"><span>🗺️</span><span>Historial de viajes</span></div><span>›</span></div>
+    <div class="pitem" onclick="toast('Próximamente')"><div class="pil"><span>💳</span><span>Métodos de pago</span></div><span>›</span></div>
   </div>
-  <div class="perfil-section">
-    <div class="perfil-section-title">Soporte</div>
-    <div class="perfil-item" onclick="showToast('Soporte por WhatsApp próximamente')">
-      <div class="perfil-item-left"><span class="perfil-item-icon">💬</span><span class="perfil-item-text">Contactar soporte</span></div>
-      <span class="perfil-item-arrow">›</span>
-    </div>
-    <div class="perfil-item" onclick="showToast('Términos y condiciones próximamente')">
-      <div class="perfil-item-left"><span class="perfil-item-icon">📄</span><span class="perfil-item-text">Términos y condiciones</span></div>
-      <span class="perfil-item-arrow">›</span>
-    </div>
-  </div>
-  <button class="btn-logout" onclick="showScreen('login')">Cerrar sesión</button>
-  <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--avs-muted)">AVS v1.0 · Atenas, Alajuela · Costa Rica</div>
+  <button class="blogout" onclick="go('login')">Cerrar sesión</button>
+  <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--mt)">AVS v2.0 · Atenas · Costa Rica</div>
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
+<div class="toast" id="toastEl"></div>
 
 <script>
-let currentUser = { name: '', role: '', fare: '2500', dest: '' };
-let disponible = false;
+// ===== SUPABASE =====
+const SB_URL = 'https://xnwpxmmepewtthwdttev.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhud3B4bW1lcGV3dHRod2R0dGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzQ0MDIsImV4cCI6MjA5NDQ1MDQwMn0.PSyZzHqppCR3HLQBtQb0jaHbXO8x4KBseDHAuQTVwy8';
+let db = null;
 
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+function initSupabase() {
+  try {
+    if (window.supabase && window.supabase.createClient) {
+      db = window.supabase.createClient(SB_URL, SB_KEY);
+      console.log('Supabase conectado');
+    }
+  } catch(e) { console.log('Supabase no disponible, modo local'); }
+}
+
+// ===== GOOGLE MAPS =====
+const ATENAS = { lat: 9.9799, lng: -84.3799 };
+let gmap, autocomplete, dirSvc, dirRend, userLoc = ATENAS, destLoc = null;
+
+function initMap() {
+  gmap = new google.maps.Map(document.getElementById('gmap'), {
+    center: ATENAS, zoom: 15, disableDefaultUI: true, styles: mstyle()
+  });
+  dirSvc = new google.maps.DirectionsService();
+  dirRend = new google.maps.DirectionsRenderer({
+    map: gmap, suppressMarkers: false,
+    polylineOptions: { strokeColor: '#00d4aa', strokeWeight: 4 }
+  });
+  const inp = document.getElementById('dac');
+  autocomplete = new google.maps.places.Autocomplete(inp, {
+    componentRestrictions: { country: 'cr' }, fields: ['geometry','name','formatted_address']
+  });
+  autocomplete.addListener('place_changed', () => {
+    const p = autocomplete.getPlace();
+    if (!p.geometry) return;
+    destLoc = p.geometry.location;
+    calcRoute();
+  });
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      gmap.setCenter(userLoc);
+      new google.maps.Marker({ position: userLoc, map: gmap,
+        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#00d4aa', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 }
+      });
+      new google.maps.Geocoder().geocode({ location: userLoc }, (r,s) => {
+        if (s==='OK' && r[0]) {
+          const a = r[0].formatted_address.split(',')[0];
+          document.getElementById('otxt').textContent = a;
+          document.getElementById('mbadge').textContent = '📍 ' + a;
+        }
+      });
+    });
+  }
+  new google.maps.Map(document.getElementById('rmap'), {
+    center: ATENAS, zoom: 14, disableDefaultUI: true, styles: mstyle()
+  });
+}
+
+function calcRoute() {
+  if (!destLoc) return;
+  dirSvc.route({ origin: userLoc, destination: destLoc, travelMode: google.maps.TravelMode.DRIVING }, (r,s) => {
+    if (s==='OK') {
+      dirRend.setDirections(r);
+      const leg = r.routes[0].legs[0];
+      const km = (leg.distance.value/1000).toFixed(1);
+      const min = Math.ceil(leg.duration.value/60);
+      const fare = Math.max(1800, Math.round(500 + km*380));
+      document.getElementById('tdist').textContent = km+' km';
+      document.getElementById('tdur').textContent = min+' min';
+      document.getElementById('tfare').textContent = '₡'+fare.toLocaleString('es-CR');
+      document.getElementById('tinfo').classList.add('show');
+      selFare = fare;
+    }
+  });
+}
+
+function mstyle() {
+  return [
+    {elementType:'geometry',stylers:[{color:'#0d1f14'}]},
+    {elementType:'labels.text.stroke',stylers:[{color:'#0d1f14'}]},
+    {elementType:'labels.text.fill',stylers:[{color:'#7a8fa6'}]},
+    {featureType:'road',elementType:'geometry',stylers:[{color:'#172040'}]},
+    {featureType:'road',elementType:'geometry.stroke',stylers:[{color:'#0a1628'}]},
+    {featureType:'water',elementType:'geometry',stylers:[{color:'#0a1628'}]},
+    {featureType:'poi',stylers:[{visibility:'off'}]}
+  ];
+}
+
+// ===== APP =====
+let user = { name:'', role:'', phone:'' };
+let selFare = 1800;
+let disponible = false;
+let viajeId = null;
+let sub = null;
+
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+function toast(msg) {
+  const t = document.getElementById('toastEl');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
 }
 
 function doLogin(role) {
-  const phone = document.getElementById('login-phone').value;
-  const name = document.getElementById('login-name').value || 'Usuario';
-  if (!phone) { showToast('Ingresá tu número de teléfono'); return; }
-  currentUser.name = name;
-  currentUser.role = role;
-  const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  document.getElementById('user-initials').textContent = initials;
-  document.getElementById('perfil-initials').textContent = initials;
-  document.getElementById('perfil-name').textContent = name;
-  document.getElementById('perfil-role').textContent = (role === 'conductor' ? 'Conductor' : 'Pasajero') + ' · Atenas';
-  document.getElementById('cond-hname').textContent = name.split(' ')[0];
-  showScreen(role === 'conductor' ? 'conductor' : 'pasajero');
+  const phone = document.getElementById('lphone').value.trim();
+  const name = document.getElementById('lname').value.trim() || 'Usuario';
+  if (!phone) { toast('Ingresá tu número'); return; }
+  user = { name, role, phone };
+  const ini = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  ['uinit','pinit','cinit'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=ini; });
+  document.getElementById('pnom').textContent = name;
+  document.getElementById('prol').textContent = (role==='conductor'?'Conductor':'Pasajero')+' · Atenas';
+  document.getElementById('chnom').textContent = name.split(' ')[0];
+  document.getElementById('cnom').textContent = name;
+  if (db) {
+    db.from('usuarios').upsert({ telefono: phone, nombre: name.split(' ')[0], apellidos: name.split(' ').slice(1).join(' ')||'-', tipo: role }, { onConflict:'telefono' }).then(()=>{});
+  }
+  go(role==='conductor'?'conductor':'pasajero');
 }
 
-function selectFare(el, fare) {
-  document.querySelectorAll('.fare-chip').forEach(c => c.classList.remove('sel'));
-  el.classList.add('sel');
-  currentUser.fare = fare;
+function selFareChip(el, fare) {
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); selFare = fare;
 }
 
-function openDestino() {
-  const dest = prompt('¿A dónde vas?', '');
-  if (dest) {
-    document.getElementById('dest-display').textContent = dest;
-    document.getElementById('dest-display').style.color = 'var(--avs-text)';
-    currentUser.dest = dest;
+async function solicitar() {
+  const dest = document.getElementById('dac').value;
+  if (!dest) { toast('Ingresá tu destino'); return; }
+  const ori = document.getElementById('otxt').textContent;
+  document.getElementById('bori').textContent = ori;
+  document.getElementById('bdst').textContent = dest;
+  document.getElementById('bfare').textContent = '₡'+selFare.toLocaleString('es-CR');
+  go('buscando');
+  if (db) {
+    const { data } = await db.from('viajes').insert({
+      estado: 'solicitado',
+      origen_lat: userLoc.lat, origen_lng: userLoc.lng,
+      origen_descripcion: ori,
+      destino_lat: destLoc ? destLoc.lat() : 0,
+      destino_lng: destLoc ? destLoc.lng() : 0,
+      destino_descripcion: dest,
+      tarifa_estimada: selFare
+    }).select().single();
+    if (data) { viajeId = data.id; toast('Viaje #'+data.id.slice(0,6)+' enviado'); }
+  }
+  // Esperar que un conductor acepte el viaje en Supabase
+  if (db && viajeId) {
+    const poll = db.channel('viaje-'+viajeId)
+      .on('postgres_changes', { event:'UPDATE', schema:'public', table:'viajes', filter:'id=eq.'+viajeId }, (payload) => {
+        if (payload.new.estado === 'aceptado') {
+          db.removeChannel(poll);
+          go('casignado');
+          toast('¡Conductor en camino!');
+        }
+      }).subscribe();
+    // Timeout de seguridad: 3 minutos sin conductor
+    setTimeout(() => {
+      try { db.removeChannel(poll); } catch(e) {}
+      if (document.getElementById('buscando').classList.contains('active')) {
+        toast('Sin conductores disponibles. Intenta de nuevo.');
+        go('pasajero');
+      }
+    }, 180000);
+  } else {
+    // Modo demo sin Supabase
+    // Esperar que conductor acepte - polling cada 3 segundos
+  if (db && viajeId) {
+    let waitPoll = setInterval(async () => {
+      const { data } = await db.from('viajes').select('estado').eq('id', viajeId).single();
+      if (data && data.estado === 'aceptado') {
+        clearInterval(waitPoll);
+        go('casignado');
+        toast('¡Conductor en camino!');
+      }
+    }, 3000);
+    // Timeout 3 minutos
+    setTimeout(() => {
+      clearInterval(waitPoll);
+      if (document.getElementById('buscando').classList.contains('active')) {
+        toast('Sin conductores disponibles. Intentá de nuevo.');
+        go('pasajero');
+      }
+    }, 180000);
+  } else {
+    setTimeout(()=>{ go('casignado'); toast('¡Conductor encontrado!'); }, 4000);
+  }
   }
 }
 
-function solicitarViaje() {
-  if (!currentUser.dest) { showToast('Ingresá tu destino primero'); return; }
-  document.getElementById('buscando-dest').textContent = currentUser.dest;
-  const fmtFare = parseInt(currentUser.fare).toLocaleString('es-CR');
-  document.getElementById('buscando-fare').textContent = '₡' + fmtFare;
-  showScreen('buscando');
-  setTimeout(() => {
-    showScreen('conductor-asignado');
-    showToast('¡Conductor encontrado!');
-  }, 4000);
+function cancelar() {
+  if (viajeId && db) db.from('viajes').update({estado:'cancelado'}).eq('id',viajeId);
+  viajeId = null; go('pasajero'); toast('Cancelado');
 }
 
-function cancelarViaje() {
-  showScreen('pasajero');
-  showToast('Solicitud cancelada');
+async function finalizar() {
+  if (viajeId && db) await db.from('viajes').update({estado:'completado',tarifa_final:selFare}).eq('id',viajeId);
+  viajeId = null; toast('¡Viaje finalizado!');
+  setTimeout(()=>go('pasajero'), 2000);
 }
 
-function aceptarViaje() {
-  showToast('Viaje aceptado — en camino al pasajero');
-  setTimeout(() => showScreen('conductor'), 1500);
-}
+let pollInterval = null;
+let lastCount = 0;
 
-function finalizarViaje() {
-  showToast('¡Viaje finalizado! Calificá tu experiencia');
-  setTimeout(() => showScreen('pasajero'), 2000);
-}
-
-function toggleDisponible(el) {
+async function toggleDisp(el) {
   disponible = !disponible;
-  document.getElementById('disp-dot').classList.toggle('on', disponible);
-  document.getElementById('disp-label').textContent = disponible ? 'Disponible' : 'Desconectado';
-  showToast(disponible ? 'Estás disponible para viajes' : 'Te desconectaste');
+  document.getElementById('ddot').classList.toggle('on', disponible);
+  document.getElementById('dlbl').textContent = disponible ? 'Disponible' : 'Desconectado';
+  toast(disponible ? 'Estás disponible' : 'Desconectado');
+  if (disponible) {
+    cargarSolicitudes();
+    // Polling cada 5 segundos
+    pollInterval = setInterval(async () => {
+      if (!db) return;
+      const { data } = await db.from('viajes').select('id').eq('estado','solicitado');
+      const newCount = data ? data.length : 0;
+      if (newCount > lastCount) {
+        toast('🚗 Nueva solicitud de viaje!');
+        cargarSolicitudes();
+      }
+      lastCount = newCount;
+    }, 5000);
+  } else {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = null;
+    lastCount = 0;
+    document.getElementById('slist').innerHTML = '<div class="nolist">🚗 Activá tu disponibilidad para recibir viajes</div>';
+    document.getElementById('snew').textContent = '0';
+  }
 }
 
-setTimeout(() => showScreen('login'), 2000);
+async function cargarSolicitudes() {
+  if (!db) { document.getElementById('slist').innerHTML = '<div class="nolist">Sin conexión a base de datos</div>'; return; }
+  const { data } = await db.from('viajes').select('*').eq('estado','solicitado').order('fecha_solicitud',{ascending:false}).limit(10);
+  if (!data || data.length===0) {
+    document.getElementById('slist').innerHTML = '<div class="nolist">Sin solicitudes activas</div>';
+    document.getElementById('snew').textContent = '0'; return;
+  }
+  document.getElementById('snew').textContent = data.length;
+  document.getElementById('slist').innerHTML = data.map(v=>`
+    <div class="scard">
+      <div class="shd"><div class="spas">👤 Pasajero</div><div class="star">₡${parseInt(v.tarifa_estimada||0).toLocaleString('es-CR')}</div></div>
+      <div class="sroute">
+        <div class="spl"><span style="color:var(--g)">●</span>${v.origen_descripcion}</div>
+        <div style="width:2px;height:10px;background:var(--mt);margin-left:5px"></div>
+        <div class="spl"><span style="color:var(--rd)">●</span>${v.destino_descripcion}</div>
+      </div>
+      <div class="sact">
+        <button class="bacp" onclick="aceptar('${v.id}')">Aceptar viaje</button>
+        <button class="brec" onclick="toast('Rechazado')">Rechazar</button>
+      </div>
+    </div>`).join('');
+}
+
+async function aceptar(id) {
+  if (db) await db.from('viajes').update({estado:'aceptado'}).eq('id',id);
+  toast('Viaje aceptado — en camino'); cargarSolicitudes();
+}
+
+// ===== INICIO =====
+window.addEventListener('DOMContentLoaded', () => {
+  initSupabase();
+  setTimeout(() => go('login'), 2000);
+});
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9LzLaIH_6QLfuHaBqUqMuabnTUBf8OzA&libraries=places,geometry&callback=initMap" async defer></script>
 </body>
 </html>
