@@ -292,7 +292,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
   <div class="scrd">
     <div class="srow">
       <div><div class="slbl">Saldo AVS disponible</div><div class="samt">₡6.500</div></div>
-      <div style="font-size:12px;color:var(--mt);text-align:right"><div>Comisión/viaje</div><div style="color:var(--tx);font-weight:500">₡300</div></div>
+      <div style="font-size:12px;color:var(--mt);text-align:right"><div>Comisión AVS</div><div style="color:var(--tx);font-weight:500">12%</div></div>
     </div>
     <div class="sbg"><div class="sfill"></div></div>
     <div class="rchips">
@@ -422,29 +422,41 @@ function calcRoute() {
       const km = parseFloat((leg.distance.value / 1000).toFixed(1));
       const min = Math.ceil(leg.duration.value / 60);
 
-      // Calcular 3 tarifas basadas en km real
-      const base = Math.max(1800, Math.round(500 + km * 380));
-      const std  = Math.max(2200, Math.round(700 + km * 450));
-      const prem = Math.max(2800, Math.round(900 + km * 550));
+      // Tarifa ~10% bajo Uber (₡676/km estándar calibrado vs Uber CR)
+      // Uber cobra ~₡751/km · AVS cobra ₡676/km estándar (10% menos)
+      const AVS_KM_ECO  = 608;  // ~19% bajo Uber
+      const AVS_KM_STD  = 676;  // ~10% bajo Uber
+      const AVS_KM_PREM = 751;  // igual a Uber (techo)
+      const BASE_MIN = 1500;    // mínimo por viaje corto
+
+      const base = Math.max(BASE_MIN, Math.round(km * AVS_KM_ECO));
+      const std  = Math.max(BASE_MIN, Math.round(km * AVS_KM_STD));
+      const prem = Math.max(BASE_MIN, Math.round(km * AVS_KM_PREM));
+
+      // Comisión AVS 12% sobre la tarifa — la paga el pasajero por encima
+      const comBase = Math.round(base * 0.12);
+      const comStd  = Math.round(std  * 0.12);
+      const comPrem = Math.round(prem * 0.12);
 
       document.getElementById('tdist').textContent = km + ' km';
       document.getElementById('tdur').textContent = min + ' min';
-      document.getElementById('tfare').textContent = '₡' + std.toLocaleString('es-CR');
+      document.getElementById('tfare').textContent = '₡' + (std + comStd).toLocaleString('es-CR');
       document.getElementById('tinfo').classList.add('show');
 
-      // Renderizar chips dinámicos
+      // Renderizar chips: muestra total (tarifa + comisión) al pasajero
       const chips = [
-        { fare: base, label: 'Económico' },
-        { fare: std,  label: 'Estándar'  },
-        { fare: prem, label: 'Premium'   }
+        { base: base, com: comBase, total: base + comBase, label: 'Económico' },
+        { base: std,  com: comStd,  total: std  + comStd,  label: 'Estándar'  },
+        { base: prem, com: comPrem, total: prem + comPrem, label: 'Premium'   }
       ];
       const fc = document.getElementById('fchips');
       fc.innerHTML = chips.map((c,i) => `
-        <div class="fchip ${i===1?'sel':''}" onclick="selFareChip(this,${c.fare})">
-          <div class="famt">₡${c.fare.toLocaleString('es-CR')}</div>
+        <div class="fchip ${i===1?'sel':''}" onclick="selFareChip(this,${c.base},${c.com})">
+          <div class="famt">₡${c.total.toLocaleString('es-CR')}</div>
           <div class="ftyp">${c.label}</div>
         </div>`).join('');
       selFare = std;
+      selCom  = comStd;
       document.getElementById('fareSection').style.display = 'block';
     }
   });
@@ -465,7 +477,8 @@ function mstyle() {
 // ===== SESSION — BUG 4 FIX =====
 // Persistir sesión en localStorage para sobrevivir cambio de app
 let user = { name:'', role:'', phone:'' };
-let selFare = 1800;
+let selFare = 1500;
+let selCom  = 0;
 let disponible = false;
 let viajeId = null;
 let viajeData = null; // datos completos del viaje activo
@@ -532,9 +545,11 @@ function applyUser() {
   document.getElementById('cnom').textContent = user.name;
 }
 
-function selFareChip(el, fare) {
+function selFareChip(el, fare, com) {
   document.querySelectorAll('.fchip').forEach(c => c.classList.remove('sel'));
-  el.classList.add('sel'); selFare = fare;
+  el.classList.add('sel');
+  selFare = fare;
+  selCom  = com || Math.round(fare * 0.12);
 }
 
 // ===== SOLICITAR VIAJE — BUG 1 FIX =====
@@ -555,7 +570,9 @@ async function solicitar() {
       origen_descripcion: ori,
       destino_lat: destLoc.lat(), destino_lng: destLoc.lng(),
       destino_descripcion: dest,
-      tarifa_estimada: selFare
+      tarifa_estimada: selFare,
+      comision_avs: selCom,
+      total_pasajero: selFare + selCom
     }).select().single();
     if (data) {
       viajeId = data.id;
@@ -656,19 +673,38 @@ async function cargarSolicitudes() {
     document.getElementById('snew').textContent = '0'; return;
   }
   document.getElementById('snew').textContent = data.length;
-  document.getElementById('slist').innerHTML = data.map(v => `
+  document.getElementById('slist').innerHTML = data.map(v => {
+    const tarifa = parseInt(v.tarifa_estimada || 0);
+    const com    = parseInt(v.comision_avs   || Math.round(tarifa * 0.12));
+    const total  = parseInt(v.total_pasajero || tarifa + com);
+    return `
     <div class="scard" id="card-${v.id}">
-      <div class="shd"><div class="spas">👤 Pasajero</div><div class="star">₡${parseInt(v.tarifa_estimada||0).toLocaleString('es-CR')}</div></div>
+      <div class="shd"><div class="spas">👤 Pasajero</div></div>
       <div class="sroute">
         <div class="spl"><span style="color:var(--g)">●</span>${v.origen_descripcion}</div>
         <div style="width:2px;height:10px;background:var(--mt);margin-left:5px"></div>
         <div class="spl"><span style="color:var(--rd)">●</span>${v.destino_descripcion}</div>
       </div>
+      <div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="color:var(--mt)">Pasajero paga</span>
+          <span>₡${total.toLocaleString('es-CR')}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="color:var(--mt)">Comisión AVS (12%)</span>
+          <span style="color:var(--rd)">−₡${com.toLocaleString('es-CR')}</span>
+        </div>
+        <div style="border-top:1px solid var(--bd);padding-top:6px;margin-top:2px;display:flex;justify-content:space-between;font-weight:600">
+          <span style="color:var(--g)">Vos recibís</span>
+          <span style="color:var(--g);font-family:var(--font-d);font-size:15px">₡${tarifa.toLocaleString('es-CR')}</span>
+        </div>
+      </div>
       <div class="sact">
         <button class="bacp" onclick="aceptar('${v.id}',${v.origen_lat},${v.origen_lng},'${v.origen_descripcion}',${v.destino_lat},${v.destino_lng},'${v.destino_descripcion}')">Aceptar viaje</button>
         <button class="brec" onclick="rechazar('${v.id}')">Rechazar</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // BUG 2 FIX: aceptar abre mapa del conductor con ruta al pasajero
