@@ -910,31 +910,61 @@ function doLogin(role) {
     cargarAdmin();
     return;
   }
+  // Si es conductor verificar estado en Supabase
+  if (role === 'conductor' && db) {
+    toast('Verificando...');
+    db.from('usuarios').select('nombre,apellidos,tipo,estado_verificacion').eq('telefono', phone).single().then(({ data, error }) => {
+      if (!data) {
+        // No existe — mandarlo a registrarse
+        showLoginMsg('🚗', 'No encontramos tu registro', 'Para operar como conductor en AVS primero debés completar el registro y esperar aprobación.', 'Registrarme', () => go('registro'));
+        return;
+      }
+      if (data.estado_verificacion === 'pendiente') {
+        showLoginMsg('⏳', 'Solicitud en revisión', 'Tu documentación está siendo revisada por el equipo AVS. Te contactaremos en 24-48 horas al número ' + phone + '.', 'Volver', () => go('login'));
+        return;
+      }
+      if (data.estado_verificacion === 'rechazado') {
+        showLoginMsg('❌', 'Solicitud rechazada', 'Tu solicitud no fue aprobada. Contactá al equipo AVS para más información o registrate nuevamente con documentación correcta.', 'Registrarme de nuevo', () => go('registro'));
+        return;
+      }
+      // Aprobado — entrar normal
+      user = { name: data.nombre + ' ' + (data.apellidos||''), role: 'conductor', phone };
+      saveSession();
+      applyUser();
+      // Actualizar tipo por si acaso
+      db.from('usuarios').update({ tipo: 'conductor' }).eq('telefono', phone).then(() => {});
+      go('conductor');
+    });
+    return;
+  }
+  // Pasajero — entrar directo
   user = { name, role, phone };
   saveSession();
   applyUser();
   if (db) {
-    // Primero verificar si ya existe
-    db.from('usuarios').select('telefono,tipo').eq('telefono', phone).single().then(({ data }) => {
+    db.from('usuarios').select('telefono').eq('telefono', phone).single().then(({ data }) => {
       if (data) {
-        // Ya existe — actualizar nombre y tipo con el rol que eligió ahora
-        db.from('usuarios').update({
-          nombre: name.split(' ')[0],
-          apellidos: name.split(' ').slice(1).join(' ') || '-',
-          tipo: role
-        }).eq('telefono', phone).then(() => {});
+        db.from('usuarios').update({ nombre: name.split(' ')[0], apellidos: name.split(' ').slice(1).join(' ') || '-', tipo: role }).eq('telefono', phone).then(() => {});
       } else {
-        // No existe — insertar nuevo
-        db.from('usuarios').insert({
-          telefono: phone,
-          nombre: name.split(' ')[0],
-          apellidos: name.split(' ').slice(1).join(' ') || '-',
-          tipo: role
-        }).then(() => {});
+        db.from('usuarios').insert({ telefono: phone, nombre: name.split(' ')[0], apellidos: name.split(' ').slice(1).join(' ') || '-', tipo: role }).then(() => {});
       }
     });
   }
-  go(role === 'conductor' ? 'conductor' : 'pasajero');
+  go('pasajero');
+}
+
+function showLoginMsg(ico, titulo, desc, btnTxt, btnAction) {
+  // Mostrar mensaje temporal en pantalla login
+  const sheet = document.querySelector('#login .lsheet');
+  const original = sheet.innerHTML;
+  sheet.innerHTML = `
+    <div style="text-align:center;padding:10px 0 20px">
+      <div style="font-size:52px;margin-bottom:12px">${ico}</div>
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">${titulo}</div>
+      <div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:20px">${desc}</div>
+      <button class="btnp" onclick="(${btnAction.toString()})()">${btnTxt}</button>
+      <button class="btno" onclick="this.closest('.lsheet').innerHTML = \`${original.replace(/`/g, '\\`')}\`" style="margin-top:8px">← Volver al inicio</button>
+    </div>`;
 }
 
 function applyUser() {
