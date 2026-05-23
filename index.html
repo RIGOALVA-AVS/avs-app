@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0a1628">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>AVS — Viaje Seguro Pura Vida</title>
@@ -630,10 +633,8 @@ async function toggleDisp(el) {
     cargarSolicitudes();
     pollInterval = setInterval(async () => {
       if (!db) return;
-      const { data } = await db.from('viajes').select('id').eq('estado','solicitado');
-      const newCount = data ? data.length : 0;
-      if (newCount > lastCount) { toast('🚗 Nueva solicitud de viaje!'); cargarSolicitudes(); }
-      lastCount = newCount;
+      // Siempre recargar la lista — limpia rechazados y muestra nuevos
+      cargarSolicitudes();
     }, 5000);
   } else {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
@@ -670,11 +671,18 @@ async function cargarSolicitudes() {
 // BUG 2 FIX: aceptar abre mapa del conductor con ruta al pasajero
 async function aceptar(id, oriLat, oriLng, oriDesc, dstLat, dstLng, dstDesc) {
   if (db) {
-    await db.from('viajes').update({
-      estado: 'aceptado',
-      conductor_nombre: user.name,
-      conductor_placa: 'BPJ207 · Toyota Corolla'
-    }).eq('id', id);
+    // Solo actualizar estado — no depender de columnas opcionales
+    const updateData = { estado: 'aceptado' };
+    // Intentar agregar datos del conductor si las columnas existen
+    try {
+      updateData.conductor_nombre = user.name;
+      updateData.conductor_placa = 'BPJ207 · Toyota Corolla';
+    } catch(e) {}
+    const { error } = await db.from('viajes').update(updateData).eq('id', id);
+    if (error) {
+      // Si falla por columnas faltantes, intentar solo con estado
+      await db.from('viajes').update({ estado: 'aceptado' }).eq('id', id);
+    }
   }
   viajeId = id;
   viajeData = { oriLat, oriLng, oriDesc, dstLat, dstLng, dstDesc };
