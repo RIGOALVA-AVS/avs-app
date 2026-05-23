@@ -107,6 +107,15 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 .arow { display: flex; gap: 10px; }
 .bact { flex: 1; background: var(--cd); border: 1px solid var(--bd); border-radius: 12px; padding: 14px; font-size: 13px; color: var(--tx); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
+/* Pantalla mapa conductor */
+#condmap { background: var(--bg); }
+.tmap { flex: 1; position: relative; overflow: hidden; }
+#dmap { width: 100%; height: 100%; background: #0d1f14; }
+.dsheet { background: var(--sf); border-radius: 24px 24px 0 0; padding: 20px 20px 32px; border-top: 1px solid var(--bd); }
+.dtit { font-family: var(--font-d); font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.dsub { font-size: 13px; color: var(--mt); margin-bottom: 16px; }
+.bfin { width: 100%; background: var(--g); color: var(--bg); border: none; border-radius: 14px; padding: 16px; font-size: 15px; font-weight: 600; font-family: var(--font-d); cursor: pointer; }
+
 #conductor { background: var(--bg); }
 .chdr { padding: 48px 20px 16px; display: flex; justify-content: space-between; align-items: flex-start; }
 .cgreet { font-size: 13px; color: var(--mt); }
@@ -205,11 +214,10 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
       <div class="tiitem"><div class="tilbl">Tiempo</div><div class="tival" id="tdur">—</div></div>
       <div class="tiitem"><div class="tilbl">Tarifa</div><div class="tival" id="tfare">—</div></div>
     </div>
-    <div class="plabel">Tarifa sugerida</div>
-    <div class="fchips">
-      <div class="fchip sel" onclick="selFareChip(this,1800)"><div class="famt">₡1.800</div><div class="ftyp">Económico</div></div>
-      <div class="fchip" onclick="selFareChip(this,2200)"><div class="famt">₡2.200</div><div class="ftyp">Estándar</div></div>
-      <div class="fchip" onclick="selFareChip(this,2800)"><div class="famt">₡2.800</div><div class="ftyp">Premium</div></div>
+    <!-- BUG 3 FIX: chips ocultos hasta que haya ruta calculada -->
+    <div id="fareSection" style="display:none">
+      <div class="plabel">Seleccioná tu tarifa</div>
+      <div class="fchips" id="fchips"></div>
     </div>
     <button class="btnp" style="margin-top:8px" onclick="solicitar()">Solicitar Viaje</button>
   </div>
@@ -237,8 +245,9 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
   <button class="bcancel" onclick="cancelar()">Cancelar solicitud</button>
 </div>
 
+<!-- BUG 1 FIX: Pantalla pasajero con confirmación y mapa del conductor en tiempo real -->
 <div class="screen" id="casignado">
-  <div class="ahdr"><div class="alogo">AVS</div><div style="font-size:13px;color:var(--g)">En camino</div></div>
+  <div class="ahdr"><div class="alogo">AVS</div><div style="font-size:13px;color:var(--g)">✅ En camino</div></div>
   <div class="tmap"><div id="rmap"></div></div>
   <div class="csheet">
     <div class="ccard">
@@ -246,15 +255,26 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
       <div class="cinfo">
         <div class="cname" id="cnom">Rigoberto Alvarado</div>
         <div class="cstars">★★★★★ 5.0</div>
-        <div class="cplate">BPJ207 · Toyota Corolla</div>
+        <div class="cplate" id="cplate">BPJ207 · Toyota Corolla</div>
       </div>
-      <div class="etab"><div class="etanum">4</div><div class="etalbl">min</div></div>
+      <div class="etab"><div class="etanum" id="etamin">—</div><div class="etalbl">min</div></div>
     </div>
     <div class="arow">
       <button class="bact" onclick="toast('Llamando...')">📞 Llamar</button>
       <button class="bact" onclick="toast('Chat próximamente')">💬 Chat</button>
       <button class="bact" onclick="finalizar()">✅ Finalizar</button>
     </div>
+  </div>
+</div>
+
+<!-- BUG 2 FIX: Pantalla mapa del conductor con ruta al pasajero -->
+<div class="screen" id="condmap">
+  <div class="ahdr"><div class="alogo">AVS</div><div style="font-size:13px;color:var(--am)">🚗 Viaje activo</div></div>
+  <div class="tmap"><div id="dmap"></div></div>
+  <div class="dsheet">
+    <div class="dtit" id="dtit">En camino al pasajero</div>
+    <div class="dsub" id="dsub">Calculando ruta...</div>
+    <button class="bfin" onclick="conductorFinalizar()">Finalizar viaje</button>
   </div>
 </div>
 
@@ -301,8 +321,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
     <div class="pitem" onclick="toast('Próximamente')"><div class="pil"><span>🗺️</span><span>Historial de viajes</span></div><span>›</span></div>
     <div class="pitem" onclick="toast('Próximamente')"><div class="pil"><span>💳</span><span>Métodos de pago</span></div><span>›</span></div>
   </div>
-  <button class="blogout" onclick="go('login')">Cerrar sesión</button>
-  <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--mt)">AVS v2.0 · Atenas · Costa Rica</div>
+  <button class="blogout" onclick="logout()">Cerrar sesión</button>
+  <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--mt)">AVS v2.1 · Atenas · Costa Rica</div>
 </div>
 
 <div class="toast" id="toastEl"></div>
@@ -319,12 +339,13 @@ function initSupabase() {
       db = window.supabase.createClient(SB_URL, SB_KEY);
       console.log('Supabase conectado');
     }
-  } catch(e) { console.log('Supabase no disponible, modo local'); }
+  } catch(e) { console.log('Supabase no disponible'); }
 }
 
 // ===== GOOGLE MAPS =====
 const ATENAS = { lat: 9.9799, lng: -84.3799 };
-let gmap, autocomplete, dirSvc, dirRend, userLoc = ATENAS, destLoc = null;
+let gmap, dmap, rmapInst, autocomplete, dirSvc, dirRend, dirRendR, dirRendD;
+let userLoc = ATENAS, destLoc = null;
 
 function initMap() {
   gmap = new google.maps.Map(document.getElementById('gmap'), {
@@ -335,6 +356,26 @@ function initMap() {
     map: gmap, suppressMarkers: false,
     polylineOptions: { strokeColor: '#00d4aa', strokeWeight: 4 }
   });
+
+  // BUG 1 FIX: mapa del pasajero en casignado
+  rmapInst = new google.maps.Map(document.getElementById('rmap'), {
+    center: ATENAS, zoom: 14, disableDefaultUI: true, styles: mstyle()
+  });
+  dirRendR = new google.maps.DirectionsRenderer({
+    map: rmapInst, suppressMarkers: false,
+    polylineOptions: { strokeColor: '#00d4aa', strokeWeight: 4 }
+  });
+
+  // BUG 2 FIX: mapa del conductor
+  dmap = new google.maps.Map(document.getElementById('dmap'), {
+    center: ATENAS, zoom: 14, disableDefaultUI: true, styles: mstyle()
+  });
+  dirRendD = new google.maps.DirectionsRenderer({
+    map: dmap, suppressMarkers: false,
+    polylineOptions: { strokeColor: '#f5a623', strokeWeight: 4 }
+  });
+
+  // Autocomplete destino
   const inp = document.getElementById('dac');
   autocomplete = new google.maps.places.Autocomplete(inp, {
     componentRestrictions: { country: 'cr' }, fields: ['geometry','name','formatted_address']
@@ -345,6 +386,8 @@ function initMap() {
     destLoc = p.geometry.location;
     calcRoute();
   });
+
+  // GPS
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
       userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -359,27 +402,44 @@ function initMap() {
           document.getElementById('mbadge').textContent = '📍 ' + a;
         }
       });
-    });
+    }, () => {});
   }
-  new google.maps.Map(document.getElementById('rmap'), {
-    center: ATENAS, zoom: 14, disableDefaultUI: true, styles: mstyle()
-  });
 }
 
+// BUG 3 FIX: chips dinámicos basados en distancia real
 function calcRoute() {
   if (!destLoc) return;
   dirSvc.route({ origin: userLoc, destination: destLoc, travelMode: google.maps.TravelMode.DRIVING }, (r,s) => {
     if (s==='OK') {
       dirRend.setDirections(r);
       const leg = r.routes[0].legs[0];
-      const km = (leg.distance.value/1000).toFixed(1);
-      const min = Math.ceil(leg.duration.value/60);
-      const fare = Math.max(1800, Math.round(500 + km*380));
-      document.getElementById('tdist').textContent = km+' km';
-      document.getElementById('tdur').textContent = min+' min';
-      document.getElementById('tfare').textContent = '₡'+fare.toLocaleString('es-CR');
+      const km = parseFloat((leg.distance.value / 1000).toFixed(1));
+      const min = Math.ceil(leg.duration.value / 60);
+
+      // Calcular 3 tarifas basadas en km real
+      const base = Math.max(1800, Math.round(500 + km * 380));
+      const std  = Math.max(2200, Math.round(700 + km * 450));
+      const prem = Math.max(2800, Math.round(900 + km * 550));
+
+      document.getElementById('tdist').textContent = km + ' km';
+      document.getElementById('tdur').textContent = min + ' min';
+      document.getElementById('tfare').textContent = '₡' + std.toLocaleString('es-CR');
       document.getElementById('tinfo').classList.add('show');
-      selFare = fare;
+
+      // Renderizar chips dinámicos
+      const chips = [
+        { fare: base, label: 'Económico' },
+        { fare: std,  label: 'Estándar'  },
+        { fare: prem, label: 'Premium'   }
+      ];
+      const fc = document.getElementById('fchips');
+      fc.innerHTML = chips.map((c,i) => `
+        <div class="fchip ${i===1?'sel':''}" onclick="selFareChip(this,${c.fare})">
+          <div class="famt">₡${c.fare.toLocaleString('es-CR')}</div>
+          <div class="ftyp">${c.label}</div>
+        </div>`).join('');
+      selFare = std;
+      document.getElementById('fareSection').style.display = 'block';
     }
   });
 }
@@ -396,22 +456,52 @@ function mstyle() {
   ];
 }
 
-// ===== APP =====
+// ===== SESSION — BUG 4 FIX =====
+// Persistir sesión en localStorage para sobrevivir cambio de app
 let user = { name:'', role:'', phone:'' };
 let selFare = 1800;
 let disponible = false;
 let viajeId = null;
-let sub = null;
+let viajeData = null; // datos completos del viaje activo
+let pollInterval = null;
+let pasajeroWaitInterval = null;
+let lastCount = 0;
+
+function saveSession() {
+  localStorage.setItem('avs_user', JSON.stringify(user));
+  if (viajeId) localStorage.setItem('avs_viaje_id', viajeId);
+}
+
+function loadSession() {
+  try {
+    const u = localStorage.getItem('avs_user');
+    if (u) { user = JSON.parse(u); return true; }
+  } catch(e) {}
+  return false;
+}
+
+function clearSession() {
+  localStorage.removeItem('avs_user');
+  localStorage.removeItem('avs_viaje_id');
+}
 
 function go(id) {
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 
 function toast(msg) {
   const t = document.getElementById('toastEl');
   t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2500);
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function logout() {
+  clearSession();
+  viajeId = null; viajeData = null;
+  if (pollInterval) clearInterval(pollInterval);
+  if (pasajeroWaitInterval) clearInterval(pasajeroWaitInterval);
+  go('login');
 }
 
 function doLogin(role) {
@@ -419,107 +509,118 @@ function doLogin(role) {
   const name = document.getElementById('lname').value.trim() || 'Usuario';
   if (!phone) { toast('Ingresá tu número'); return; }
   user = { name, role, phone };
-  const ini = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  ['uinit','pinit','cinit'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=ini; });
-  document.getElementById('pnom').textContent = name;
-  document.getElementById('prol').textContent = (role==='conductor'?'Conductor':'Pasajero')+' · Atenas';
-  document.getElementById('chnom').textContent = name.split(' ')[0];
-  document.getElementById('cnom').textContent = name;
+  saveSession();
+  applyUser();
   if (db) {
     db.from('usuarios').upsert({ telefono: phone, nombre: name.split(' ')[0], apellidos: name.split(' ').slice(1).join(' ')||'-', tipo: role }, { onConflict:'telefono' }).then(()=>{});
   }
-  go(role==='conductor'?'conductor':'pasajero');
+  go(role === 'conductor' ? 'conductor' : 'pasajero');
+}
+
+function applyUser() {
+  const ini = user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) || 'U';
+  ['uinit','pinit','cinit'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = ini; });
+  document.getElementById('pnom').textContent = user.name;
+  document.getElementById('prol').textContent = (user.role==='conductor'?'Conductor':'Pasajero') + ' · Atenas';
+  document.getElementById('chnom').textContent = user.name.split(' ')[0];
+  document.getElementById('cnom').textContent = user.name;
 }
 
 function selFareChip(el, fare) {
-  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('sel'));
+  document.querySelectorAll('.fchip').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel'); selFare = fare;
 }
 
+// ===== SOLICITAR VIAJE — BUG 1 FIX =====
 async function solicitar() {
   const dest = document.getElementById('dac').value;
   if (!dest) { toast('Ingresá tu destino'); return; }
+  if (!destLoc) { toast('Seleccioná un destino del autocomplete'); return; }
   const ori = document.getElementById('otxt').textContent;
   document.getElementById('bori').textContent = ori;
   document.getElementById('bdst').textContent = dest;
-  document.getElementById('bfare').textContent = '₡'+selFare.toLocaleString('es-CR');
+  document.getElementById('bfare').textContent = '₡' + selFare.toLocaleString('es-CR');
   go('buscando');
+
   if (db) {
-    const { data } = await db.from('viajes').insert({
+    const { data, error } = await db.from('viajes').insert({
       estado: 'solicitado',
       origen_lat: userLoc.lat, origen_lng: userLoc.lng,
       origen_descripcion: ori,
-      destino_lat: destLoc ? destLoc.lat() : 0,
-      destino_lng: destLoc ? destLoc.lng() : 0,
+      destino_lat: destLoc.lat(), destino_lng: destLoc.lng(),
       destino_descripcion: dest,
       tarifa_estimada: selFare
     }).select().single();
-    if (data) { viajeId = data.id; toast('Viaje #'+data.id.slice(0,6)+' enviado'); }
-  }
-  // Esperar que un conductor acepte el viaje en Supabase
-  if (db && viajeId) {
-    const poll = db.channel('viaje-'+viajeId)
-      .on('postgres_changes', { event:'UPDATE', schema:'public', table:'viajes', filter:'id=eq.'+viajeId }, (payload) => {
-        if (payload.new.estado === 'aceptado') {
-          db.removeChannel(poll);
-          go('casignado');
-          toast('¡Conductor en camino!');
+    if (data) {
+      viajeId = data.id;
+      saveSession();
+      toast('Viaje #' + data.id.slice(0,6) + ' enviado');
+      // Polling limpio: esperar aceptación del conductor
+      pasajeroWaitInterval = setInterval(async () => {
+        try {
+          const { data: v } = await db.from('viajes').select('estado,conductor_nombre,conductor_placa').eq('id', viajeId).single();
+          if (v && v.estado === 'aceptado') {
+            clearInterval(pasajeroWaitInterval);
+            pasajeroWaitInterval = null;
+            // Mostrar datos del conductor
+            if (v.conductor_nombre) document.getElementById('cnom').textContent = v.conductor_nombre;
+            if (v.conductor_placa) document.getElementById('cplate').textContent = v.conductor_placa;
+            // Trazar ruta en mapa del pasajero
+            trazarRutaPasajero();
+            go('casignado');
+            toast('¡Conductor en camino!');
+          }
+        } catch(e) { console.log('Poll error:', e); }
+      }, 2000);
+      // Timeout 3 minutos
+      setTimeout(() => {
+        if (pasajeroWaitInterval) {
+          clearInterval(pasajeroWaitInterval);
+          pasajeroWaitInterval = null;
         }
-      }).subscribe();
-    // Timeout de seguridad: 3 minutos sin conductor
-    setTimeout(() => {
-      try { db.removeChannel(poll); } catch(e) {}
-      if (document.getElementById('buscando').classList.contains('active')) {
-        toast('Sin conductores disponibles. Intenta de nuevo.');
-        go('pasajero');
-      }
-    }, 180000);
-  } else {
-    // Modo demo sin Supabase
-    // Esperar que conductor acepte - polling cada 3 segundos
-  if (db && viajeId) {
-    let waitPoll = setInterval(async () => {
-      const { data } = await db.from('viajes').select('estado,conductor_nombre,conductor_telefono').eq('id', viajeId).single();
-      if (data && data.estado === 'aceptado') {
-        clearInterval(waitPoll);
-        // Mostrar nombre real del conductor
-        if (data.conductor_nombre) {
-          const ini = data.conductor_nombre.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-          document.getElementById('cinit').textContent = ini;
-          document.getElementById('cnom').textContent = data.conductor_nombre;
+        if (document.getElementById('buscando').classList.contains('active')) {
+          toast('Sin conductores disponibles. Intentá de nuevo.');
+          go('pasajero');
         }
-        go('casignado');
-        toast('¡Conductor en camino!');
-      }
-    }, 3000);
-    // Timeout 3 minutos
-    setTimeout(() => {
-      clearInterval(waitPoll);
-      if (document.getElementById('buscando').classList.contains('active')) {
-        toast('Sin conductores disponibles. Intentá de nuevo.');
-        go('pasajero');
-      }
-    }, 180000);
+      }, 180000);
+    } else {
+      toast('Error al crear viaje. Intentá de nuevo.');
+      go('pasajero');
+    }
   } else {
-    setTimeout(()=>{ go('casignado'); toast('¡Conductor encontrado!'); }, 4000);
+    // Demo sin Supabase
+    setTimeout(() => { go('casignado'); toast('¡Conductor encontrado!'); trazarRutaPasajero(); }, 4000);
   }
-  }
+}
+
+// BUG 1 FIX: trazar ruta en mapa del pasajero
+function trazarRutaPasajero() {
+  if (!destLoc || !dirRendR || !dirSvc) return;
+  dirSvc.route({ origin: userLoc, destination: destLoc, travelMode: google.maps.TravelMode.DRIVING }, (r,s) => {
+    if (s === 'OK') {
+      dirRendR.setDirections(r);
+      const min = Math.ceil(r.routes[0].legs[0].duration.value / 60);
+      document.getElementById('etamin').textContent = min;
+      rmapInst.setCenter(userLoc);
+    }
+  });
 }
 
 function cancelar() {
-  if (viajeId && db) db.from('viajes').update({estado:'cancelado'}).eq('id',viajeId);
-  viajeId = null; go('pasajero'); toast('Cancelado');
+  if (viajeId && db) db.from('viajes').update({estado:'cancelado'}).eq('id', viajeId);
+  if (pasajeroWaitInterval) { clearInterval(pasajeroWaitInterval); pasajeroWaitInterval = null; }
+  viajeId = null; localStorage.removeItem('avs_viaje_id');
+  go('pasajero'); toast('Cancelado');
 }
 
 async function finalizar() {
-  if (viajeId && db) await db.from('viajes').update({estado:'completado',tarifa_final:selFare}).eq('id',viajeId);
-  viajeId = null; toast('¡Viaje finalizado!');
-  setTimeout(()=>go('pasajero'), 2000);
+  if (viajeId && db) await db.from('viajes').update({estado:'completado', tarifa_final:selFare}).eq('id', viajeId);
+  viajeId = null; localStorage.removeItem('avs_viaje_id');
+  toast('¡Viaje finalizado!');
+  setTimeout(() => go('pasajero'), 2000);
 }
 
-let pollInterval = null;
-let lastCount = 0;
-
+// ===== CONDUCTOR =====
 async function toggleDisp(el) {
   disponible = !disponible;
   document.getElementById('ddot').classList.toggle('on', disponible);
@@ -527,20 +628,15 @@ async function toggleDisp(el) {
   toast(disponible ? 'Estás disponible' : 'Desconectado');
   if (disponible) {
     cargarSolicitudes();
-    // Polling cada 5 segundos
     pollInterval = setInterval(async () => {
       if (!db) return;
       const { data } = await db.from('viajes').select('id').eq('estado','solicitado');
       const newCount = data ? data.length : 0;
-      if (newCount > lastCount) {
-        toast('🚗 Nueva solicitud de viaje!');
-        cargarSolicitudes();
-      }
+      if (newCount > lastCount) { toast('🚗 Nueva solicitud de viaje!'); cargarSolicitudes(); }
       lastCount = newCount;
     }, 5000);
   } else {
-    if (pollInterval) clearInterval(pollInterval);
-    pollInterval = null;
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
     lastCount = 0;
     document.getElementById('slist').innerHTML = '<div class="nolist">🚗 Activá tu disponibilidad para recibir viajes</div>';
     document.getElementById('snew').textContent = '0';
@@ -549,14 +645,15 @@ async function toggleDisp(el) {
 
 async function cargarSolicitudes() {
   if (!db) { document.getElementById('slist').innerHTML = '<div class="nolist">Sin conexión a base de datos</div>'; return; }
+  // BUG 4 FIX: solo mostrar viajes en estado 'solicitado' (rechazados y aceptados no aparecen)
   const { data } = await db.from('viajes').select('*').eq('estado','solicitado').order('fecha_solicitud',{ascending:false}).limit(10);
-  if (!data || data.length===0) {
+  if (!data || data.length === 0) {
     document.getElementById('slist').innerHTML = '<div class="nolist">Sin solicitudes activas</div>';
     document.getElementById('snew').textContent = '0'; return;
   }
   document.getElementById('snew').textContent = data.length;
-  document.getElementById('slist').innerHTML = data.map(v=>`
-    <div class="scard">
+  document.getElementById('slist').innerHTML = data.map(v => `
+    <div class="scard" id="card-${v.id}">
       <div class="shd"><div class="spas">👤 Pasajero</div><div class="star">₡${parseInt(v.tarifa_estimada||0).toLocaleString('es-CR')}</div></div>
       <div class="sroute">
         <div class="spl"><span style="color:var(--g)">●</span>${v.origen_descripcion}</div>
@@ -564,25 +661,93 @@ async function cargarSolicitudes() {
         <div class="spl"><span style="color:var(--rd)">●</span>${v.destino_descripcion}</div>
       </div>
       <div class="sact">
-        <button class="bacp" onclick="aceptar('${v.id}')">Aceptar viaje</button>
-        <button class="brec" onclick="toast('Rechazado')">Rechazar</button>
+        <button class="bacp" onclick="aceptar('${v.id}',${v.origen_lat},${v.origen_lng},'${v.origen_descripcion}',${v.destino_lat},${v.destino_lng},'${v.destino_descripcion}')">Aceptar viaje</button>
+        <button class="brec" onclick="rechazar('${v.id}')">Rechazar</button>
       </div>
     </div>`).join('');
 }
 
-async function aceptar(id) {
-  if (db) await db.from('viajes').update({
-    estado:'aceptado',
-    conductor_nombre: user.name,
-    conductor_telefono: user.phone
-  }).eq('id',id);
-  toast('Viaje aceptado — en camino'); cargarSolicitudes();
+// BUG 2 FIX: aceptar abre mapa del conductor con ruta al pasajero
+async function aceptar(id, oriLat, oriLng, oriDesc, dstLat, dstLng, dstDesc) {
+  if (db) {
+    await db.from('viajes').update({
+      estado: 'aceptado',
+      conductor_nombre: user.name,
+      conductor_placa: 'BPJ207 · Toyota Corolla'
+    }).eq('id', id);
+  }
+  viajeId = id;
+  viajeData = { oriLat, oriLng, oriDesc, dstLat, dstLng, dstDesc };
+  saveSession();
+
+  // Limpiar card del viaje aceptado (Bug 4)
+  const card = document.getElementById('card-' + id);
+  if (card) card.remove();
+  document.getElementById('snew').textContent =
+    document.querySelectorAll('#slist .scard').length;
+
+  toast('Viaje aceptado — abriendo mapa');
+  go('condmap');
+  document.getElementById('dtit').textContent = 'En camino a: ' + oriDesc;
+  document.getElementById('dsub').textContent = 'Calculando ruta...';
+  setTimeout(() => abrirMapaConductor(oriLat, oriLng, dstLat, dstLng, oriDesc), 600);
 }
 
-// ===== INICIO =====
+// BUG 2 FIX: rechazar limpia el card de pantalla inmediatamente
+function rechazar(id) {
+  if (db) db.from('viajes').update({estado:'rechazado'}).eq('id', id);
+  const card = document.getElementById('card-' + id);
+  if (card) { card.style.opacity='0'; card.style.transition='opacity 0.3s'; setTimeout(()=>card.remove(), 300); }
+  const remaining = document.querySelectorAll('#slist .scard').length - 1;
+  document.getElementById('snew').textContent = Math.max(0, remaining);
+  toast('Solicitud rechazada');
+}
+
+function abrirMapaConductor(oriLat, oriLng, dstLat, dstLng, oriDesc) {
+  if (!dirSvc || !dirRendD || !dmap) return;
+  // Forzar resize del mapa ahora que la pantalla es visible
+  google.maps.event.trigger(dmap, 'resize');
+  const condLoc = userLoc;
+  const pasajeroLoc = { lat: parseFloat(oriLat), lng: parseFloat(oriLng) };
+  dirSvc.route({ origin: condLoc, destination: pasajeroLoc, travelMode: google.maps.TravelMode.DRIVING }, (r,s) => {
+    if (s === 'OK') {
+      dirRendD.setDirections(r);
+      const leg = r.routes[0].legs[0];
+      const min = Math.ceil(leg.duration.value / 60);
+      const km = (leg.distance.value / 1000).toFixed(1);
+      document.getElementById('dsub').textContent = km + ' km · ~' + min + ' min al pasajero';
+      dmap.setCenter(condLoc);
+    } else {
+      document.getElementById('dsub').textContent = 'No se pudo calcular la ruta';
+    }
+  });
+}
+
+function conductorFinalizar() {
+  if (viajeId && db) db.from('viajes').update({estado:'completado'}).eq('id', viajeId);
+  viajeId = null; viajeData = null;
+  localStorage.removeItem('avs_viaje_id');
+  toast('¡Viaje completado!');
+  setTimeout(() => go('conductor'), 1500);
+}
+
+// ===== INICIO — BUG 4 FIX: restaurar sesión =====
 window.addEventListener('DOMContentLoaded', () => {
   initSupabase();
-  setTimeout(() => go('login'), 2000);
+  // Restaurar sesión si existía
+  if (loadSession() && user.name && user.role) {
+    applyUser();
+    setTimeout(() => go(user.role === 'conductor' ? 'conductor' : 'pasajero'), 1500);
+  } else {
+    setTimeout(() => go('login'), 2000);
+  }
+});
+
+// Detectar que la app vuelve al primer plano y refrescar si es conductor
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && disponible && user.role === 'conductor') {
+    cargarSolicitudes();
+  }
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
