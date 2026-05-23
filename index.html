@@ -914,7 +914,25 @@ function doLogin(role) {
   saveSession();
   applyUser();
   if (db) {
-    db.from('usuarios').upsert({ telefono: phone, nombre: name.split(' ')[0], apellidos: name.split(' ').slice(1).join(' ')||'-', tipo: role }, { onConflict:'telefono' }).then(()=>{});
+    // Primero verificar si ya existe
+    db.from('usuarios').select('telefono,tipo').eq('telefono', phone).single().then(({ data }) => {
+      if (data) {
+        // Ya existe — actualizar nombre y tipo con el rol que eligió ahora
+        db.from('usuarios').update({
+          nombre: name.split(' ')[0],
+          apellidos: name.split(' ').slice(1).join(' ') || '-',
+          tipo: role
+        }).eq('telefono', phone).then(() => {});
+      } else {
+        // No existe — insertar nuevo
+        db.from('usuarios').insert({
+          telefono: phone,
+          nombre: name.split(' ')[0],
+          apellidos: name.split(' ').slice(1).join(' ') || '-',
+          tipo: role
+        }).then(() => {});
+      }
+    });
   }
   go(role === 'conductor' ? 'conductor' : 'pasajero');
 }
