@@ -241,10 +241,10 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 
   <div class="rsec">
     <div class="rstit">Datos personales</div>
-    <input class="ifield" type="text" placeholder="Nombre completo" id="rnombre">
-    <input class="ifield" type="tel" placeholder="Teléfono (8888-8888)" id="rtelefono">
-    <input class="ifield" type="email" placeholder="Correo electrónico" id="rcorreo">
-    <input class="ifield" type="text" placeholder="Número de cédula" id="rcedula">
+    <input class="ifield" type="text" placeholder="Nombre completo" id="rnombre" oninput="saveRegProgress()">
+    <input class="ifield" type="tel" placeholder="Teléfono (8888-8888)" id="rtelefono" oninput="saveRegProgress()">
+    <input class="ifield" type="email" placeholder="Correo electrónico" id="rcorreo" oninput="saveRegProgress()">
+    <input class="ifield" type="text" placeholder="Número de cédula" id="rcedula" oninput="saveRegProgress()">
   </div>
 
   <div class="rsec">
@@ -259,9 +259,9 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 
   <div class="rsec">
     <div class="rstit">Datos del vehículo</div>
-    <input class="ifield" type="text" placeholder="Placa (ej: BPJ207)" id="rplaca">
-    <input class="ifield" type="text" placeholder="Marca y modelo (ej: Toyota Corolla 2020)" id="rmodelo">
-    <input class="ifield" type="number" placeholder="Capacidad de pasajeros" id="rcapacidad" min="1" max="15">
+    <input class="ifield" type="text" placeholder="Placa (ej: BPJ207)" id="rplaca" oninput="saveRegProgress()">
+    <input class="ifield" type="text" placeholder="Marca y modelo (ej: Toyota Corolla 2020)" id="rmodelo" oninput="saveRegProgress()">
+    <input class="ifield" type="number" placeholder="Capacidad de pasajeros" id="rcapacidad" min="1" max="15" oninput="saveRegProgress()">
   </div>
 
   <div class="rsec">
@@ -365,7 +365,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
     <input class="ifield" type="text" placeholder="Tu nombre completo" id="lname">
     <button class="btnp" onclick="doLogin('pasajero')">Entrar como Pasajero</button>
     <button class="btno" onclick="doLogin('conductor')">Entrar como Conductor</button>
-    <div class="lsw">¿Conductor nuevo? <a onclick="go('registro')">Registrate aquí</a></div>
+    <div class="lsw">¿Conductor nuevo? <a onclick="go('registro'); setTimeout(loadRegProgress, 100)">Registrate aquí</a></div>
     <div class="lsw" style="margin-top:6px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
   </div>
 </div>
@@ -666,21 +666,74 @@ function selVchip(el, tipo) {
   document.querySelectorAll('#vtype-chips .vchip').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
   regVehiculo = tipo;
+  saveRegProgress();
 }
 
 function togFeature(el, feat) {
   el.classList.toggle('on');
   regFeatures[feat] = el.classList.contains('on');
+  saveRegProgress();
 }
 
 function simDoc(tipo) {
-  // Simular carga de documento (en producción abriría cámara/galería)
   regDocs[tipo] = 'subido';
   const el = document.getElementById('doc-' + tipo);
   const st = document.getElementById('dst-' + tipo);
   if (el) el.classList.add('ok');
   if (st) { st.textContent = '✅ Documento cargado'; st.classList.add('ok'); }
+  saveRegProgress();
   toast('Documento registrado');
+}
+
+function saveRegProgress() {
+  const prog = {
+    nombre:    document.getElementById('rnombre')?.value    || '',
+    telefono:  document.getElementById('rtelefono')?.value  || '',
+    correo:    document.getElementById('rcorreo')?.value     || '',
+    cedula:    document.getElementById('rcedula')?.value     || '',
+    placa:     document.getElementById('rplaca')?.value      || '',
+    modelo:    document.getElementById('rmodelo')?.value     || '',
+    capacidad: document.getElementById('rcapacidad')?.value  || '',
+    vehiculo:  regVehiculo,
+    features:  regFeatures,
+    docs:      regDocs
+  };
+  localStorage.setItem('avs_reg', JSON.stringify(prog));
+}
+
+function loadRegProgress() {
+  try {
+    const p = localStorage.getItem('avs_reg');
+    if (!p) return;
+    const prog = JSON.parse(p);
+    if (document.getElementById('rnombre'))    document.getElementById('rnombre').value    = prog.nombre    || '';
+    if (document.getElementById('rtelefono'))  document.getElementById('rtelefono').value  = prog.telefono  || '';
+    if (document.getElementById('rcorreo'))    document.getElementById('rcorreo').value    = prog.correo    || '';
+    if (document.getElementById('rcedula'))    document.getElementById('rcedula').value    = prog.cedula    || '';
+    if (document.getElementById('rplaca'))     document.getElementById('rplaca').value     = prog.placa     || '';
+    if (document.getElementById('rmodelo'))    document.getElementById('rmodelo').value    = prog.modelo    || '';
+    if (document.getElementById('rcapacidad')) document.getElementById('rcapacidad').value = prog.capacidad || '';
+    regVehiculo  = prog.vehiculo  || 'sedan';
+    regFeatures  = prog.features  || { ac: false, pet: false, carga: false };
+    regDocs      = prog.docs      || {};
+    // Restaurar chips de vehículo
+    document.querySelectorAll('#vtype-chips .vchip').forEach(c => c.classList.remove('sel'));
+    document.querySelectorAll('#vtype-chips .vchip').forEach(c => {
+      if (c.getAttribute('onclick')?.includes("'"+regVehiculo+"'")) c.classList.add('sel');
+    });
+    // Restaurar toggles
+    ['ac','pet','carga'].forEach(f => {
+      const tog = document.getElementById('tog-' + f);
+      if (tog && regFeatures[f]) tog.classList.add('on');
+    });
+    // Restaurar documentos
+    Object.keys(regDocs).forEach(tipo => {
+      const el = document.getElementById('doc-' + tipo);
+      const st = document.getElementById('dst-' + tipo);
+      if (el) el.classList.add('ok');
+      if (st) { st.textContent = '✅ Documento cargado'; st.classList.add('ok'); }
+    });
+  } catch(e) {}
 }
 
 async function enviarRegistro() {
@@ -719,7 +772,7 @@ async function enviarRegistro() {
   }
 
   // Mostrar confirmación
-  document.querySelector('#registro .rbk').style.display = 'none';
+  localStorage.removeItem('avs_reg'); // Limpiar progreso guardado
   document.getElementById('registro').innerHTML = `
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;gap:16px">
       <div style="font-size:64px">⏳</div>
@@ -812,6 +865,19 @@ function clearSession() {
 function go(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  // Restaurar progreso del registro si aplica
+  if (id === 'registro') {
+    setTimeout(() => {
+      loadRegProgress();
+      // Autoguardar al escribir en campos
+      ['rnombre','rtelefono','rcorreo','rcedula','rplaca','rmodelo','rcapacidad'].forEach(fid => {
+        const el = document.getElementById(fid);
+        if (el) el.addEventListener('input', saveRegProgress);
+      });
+    }, 100);
+  }
+  // Cargar admin al entrar
+  if (id === 'admin') cargarAdmin();
 }
 
 function toast(msg) {
