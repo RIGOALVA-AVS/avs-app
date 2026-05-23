@@ -755,7 +755,11 @@ async function enviarRegistro() {
   }
 
   if (db) {
-    const { error } = await db.from('usuarios').upsert({
+    // Verificar si ya existe ese teléfono
+    const { data: existe } = await db.from('usuarios').select('telefono').eq('telefono', telefono).single();
+    if (existe) { toast('Ya existe un registro con ese teléfono'); return; }
+
+    const { error } = await db.from('usuarios').insert({
       telefono, nombre, tipo: 'conductor',
       placa, modelo_vehiculo: modelo,
       tipo_vehiculo: regVehiculo,
@@ -767,8 +771,8 @@ async function enviarRegistro() {
       correo,
       estado_verificacion: 'pendiente',
       documentos_url: regDocs
-    }, { onConflict: 'telefono' });
-    if (error) { toast('Error al enviar. Intentá de nuevo.'); return; }
+    });
+    if (error) { toast('Error al enviar. Intentá de nuevo.'); console.error(error); return; }
   }
 
   // Mostrar confirmación
