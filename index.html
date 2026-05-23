@@ -390,7 +390,7 @@ function initMap() {
     calcRoute();
   });
 
-  // GPS
+  // GPS — funciona para pasajero Y conductor
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
       userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -405,7 +405,10 @@ function initMap() {
           document.getElementById('mbadge').textContent = '📍 ' + a;
         }
       });
-    }, () => {});
+    }, () => {
+      // Si falla GPS, mantener ATENAS como fallback
+      console.log('GPS no disponible, usando Atenas como referencia');
+    });
   }
 }
 
@@ -742,10 +745,52 @@ function conductorFinalizar() {
 // ===== INICIO — BUG 4 FIX: restaurar sesión =====
 window.addEventListener('DOMContentLoaded', () => {
   initSupabase();
-  // Restaurar sesión si existía
   if (loadSession() && user.name && user.role) {
     applyUser();
-    setTimeout(() => go(user.role === 'conductor' ? 'conductor' : 'pasajero'), 1500);
+    setTimeout(async () => {
+      // Verificar si hay un viaje activo pendiente
+      const savedViajeId = localStorage.getItem('avs_viaje_id');
+      if (savedViajeId && db && user.role === 'pasajero') {
+        viajeId = savedViajeId;
+        const { data: v } = await db.from('viajes').select('estado').eq('id', viajeId).single();
+        if (v && v.estado === 'solicitado') {
+          // Retomar pantalla buscando y reiniciar polling
+          go('buscando');
+          toast('Retomando búsqueda de conductor...');
+          pasajeroWaitInterval = setInterval(async () => {
+            try {
+              const { data: vv } = await db.from('viajes').select('estado,conductor_nombre,conductor_placa').eq('id', viajeId).single();
+              if (vv && vv.estado === 'aceptado') {
+                clearInterval(pasajeroWaitInterval);
+                pasajeroWaitInterval = null;
+                if (vv.conductor_nombre) document.getElementById('cnom').textContent = vv.conductor_nombre;
+                if (vv.conductor_placa) document.getElementById('cplate').textContent = vv.conductor_placa;
+                trazarRutaPasajero();
+                go('casignado');
+                toast('¡Conductor en camino!');
+              } else if (vv && (vv.estado === 'cancelado' || vv.estado === 'rechazado')) {
+                clearInterval(pasajeroWaitInterval);
+                pasajeroWaitInterval = null;
+                viajeId = null;
+                localStorage.removeItem('avs_viaje_id');
+                go('pasajero');
+              }
+            } catch(e) {}
+          }, 2000);
+        } else if (v && v.estado === 'aceptado') {
+          trazarRutaPasajero();
+          go('casignado');
+          toast('Tu conductor ya está en camino');
+        } else {
+          // Viaje terminado o no existe
+          viajeId = null;
+          localStorage.removeItem('avs_viaje_id');
+          go(user.role === 'conductor' ? 'conductor' : 'pasajero');
+        }
+      } else {
+        go(user.role === 'conductor' ? 'conductor' : 'pasajero');
+      }
+    }, 1500);
   } else {
     setTimeout(() => go('login'), 2000);
   }
