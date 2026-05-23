@@ -1094,11 +1094,21 @@ async function toggleDisp(el) {
   document.getElementById('dlbl').textContent = disponible ? 'Disponible' : 'Desconectado';
   toast(disponible ? 'Estás disponible' : 'Desconectado');
   if (disponible) {
+    // Pedir permiso de notificaciones al activarse
+    await pedirPermisoNotificaciones();
     cargarSolicitudes();
+    let ultimosIds = [];
     pollInterval = setInterval(async () => {
       if (!db) return;
-      // Siempre recargar la lista — limpia rechazados y muestra nuevos
-      cargarSolicitudes();
+      const { data } = await db.from('viajes').select('id').eq('estado','solicitado');
+      const nuevosIds = data ? data.map(v => v.id) : [];
+      // Detectar IDs nuevos que no estaban antes
+      const nuevos = nuevosIds.filter(id => !ultimosIds.includes(id));
+      if (nuevos.length > 0) {
+        notificarConductor('🚗 AVS — Nueva solicitud', 'Tenés ' + nuevos.length + ' solicitud(es) de viaje esperando');
+        cargarSolicitudes();
+      }
+      ultimosIds = nuevosIds;
     }, 5000);
   } else {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
@@ -1281,6 +1291,48 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden && disponible && user.role === 'conductor') {
     cargarSolicitudes();
   }
+});
+
+// ===== SERVICE WORKER Y NOTIFICACIONES PUSH =====
+async function registrarServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.register('/avs-app/sw.js');
+    console.log('SW registrado:', reg.scope);
+    return reg;
+  } catch(e) {
+    console.log('SW error:', e);
+  }
+}
+
+async function pedirPermisoNotificaciones() {
+  if (!('Notification' in window)) {
+    toast('Tu dispositivo no soporta notificaciones'); return false;
+  }
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') {
+    toast('Notificaciones bloqueadas — activalas en configuración del navegador'); return false;
+  }
+  const perm = await Notification.requestPermission();
+  return perm === 'granted';
+}
+
+function notificarConductor(titulo, cuerpo) {
+  if (Notification.permission !== 'granted') return;
+  // Notificación nativa del navegador
+  const n = new Notification(titulo, {
+    body: cuerpo,
+    icon: '/avs-app/icon-192.png',
+    vibrate: [200, 100, 200],
+    tag: 'avs-viaje'
+  });
+  n.onclick = () => { window.focus(); n.close(); };
+  setTimeout(() => n.close(), 10000);
+}
+
+// Registrar SW al cargar
+window.addEventListener('load', () => {
+  registrarServiceWorker();
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
