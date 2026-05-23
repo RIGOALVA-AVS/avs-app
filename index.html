@@ -169,6 +169,59 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 
 .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--sf); border: 1px solid var(--bd); border-radius: 20px; padding: 10px 20px; font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Registro conductor */
+#registro { background: var(--bg); overflow-y: auto; padding: 48px 24px 40px; }
+.rhdr { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.rbk { background: transparent; border: none; color: var(--g); font-size: 20px; cursor: pointer; padding: 0; }
+.rtit { font-family: var(--font-d); font-size: 20px; font-weight: 700; }
+.rsec { margin-bottom: 20px; }
+.rstit { font-size: 11px; color: var(--mt); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+.vchips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.vchip { background: var(--cd); border: 1px solid var(--bd); border-radius: 12px; padding: 10px 14px; font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+.vchip.sel { border-color: var(--g); background: rgba(0,212,170,0.08); color: var(--g); }
+.docitem { display: flex; align-items: center; justify-content: space-between; background: var(--sf); border: 1px solid var(--bd); border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; cursor: pointer; }
+.docitem.ok { border-color: var(--g); }
+.docico { font-size: 18px; }
+.docnm { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+.docst { font-size: 11px; color: var(--mt); }
+.docst.ok { color: var(--g); }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; background: var(--sf); border: 1px solid var(--bd); border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; }
+.toggle-lbl { font-size: 14px; }
+.toggle { width: 44px; height: 24px; background: var(--cd); border-radius: 12px; position: relative; cursor: pointer; transition: background 0.3s; border: 1px solid var(--bd); }
+.toggle.on { background: var(--g); }
+.toggle::after { content:''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: left 0.3s; }
+.toggle.on::after { left: 23px; }
+.rsta { background: var(--sf); border: 1px solid var(--bd); border-radius: 16px; padding: 20px; text-align: center; margin-top: 16px; }
+.rsta-ico { font-size: 40px; margin-bottom: 10px; }
+.rsta-tit { font-family: var(--font-d); font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.rsta-sub { font-size: 13px; color: var(--mt); line-height: 1.5; }
+
+/* Panel Admin */
+#admin { background: var(--bg); overflow-y: auto; padding: 48px 20px 32px; }
+.adhdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.adtit { font-family: var(--font-d); font-size: 20px; font-weight: 700; }
+.adtab { display: flex; gap: 8px; margin-bottom: 16px; }
+.adtbtn { flex: 1; padding: 8px; border-radius: 10px; border: 1px solid var(--bd); background: var(--cd); font-size: 12px; cursor: pointer; text-align: center; color: var(--mt); }
+.adtbtn.on { background: var(--g); color: var(--bg); border-color: var(--g); font-weight: 600; }
+.adcard { background: var(--sf); border: 1px solid var(--bd); border-radius: 16px; padding: 16px; margin-bottom: 10px; }
+.adname { font-family: var(--font-d); font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.adinfo { font-size: 12px; color: var(--mt); margin-bottom: 10px; }
+.adbadge { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 20px; margin-bottom: 10px; }
+.adbadge.pendiente { background: rgba(245,166,35,0.15); color: var(--am); }
+.adbadge.aprobado  { background: rgba(0,212,170,0.15); color: var(--g); }
+.adbadge.rechazado { background: rgba(226,75,74,0.15); color: var(--rd); }
+.adacts { display: flex; gap: 8px; }
+.adaprob { flex: 2; background: var(--g); color: var(--bg); border: none; border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.adrech { flex: 1; background: transparent; color: var(--rd); border: 1px solid rgba(226,75,74,0.3); border-radius: 10px; padding: 10px; font-size: 13px; cursor: pointer; }
+.addocs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.addoc { background: var(--cd); border: 1px solid var(--bd); border-radius: 8px; padding: 5px 10px; font-size: 11px; color: var(--mt); }
+
+/* Categorías vehículo en pasajero */
+.catrow { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 8px; scrollbar-width: none; }
+.catrow::-webkit-scrollbar { display: none; }
+.catbtn { flex-shrink: 0; background: var(--cd); border: 1px solid var(--bd); border-radius: 20px; padding: 7px 14px; font-size: 12px; cursor: pointer; white-space: nowrap; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
+.catbtn.sel { border-color: var(--g); background: rgba(0,212,170,0.08); color: var(--g); }
 </style>
 </head>
 <body>
@@ -177,6 +230,124 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
   <div class="spl-logo">AVS</div>
   <div class="spl-sub">Viaje Seguro Pura Vida</div>
   <div class="spl-spin"></div>
+</div>
+
+<!-- REGISTRO CONDUCTOR -->
+<div class="screen" id="registro">
+  <div class="rhdr">
+    <button class="rbk" onclick="go('login')">←</button>
+    <div class="rtit">Registro de Conductor</div>
+  </div>
+
+  <div class="rsec">
+    <div class="rstit">Datos personales</div>
+    <input class="ifield" type="text" placeholder="Nombre completo" id="rnombre">
+    <input class="ifield" type="tel" placeholder="Teléfono (8888-8888)" id="rtelefono">
+    <input class="ifield" type="email" placeholder="Correo electrónico" id="rcorreo">
+    <input class="ifield" type="text" placeholder="Número de cédula" id="rcedula">
+  </div>
+
+  <div class="rsec">
+    <div class="rstit">Tipo de vehículo</div>
+    <div class="vchips" id="vtype-chips">
+      <div class="vchip sel" onclick="selVchip(this,'sedan')">🚗 Sedán</div>
+      <div class="vchip" onclick="selVchip(this,'suv')">🚙 SUV</div>
+      <div class="vchip" onclick="selVchip(this,'van')">🚐 Van</div>
+      <div class="vchip" onclick="selVchip(this,'ejecutivo')">👔 Ejecutivo</div>
+    </div>
+  </div>
+
+  <div class="rsec">
+    <div class="rstit">Datos del vehículo</div>
+    <input class="ifield" type="text" placeholder="Placa (ej: BPJ207)" id="rplaca">
+    <input class="ifield" type="text" placeholder="Marca y modelo (ej: Toyota Corolla 2020)" id="rmodelo">
+    <input class="ifield" type="number" placeholder="Capacidad de pasajeros" id="rcapacidad" min="1" max="15">
+  </div>
+
+  <div class="rsec">
+    <div class="rstit">Características</div>
+    <div class="toggle-row">
+      <span class="toggle-lbl">❄️ Aire acondicionado</span>
+      <div class="toggle" id="tog-ac" onclick="togFeature(this,'ac')"></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-lbl">🐾 Pet Friendly</span>
+      <div class="toggle" id="tog-pet" onclick="togFeature(this,'pet')"></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-lbl">🧳 Acepta carga/equipaje</span>
+      <div class="toggle" id="tog-carga" onclick="togFeature(this,'carga')"></div>
+    </div>
+  </div>
+
+  <div class="rsec">
+    <div class="rstit">Documentos requeridos</div>
+    <div class="docitem" id="doc-cedula" onclick="simDoc('cedula')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="docico">🪪</span>
+        <div><div class="docnm">Cédula de identidad</div><div class="docst" id="dst-cedula">Toca para subir foto</div></div>
+      </div>
+      <span>›</span>
+    </div>
+    <div class="docitem" id="doc-licencia" onclick="simDoc('licencia')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="docico">🚗</span>
+        <div><div class="docnm">Licencia de conducir</div><div class="docst" id="dst-licencia">Toca para subir foto</div></div>
+      </div>
+      <span>›</span>
+    </div>
+    <div class="docitem" id="doc-circulacion" onclick="simDoc('circulacion')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="docico">📄</span>
+        <div><div class="docnm">Tarjeta de circulación</div><div class="docst" id="dst-circulacion">Toca para subir foto</div></div>
+      </div>
+      <span>›</span>
+    </div>
+    <div class="docitem" id="doc-seguro" onclick="simDoc('seguro')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="docico">🛡️</span>
+        <div><div class="docnm">Seguro obligatorio</div><div class="docst" id="dst-seguro">Toca para subir foto</div></div>
+      </div>
+      <span>›</span>
+    </div>
+    <div class="docitem" id="doc-revision" onclick="simDoc('revision')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="docico">📋</span>
+        <div><div class="docnm">Revisión técnica</div><div class="docst" id="dst-revision">Toca para subir foto</div></div>
+      </div>
+      <span>›</span>
+    </div>
+    <div class="docitem" id="doc-foto-ext" onclick="simDoc('foto-ext')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="docico">📸</span>
+        <div><div class="docnm">Foto exterior del vehículo</div><div class="docst" id="dst-foto-ext">Toca para subir foto</div></div>
+      </div>
+      <span>›</span>
+    </div>
+    <div class="docitem" id="doc-foto-int" onclick="simDoc('foto-int')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="docico">🛻</span>
+        <div><div class="docnm">Foto interior del vehículo</div><div class="docst" id="dst-foto-int">Toca para subir foto</div></div>
+      </div>
+      <span>›</span>
+    </div>
+  </div>
+
+  <button class="btnp" onclick="enviarRegistro()" style="margin-bottom:40px">Enviar solicitud de registro</button>
+</div>
+
+<!-- PANEL ADMIN AVS -->
+<div class="screen" id="admin">
+  <div class="adhdr">
+    <div class="adtit">🛡️ Panel Admin AVS</div>
+    <button onclick="logout()" style="background:transparent;border:none;color:var(--mt);font-size:13px;cursor:pointer">Salir</button>
+  </div>
+  <div class="adtab">
+    <div class="adtbtn on" id="adbtn-pendiente" onclick="filtrarAdmin('pendiente')">⏳ Pendientes</div>
+    <div class="adtbtn" id="adbtn-aprobado" onclick="filtrarAdmin('aprobado')">✅ Aprobados</div>
+    <div class="adtbtn" id="adbtn-rechazado" onclick="filtrarAdmin('rechazado')">❌ Rechazados</div>
+  </div>
+  <div id="adminlist"><div class="nolist">Cargando conductores...</div></div>
 </div>
 
 <div class="screen" id="login">
@@ -194,7 +365,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
     <input class="ifield" type="text" placeholder="Tu nombre completo" id="lname">
     <button class="btnp" onclick="doLogin('pasajero')">Entrar como Pasajero</button>
     <button class="btno" onclick="doLogin('conductor')">Entrar como Conductor</button>
-    <div class="lsw">¿Primera vez? <a onclick="toast('Registro próximamente')">Registrarse</a></div>
+    <div class="lsw">¿Conductor nuevo? <a onclick="go('registro')">Registrate aquí</a></div>
+    <div class="lsw" style="margin-top:6px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
   </div>
 </div>
 
@@ -209,6 +381,16 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
   </div>
   <div class="bpanel">
     <div class="bhandle"></div>
+    <div class="plabel">Tipo de vehículo</div>
+    <div class="catrow" id="catrow">
+      <div class="catbtn sel" onclick="selCat(this,'todos')">🚗 Todos</div>
+      <div class="catbtn" onclick="selCat(this,'sedan')">🚗 Sedán</div>
+      <div class="catbtn" onclick="selCat(this,'suv')">🚙 SUV</div>
+      <div class="catbtn" onclick="selCat(this,'van')">🚐 Van</div>
+      <div class="catbtn" onclick="selCat(this,'ejecutivo')">👔 Ejecutivo</div>
+      <div class="catbtn" onclick="selCat(this,'pet')">🐾 Pet</div>
+      <div class="catbtn" onclick="selCat(this,'carga')">🧳 Carga</div>
+    </div>
     <div class="plabel">¿A dónde vas?</div>
     <div class="dfrom"><div class="dotg"></div><div class="ftxt" id="otxt">Mi ubicación actual</div></div>
     <div class="acwrap"><div class="dotr"></div><input type="text" id="dac" placeholder="Escribe tu destino..." autocomplete="off"></div>
@@ -474,7 +656,130 @@ function mstyle() {
   ];
 }
 
-// ===== SESSION — BUG 4 FIX =====
+// ===== REGISTRO CONDUCTOR =====
+let regVehiculo = 'sedan';
+let regFeatures = { ac: false, pet: false, carga: false };
+let regDocs = {};
+let selCategoria = 'todos';
+
+function selVchip(el, tipo) {
+  document.querySelectorAll('#vtype-chips .vchip').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  regVehiculo = tipo;
+}
+
+function togFeature(el, feat) {
+  el.classList.toggle('on');
+  regFeatures[feat] = el.classList.contains('on');
+}
+
+function simDoc(tipo) {
+  // Simular carga de documento (en producción abriría cámara/galería)
+  regDocs[tipo] = 'subido';
+  const el = document.getElementById('doc-' + tipo);
+  const st = document.getElementById('dst-' + tipo);
+  if (el) el.classList.add('ok');
+  if (st) { st.textContent = '✅ Documento cargado'; st.classList.add('ok'); }
+  toast('Documento registrado');
+}
+
+async function enviarRegistro() {
+  const nombre   = document.getElementById('rnombre').value.trim();
+  const telefono = document.getElementById('rtelefono').value.trim();
+  const correo   = document.getElementById('rcorreo').value.trim();
+  const cedula   = document.getElementById('rcedula').value.trim();
+  const placa    = document.getElementById('rplaca').value.trim();
+  const modelo   = document.getElementById('rmodelo').value.trim();
+  const cap      = document.getElementById('rcapacidad').value.trim();
+
+  if (!nombre || !telefono || !placa || !modelo) {
+    toast('Completá todos los campos obligatorios'); return;
+  }
+  const docsReq = ['cedula','licencia','circulacion','seguro','revision','foto-ext','foto-int'];
+  const faltantes = docsReq.filter(d => !regDocs[d]);
+  if (faltantes.length > 0) {
+    toast('Falta subir ' + faltantes.length + ' documento(s)'); return;
+  }
+
+  if (db) {
+    const { error } = await db.from('usuarios').upsert({
+      telefono, nombre, tipo: 'conductor',
+      placa, modelo_vehiculo: modelo,
+      tipo_vehiculo: regVehiculo,
+      capacidad: parseInt(cap) || 4,
+      tiene_ac: regFeatures.ac,
+      pet_friendly: regFeatures.pet,
+      acepta_carga: regFeatures.carga,
+      cedula_identidad: cedula,
+      correo,
+      estado_verificacion: 'pendiente',
+      documentos_url: regDocs
+    }, { onConflict: 'telefono' });
+    if (error) { toast('Error al enviar. Intentá de nuevo.'); return; }
+  }
+
+  // Mostrar confirmación
+  document.querySelector('#registro .rbk').style.display = 'none';
+  document.getElementById('registro').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;gap:16px">
+      <div style="font-size:64px">⏳</div>
+      <div style="font-family:var(--font-d);font-size:22px;font-weight:700">Solicitud enviada</div>
+      <div style="font-size:14px;color:var(--mt);line-height:1.6">Tu solicitud fue recibida. El equipo AVS revisará tu documentación y te contactará al <strong style="color:var(--tx)">${telefono}</strong> en un plazo de 24-48 horas.</div>
+      <button class="btnp" onclick="go('login')" style="margin-top:20px;max-width:300px">Volver al inicio</button>
+    </div>`;
+}
+
+// ===== PANEL ADMIN =====
+let adminFiltro = 'pendiente';
+
+function filtrarAdmin(estado) {
+  adminFiltro = estado;
+  document.querySelectorAll('.adtbtn').forEach(b => b.classList.remove('on'));
+  document.getElementById('adbtn-' + estado).classList.add('on');
+  cargarAdmin();
+}
+
+async function cargarAdmin() {
+  if (!db) return;
+  const { data } = await db.from('usuarios')
+    .select('*').eq('tipo','conductor').eq('estado_verificacion', adminFiltro)
+    .order('created_at', { ascending: false });
+  const lista = document.getElementById('adminlist');
+  if (!data || data.length === 0) {
+    lista.innerHTML = '<div class="nolist">Sin conductores en este estado</div>'; return;
+  }
+  const iconos = { sedan:'🚗', suv:'🚙', van:'🚐', ejecutivo:'👔' };
+  lista.innerHTML = data.map(c => `
+    <div class="adcard">
+      <div class="adname">${c.nombre} ${c.apellidos || ''}</div>
+      <div class="adinfo">📱 ${c.telefono} · 📧 ${c.correo || '—'} · 🪪 ${c.cedula_identidad || '—'}</div>
+      <div class="adinfo">${iconos[c.tipo_vehiculo]||'🚗'} ${c.tipo_vehiculo||'—'} · ${c.modelo_vehiculo||'—'} · Placa: ${c.placa||'—'} · ${c.capacidad||4} pax</div>
+      <div class="adinfo">${c.tiene_ac?'❄️ A/C ':''} ${c.pet_friendly?'🐾 Pet ':''} ${c.acepta_carga?'🧳 Carga ':''}</div>
+      <div class="adbadge ${c.estado_verificacion}">${c.estado_verificacion?.toUpperCase()}</div>
+      <div class="addocs">${Object.keys(c.documentos_url||{}).map(d=>`<div class="addoc">✅ ${d}</div>`).join('')}</div>
+      ${adminFiltro === 'pendiente' ? `
+      <div class="adacts">
+        <button class="adaprob" onclick="adminAccion('${c.telefono}','aprobado')">✅ Aprobar</button>
+        <button class="adrech"  onclick="adminAccion('${c.telefono}','rechazado')">❌ Rechazar</button>
+      </div>` : ''}
+    </div>`).join('');
+}
+
+async function adminAccion(telefono, estado) {
+  if (!db) return;
+  await db.from('usuarios').update({ estado_verificacion: estado }).eq('telefono', telefono);
+  toast(estado === 'aprobado' ? '✅ Conductor aprobado' : '❌ Conductor rechazado');
+  cargarAdmin();
+}
+
+// ===== CATEGORÍAS VEHÍCULO PASAJERO =====
+function selCat(el, cat) {
+  document.querySelectorAll('.catbtn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+  selCategoria = cat;
+}
+
+// ===== REGISTRO CONDUCTOR =====
 // Persistir sesión en localStorage para sobrevivir cambio de app
 let user = { name:'', role:'', phone:'' };
 let selFare = 1500;
@@ -527,6 +832,14 @@ function doLogin(role) {
   const phone = document.getElementById('lphone').value.trim();
   const name = document.getElementById('lname').value.trim() || 'Usuario';
   if (!phone) { toast('Ingresá tu número'); return; }
+  if (role === 'admin') {
+    user = { name: 'Admin AVS', role: 'admin', phone: phone };
+    saveSession();
+    applyUser();
+    go('admin');
+    cargarAdmin();
+    return;
+  }
   user = { name, role, phone };
   saveSession();
   applyUser();
@@ -572,7 +885,8 @@ async function solicitar() {
       destino_descripcion: dest,
       tarifa_estimada: selFare,
       comision_avs: selCom,
-      total_pasajero: selFare + selCom
+      total_pasajero: selFare + selCom,
+      categoria_vehiculo: selCategoria
     }).select().single();
     if (data) {
       viajeId = data.id;
