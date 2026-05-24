@@ -397,7 +397,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
     <div class="tinfo" id="tinfo">
       <div class="tiitem"><div class="tilbl">Distancia</div><div class="tival" id="tdist">—</div></div>
       <div class="tiitem"><div class="tilbl">Tiempo</div><div class="tival" id="tdur">—</div></div>
-      <div class="tiitem"><div class="tilbl">Tarifa</div><div class="tival" id="tfare">—</div></div>
+      <div class="tiitem"><div class="tilbl">Total</div><div class="tival" id="tfare">—</div></div>
     </div>
     <!-- BUG 3 FIX: chips ocultos hasta que haya ruta calculada -->
     <div id="fareSection" style="display:none">
@@ -604,7 +604,7 @@ function calcRoute() {
       const km = parseFloat((leg.distance.value / 1000).toFixed(1));
       const min = Math.ceil(leg.duration.value / 60);
 
-      // Tarifa ~10% bajo Uber (₡676/km estándar calibrado vs Uber CR)
+      // Tarifa calibrada para Costa Rica — rentable para el conductor
       const AVS_KM_ECO  = 608;
       const AVS_KM_STD  = 676;
       const AVS_KM_PREM = 751;
@@ -614,16 +614,12 @@ function calcRoute() {
       const std  = Math.max(BASE_MIN, Math.round(km * AVS_KM_STD));
       const prem = Math.max(BASE_MIN, Math.round(km * AVS_KM_PREM));
 
-      // Comisión 6% pasajero + 6% conductor = 12% AVS total
-      // Pasajero paga: tarifa base + 6%
-      // Conductor recibe: tarifa base - 6%
+      // Pasajero paga la tarifa base limpia
+      // AVS toma 12% del conductor
       const calcChip = (tarifa) => {
-        const comPasajero  = Math.round(tarifa * 0.06);
-        const comConductor = Math.round(tarifa * 0.06);
-        const totalPasajero = tarifa + comPasajero;
-        const totalConductor = tarifa - comConductor;
-        const comisionAVS = comPasajero + comConductor;
-        return { tarifa, comPasajero, comConductor, totalPasajero, totalConductor, comisionAVS };
+        const comisionAVS    = Math.round(tarifa * 0.12);
+        const totalConductor = tarifa - comisionAVS;
+        return { tarifa, comisionAVS, totalConductor, totalPasajero: tarifa };
       };
 
       const chipBase = calcChip(base);
@@ -635,7 +631,6 @@ function calcRoute() {
       document.getElementById('tfare').textContent = '₡' + chipStd.totalPasajero.toLocaleString('es-CR');
       document.getElementById('tinfo').classList.add('show');
 
-      // Chips muestran total que paga el pasajero
       const chips = [
         { ...chipBase, label: 'Económico' },
         { ...chipStd,  label: 'Estándar'  },
@@ -643,13 +638,13 @@ function calcRoute() {
       ];
       const fc = document.getElementById('fchips');
       fc.innerHTML = chips.map((c,i) => `
-        <div class="fchip ${i===1?'sel':''}" onclick="selFareChip(this,${c.tarifa},${c.comPasajero},${c.comConductor})">
+        <div class="fchip ${i===1?'sel':''}" onclick="selFareChip(this,${c.tarifa},${c.comisionAVS},${c.totalConductor})">
           <div class="famt">₡${c.totalPasajero.toLocaleString('es-CR')}</div>
           <div class="ftyp">${c.label}</div>
         </div>`).join('');
       selFare = std;
-      selCom  = chipStd.comPasajero;
-      selComConductor = chipStd.comConductor;
+      selCom  = chipStd.comisionAVS;
+      selComConductor = chipStd.totalConductor;
       document.getElementById('fareSection').style.display = 'block';
     }
   });
@@ -1000,12 +995,12 @@ function applyUser() {
   document.getElementById('cnom').textContent = user.name;
 }
 
-function selFareChip(el, fare, comPas, comCond) {
+function selFareChip(el, fare, comAVS, totalCond) {
   document.querySelectorAll('.fchip').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
   selFare = fare;
-  selCom  = comPas  || Math.round(fare * 0.06);
-  selComConductor = comCond || Math.round(fare * 0.06);
+  selCom  = comAVS  || Math.round(fare * 0.12);
+  selComConductor = totalCond || fare - selCom;
 }
 
 // ===== SOLICITAR VIAJE — BUG 1 FIX =====
@@ -1027,11 +1022,9 @@ async function solicitar() {
       destino_lat: destLoc.lat(), destino_lng: destLoc.lng(),
       destino_descripcion: dest,
       tarifa_estimada: selFare,
-      comision_pasajero: selCom,
-      comision_conductor: selComConductor,
-      comision_avs: selCom + selComConductor,
-      total_pasajero: selFare + selCom,
-      total_conductor: selFare - selComConductor,
+      comision_avs: selCom,
+      total_pasajero: selFare,
+      total_conductor: selComConductor,
       categoria_vehiculo: selCategoria
     }).select().single();
     if (data) {
@@ -1144,12 +1137,9 @@ async function cargarSolicitudes() {
   }
   document.getElementById('snew').textContent = data.length;
   document.getElementById('slist').innerHTML = data.map(v => {
-    const tarifa  = parseInt(v.tarifa_estimada   || 0);
-    const comPas  = parseInt(v.comision_pasajero  || Math.round(tarifa * 0.06));
-    const comCond = parseInt(v.comision_conductor || Math.round(tarifa * 0.06));
-    const totalPas  = parseInt(v.total_pasajero   || tarifa + comPas);
-    const totalCond = parseInt(v.total_conductor  || tarifa - comCond);
-    const comAVS = comPas + comCond;
+    const tarifa    = parseInt(v.tarifa_estimada    || 0);
+    const comAVS    = parseInt(v.comision_avs       || Math.round(tarifa * 0.12));
+    const totalCond = parseInt(v.total_conductor    || tarifa - comAVS);
     return `
     <div class="scard" id="card-${v.id}">
       <div class="shd"><div class="spas">👤 Pasajero</div></div>
@@ -1160,19 +1150,15 @@ async function cargarSolicitudes() {
       </div>
       <div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-          <span style="color:var(--mt)">Tarifa base</span>
+          <span style="color:var(--mt)">Tarifa del viaje</span>
           <span>₡${tarifa.toLocaleString('es-CR')}</span>
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-          <span style="color:var(--mt)">Pasajero paga (+6%)</span>
-          <span>₡${totalPas.toLocaleString('es-CR')}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-          <span style="color:var(--mt)">Comisión AVS (6%)</span>
-          <span style="color:var(--rd)">−₡${comCond.toLocaleString('es-CR')}</span>
+          <span style="color:var(--mt)">Comisión AVS (12%)</span>
+          <span style="color:var(--rd)">−₡${comAVS.toLocaleString('es-CR')}</span>
         </div>
         <div style="border-top:1px solid var(--bd);padding-top:6px;margin-top:2px;display:flex;justify-content:space-between;font-weight:600">
-          <span style="color:var(--g)">Vos recibís</span>
+          <span style="color:var(--g)">Conductor</span>
           <span style="color:var(--g);font-family:var(--font-d);font-size:15px">₡${totalCond.toLocaleString('es-CR')}</span>
         </div>
       </div>
