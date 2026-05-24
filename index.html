@@ -82,9 +82,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
   z-index: 0; 
 }
 #login > * { position: relative; z-index: 1; }
-.lhero { flex: 0 0 15vh; visibility: hidden; min-height: 0; }
+.lhero { flex: 0 0 42%; visibility: hidden; min-height: 0; padding: 0 !important; overflow: hidden; }
 .lmap { display: none !important; }
-.lhero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 40px 24px 0; }
 .llogo-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
 .llogo-icon { width: 48px; height: 48px; border-radius: 14px; background: var(--grad-g); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,229,184,0.25); }
 .llogo-icon span { font-family: var(--font-d); font-size: 16px; font-weight: 800; color: #080f1e; }
@@ -434,6 +433,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 </div>
 
 <div class="screen" id="login">
+  <div class="lhero"></div>
   <div class="lsheet">
     <div class="ltit">Bienvenido</div>
     <div class="ldesc">Ingresá con tu número de teléfono</div>
