@@ -342,12 +342,31 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
     <div class="adtit">🛡️ Panel Admin AVS</div>
     <button onclick="logout()" style="background:transparent;border:none;color:var(--mt);font-size:13px;cursor:pointer">Salir</button>
   </div>
+  <!-- Tabs principales -->
   <div class="adtab">
-    <div class="adtbtn on" id="adbtn-pendiente" onclick="filtrarAdmin('pendiente')">⏳ Pendientes</div>
-    <div class="adtbtn" id="adbtn-aprobado" onclick="filtrarAdmin('aprobado')">✅ Aprobados</div>
-    <div class="adtbtn" id="adbtn-rechazado" onclick="filtrarAdmin('rechazado')">❌ Rechazados</div>
+    <div class="adtbtn on" id="admtab-conductores" onclick="switchAdminTab('conductores')">👥 Conductores</div>
+    <div class="adtbtn" id="admtab-recargas" onclick="switchAdminTab('recargas')">💰 Recargas</div>
   </div>
-  <div id="adminlist"><div class="nolist">Cargando conductores...</div></div>
+
+  <!-- Sección conductores -->
+  <div id="admin-conductores">
+    <div class="adtab" style="margin-top:8px">
+      <div class="adtbtn on" id="adbtn-pendiente" onclick="filtrarAdmin('pendiente')">⏳ Pendientes</div>
+      <div class="adtbtn" id="adbtn-aprobado" onclick="filtrarAdmin('aprobado')">✅ Aprobados</div>
+      <div class="adtbtn" id="adbtn-rechazado" onclick="filtrarAdmin('rechazado')">❌ Rechazados</div>
+    </div>
+    <div id="adminlist"><div class="nolist">Cargando conductores...</div></div>
+  </div>
+
+  <!-- Sección recargas -->
+  <div id="admin-recargas" style="display:none;padding:0 0 20px;overflow-y:auto;flex:1">
+    <div class="adtab" style="margin-top:8px">
+      <div class="adtbtn on" id="recbtn-pendiente" onclick="filtrarRecargas('pendiente')">⏳ Pendientes</div>
+      <div class="adtbtn" id="recbtn-acreditado" onclick="filtrarRecargas('acreditado')">✅ Acreditadas</div>
+      <div class="adtbtn" id="recbtn-rechazado" onclick="filtrarRecargas('rechazado')">❌ Rechazadas</div>
+    </div>
+    <div id="recargaslist"><div class="nolist">Cargando recargas...</div></div>
+  </div>
 </div>
 
 <div class="screen" id="login">
@@ -885,6 +904,77 @@ async function enviarRegistro() {
       <div style="font-size:14px;color:var(--mt);line-height:1.6">Tu solicitud fue recibida. El equipo AVS revisará tu documentación y te contactará al <strong style="color:var(--tx)">${telefono}</strong> en un plazo de 24-48 horas.</div>
       <button class="btnp" onclick="go('login')" style="margin-top:20px;max-width:300px">Volver al inicio</button>
     </div>`;
+}
+
+// ===== ADMIN TABS =====
+function switchAdminTab(tab) {
+  document.querySelectorAll('.admtab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('[id^="admtab-"]').forEach(el => el.classList.remove('on'));
+  document.getElementById('admtab-' + tab).classList.add('on');
+  if (tab === 'conductores') {
+    document.getElementById('admin-conductores').style.display = 'block';
+    document.getElementById('admin-recargas').style.display = 'none';
+    cargarAdmin();
+  } else {
+    document.getElementById('admin-conductores').style.display = 'none';
+    document.getElementById('admin-recargas').style.display = 'block';
+    filtrarRecargas('pendiente');
+  }
+}
+
+// ===== ADMIN RECARGAS =====
+let recargasFiltro = 'pendiente';
+
+function filtrarRecargas(estado) {
+  recargasFiltro = estado;
+  document.querySelectorAll('[id^="recbtn-"]').forEach(b => b.classList.remove('on'));
+  document.getElementById('recbtn-' + estado).classList.add('on');
+  cargarRecargas();
+}
+
+async function cargarRecargas() {
+  if (!db) return;
+  const { data } = await db.from('recargas')
+    .select('*').eq('estado', recargasFiltro)
+    .order('fecha', { ascending: false });
+  const lista = document.getElementById('recargaslist');
+  if (!data || data.length === 0) {
+    lista.innerHTML = '<div class="nolist">Sin recargas en este estado</div>'; return;
+  }
+  lista.innerHTML = data.map(r => `
+    <div class="adcard" style="margin:8px 20px">
+      <div class="adname">${r.conductor_nombre || '—'}</div>
+      <div class="adinfo">📱 ${r.conductor_telefono} · 📅 ${new Date(r.fecha).toLocaleDateString('es-CR')}</div>
+      <div class="adinfo">💬 Concepto: <strong>${r.concepto}</strong></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0">
+        <div style="font-family:var(--font-d);font-size:24px;font-weight:700;color:var(--g)">₡${parseInt(r.monto).toLocaleString('es-CR')}</div>
+        <div class="adbadge ${r.estado}">${r.estado.toUpperCase()}</div>
+      </div>
+      ${recargasFiltro === 'pendiente' ? `
+      <div class="adacts">
+        <button class="adaprob" onclick="acreditarRecarga('${r.id}','${r.conductor_telefono}',${r.monto})">✅ Acreditar saldo</button>
+        <button class="adrech" onclick="rechazarRecarga('${r.id}')">❌ Rechazar</button>
+      </div>` : ''}
+    </div>`).join('');
+}
+
+async function acreditarRecarga(id, telefono, monto) {
+  if (!db) return;
+  // Actualizar estado de recarga
+  await db.from('recargas').update({ estado: 'acreditado' }).eq('id', id);
+  // Actualizar saldo del conductor en usuarios
+  const { data: conductor } = await db.from('usuarios').select('saldo_avs').eq('telefono', telefono).single();
+  const saldoActual = parseInt(conductor?.saldo_avs || 0);
+  await db.from('usuarios').update({ saldo_avs: saldoActual + monto }).eq('telefono', telefono);
+  toast('✅ ₡' + monto.toLocaleString('es-CR') + ' acreditados al conductor');
+  cargarRecargas();
+}
+
+async function rechazarRecarga(id) {
+  if (!db) return;
+  await db.from('recargas').update({ estado: 'rechazado' }).eq('id', id);
+  toast('Recarga rechazada');
+  cargarRecargas();
 }
 
 // ===== PANEL ADMIN =====
