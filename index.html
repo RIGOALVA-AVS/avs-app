@@ -1764,7 +1764,13 @@ function notificarConductor(titulo, cuerpo) {
 
 // Registrar SW al cargar
 window.addEventListener('load', () => {
-  registrarServiceWorker();
+  // SW deshabilitado temporalmente durante desarrollo
+  // registrarServiceWorker();
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(reg => reg.unregister());
+    });
+  }
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
