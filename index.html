@@ -58,20 +58,20 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .avs-city-dot{width:6px;height:6px;background:var(--g);border-radius:50%;box-shadow:0 0 6px var(--g);animation:blink 2s ease infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
 
-.lsheet{background:#0a1525;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:16px 24px 20px;border-top:2px solid rgba(0,229,184,0.35);overflow-y:auto;border-radius:0;}
+.lsheet{background:#0a1525;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;padding:10px 20px 16px;border-top:2px solid rgba(0,229,184,0.35);overflow-y:auto;border-radius:0;}
 .lsheet-handle{display:none;}
-.ltit{font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:1px;}
-.ldesc{font-size:11px;color:var(--mt);margin-bottom:8px;}
-.ilabel{font-size:9px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;font-weight:500;display:block;}
-.ifield{width:100%;background:rgba(8,15,30,0.20);border:1px solid rgba(0,229,184,0.25);border-radius:12px;padding:9px 14px;color:var(--tx);font-size:15px;font-family:var(--font-b);outline:none;transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;}
+.ltit{font-family:var(--font-d);font-size:16px;font-weight:700;margin-bottom:0px;}
+.ldesc{font-size:11px;color:var(--mt);margin-bottom:6px;}
+.ilabel{font-size:9px;color:var(--mt);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;font-weight:500;display:block;}
+.ifield{width:100%;background:rgba(8,15,30,0.20);border:1px solid rgba(0,229,184,0.25);border-radius:10px;padding:8px 12px;color:var(--tx);font-size:15px;font-family:var(--font-b);outline:none;transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;}
 .ifield:focus{border-color:var(--g);background:rgba(8,15,30,0.40);box-shadow:0 0 0 3px rgba(0,229,184,0.12);}
 .ifield::placeholder{color:rgba(220,230,240,0.75);}
-.btnp{width:100%;background:var(--grad-btn);color:#080f1e;border:none;border-radius:12px;padding:11px;font-size:15px;font-weight:700;font-family:var(--font-d);cursor:pointer;margin-top:10px;letter-spacing:0.3px;box-shadow:0 4px 22px rgba(0,229,184,0.30);transition:transform 0.15s,box-shadow 0.15s;position:relative;overflow:hidden;}
+.btnp{width:100%;background:var(--grad-btn);color:#080f1e;border:none;border-radius:10px;padding:10px;font-size:15px;font-weight:700;font-family:var(--font-d);cursor:pointer;margin-top:10px;letter-spacing:0.3px;box-shadow:0 4px 22px rgba(0,229,184,0.30);transition:transform 0.15s,box-shadow 0.15s;position:relative;overflow:hidden;}
 .btnp::after{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:rgba(255,255,255,0.09);border-radius:14px 14px 0 0;pointer-events:none;}
 .btnp:active{transform:scale(0.98);}
-.btno{width:100%;background:transparent;color:var(--g);border:1px solid rgba(0,229,184,0.22);border-radius:12px;padding:9px;font-size:14px;font-family:var(--font-b);cursor:pointer;margin-top:8px;transition:background 0.2s;}
+.btno{width:100%;background:transparent;color:var(--g);border:1px solid rgba(0,229,184,0.22);border-radius:10px;padding:8px;font-size:13px;font-family:var(--font-b);cursor:pointer;margin-top:6px;transition:background 0.2s;}
 .btno:active{background:rgba(0,229,184,0.05);}
-.lsw{text-align:center;margin-top:7px;font-size:12px;color:var(--mt);}
+.lsw{text-align:center;margin-top:5px;font-size:11px;color:var(--mt);}
 .lsw a{color:var(--g);cursor:pointer;font-weight:500;text-decoration:none;}
 
 /* RESTO DE PANTALLAS */
@@ -320,14 +320,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div class="ldesc">Ingresá tus datos para continuar</div>
       <div class="ilabel">Teléfono</div>
       <input class="ifield" type="tel" placeholder="8888-8888" id="lphone">
-      <div class="ilabel" style="margin-top:6px">Nombre</div>
+      <div class="ilabel" style="margin-top:4px">Nombre</div>
       <input class="ifield" type="text" placeholder="Tu nombre completo" id="lname">
-      <div class="ilabel" style="margin-top:6px">Correo electrónico</div>
+      <div class="ilabel" style="margin-top:4px">Correo electrónico</div>
       <input class="ifield" type="email" placeholder="tu@correo.com" id="lemail">
-      <button class="btnp" onclick="enviarOTP('pasajero')" style="margin-top:8px">🚗 Entrar como Pasajero</button>
+      <button class="btnp" onclick="enviarOTP('pasajero')" style="margin-top:6px">🚗 Entrar como Pasajero</button>
       <button class="btno" onclick="enviarOTP('conductor')">🧑‍✈️ Entrar como Conductor</button>
       <div class="lsw">¿Conductor nuevo? <a onclick="go('registro'); setTimeout(loadRegProgress,100)">Registrate aquí</a></div>
-      <div class="lsw" style="margin-top:4px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
+      <div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
     </div>
     <!-- PASO 2: Ingresar código OTP -->
     <div id="step2" style="display:none">
@@ -559,7 +559,7 @@ function doLogin(role){
   go('pasajero');
 }
 function showLoginMsg(ico,titulo,desc,btnTxt,btnAction){document.querySelector('#login .lsheet').innerHTML=`<div style="text-align:center;padding:10px 0 20px"><div style="font-size:52px;margin-bottom:12px">${ico}</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">${titulo}</div><div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:20px">${desc}</div><button class="btnp" onclick="(${btnAction.toString()})()">${btnTxt}</button><button class="btno" onclick="resetLoginSheet()" style="margin-top:8px">← Volver al inicio</button></div>`;}
-function resetLoginSheet(){document.querySelector('#login .lsheet').innerHTML=`<div class="ltit">Bienvenido 👋</div><div class="ldesc">Ingresá con tu número de teléfono</div><div class="ilabel">Teléfono</div><input class="ifield" type="tel" placeholder="8888-8888" id="lphone"><div class="ilabel" style="margin-top:6px">Nombre</div><input class="ifield" type="text" placeholder="Tu nombre completo" id="lname"><button class="btnp" onclick="doLogin('pasajero')" style="margin-top:8px">🚗 Entrar como Pasajero</button><button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button><div class="lsw">¿Conductor nuevo? <a onclick="go('registro');setTimeout(loadRegProgress,100)">Registrate aquí</a></div><div class="lsw" style="margin-top:4px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>`;}
+function resetLoginSheet(){document.querySelector('#login .lsheet').innerHTML=`<div class="ltit">Bienvenido 👋</div><div class="ldesc">Ingresá con tu número de teléfono</div><div class="ilabel">Teléfono</div><input class="ifield" type="tel" placeholder="8888-8888" id="lphone"><div class="ilabel" style="margin-top:4px">Nombre</div><input class="ifield" type="text" placeholder="Tu nombre completo" id="lname"><button class="btnp" onclick="doLogin('pasajero')" style="margin-top:6px">🚗 Entrar como Pasajero</button><button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button><div class="lsw">¿Conductor nuevo? <a onclick="go('registro');setTimeout(loadRegProgress,100)">Registrate aquí</a></div><div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>`;}
 function applyUser(){const ini=user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'U';['uinit','pinit','cinit'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ini;});document.getElementById('pnom').textContent=user.name;document.getElementById('prol').textContent=(user.role==='conductor'?'Conductor':'Pasajero')+' · Atenas';document.getElementById('chnom').textContent=user.name.split(' ')[0];document.getElementById('cnom').textContent=user.name;}
 function selFareChip(el,fare,comAVS,totalCond){document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');selFare=fare;selCom=comAVS||Math.round(fare*0.12);selComConductor=totalCond||fare-selCom;}
 async function solicitar(){const dest=document.getElementById('dac').value;if(!dest){toast('Ingresá tu destino');return;}if(!destLoc){toast('Seleccioná un destino del autocomplete');return;}const ori=document.getElementById('otxt').textContent;document.getElementById('bori').textContent=ori;document.getElementById('bdst').textContent=dest;document.getElementById('bfare').textContent='₡'+selFare.toLocaleString('es-CR');go('buscando');if(db){const{data,error}=await db.from('viajes').insert({estado:'solicitado',origen_lat:userLoc.lat,origen_lng:userLoc.lng,origen_descripcion:ori,destino_lat:destLoc.lat(),destino_lng:destLoc.lng(),destino_descripcion:dest,tarifa_estimada:selFare,comision_avs:selCom,total_pasajero:selFare,total_conductor:selComConductor,categoria_vehiculo:selCategoria}).select().single();if(data){viajeId=data.id;saveSession();toast('Viaje #'+data.id.slice(0,6)+' enviado');pasajeroWaitInterval=setInterval(async()=>{try{const{data:v}=await db.from('viajes').select('estado,conductor_nombre,conductor_placa').eq('id',viajeId).single();if(v&&v.estado==='aceptado'){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;if(v.conductor_nombre)document.getElementById('cnom').textContent=v.conductor_nombre;if(v.conductor_placa)document.getElementById('cplate').textContent=v.conductor_placa;trazarRutaPasajero();go('casignado');toast('¡Conductor en camino!');}}catch(e){}},2000);setTimeout(()=>{if(pasajeroWaitInterval){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;}if(document.getElementById('buscando').classList.contains('active')){toast('Sin conductores disponibles. Intentá de nuevo.');go('pasajero');}},180000);}else{toast('Error al crear viaje.');go('pasajero');}}else{setTimeout(()=>{go('casignado');toast('¡Conductor encontrado!');trazarRutaPasajero();},4000);}}
