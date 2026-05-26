@@ -344,6 +344,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .adrech{flex:1;background:transparent;color:var(--rd);border:1px solid rgba(226,75,74,0.3);border-radius:10px;padding:10px;font-size:13px;cursor:pointer;}
 .addocs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
 .addoc{background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--mt);}
+
+.serv-card{background:var(--sf);border:1px solid var(--bd2);border-radius:18px;padding:18px 14px;text-align:center;cursor:pointer;transition:all 0.2s;}
+.serv-card:active{border-color:var(--g);background:rgba(0,229,184,0.07);transform:scale(0.97);}
+.serv-ico{font-size:36px;margin-bottom:8px;}
+.serv-name{font-family:var(--font-d);font-size:14px;font-weight:700;margin-bottom:3px;}
+.serv-desc{font-size:11px;color:var(--mt);}
+
 .dest-chip{
   background:var(--cd);border:1px solid var(--bd);border-radius:10px;
   padding:8px 10px;font-size:12px;cursor:pointer;text-align:center;
@@ -409,6 +416,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <div class="adtab">
     <div class="adtbtn on" id="admtab-conductores" onclick="switchAdminTab('conductores')">👥 Conductores</div>
     <div class="adtbtn" id="admtab-recargas" onclick="switchAdminTab('recargas')">💰 Recargas</div>
+    <div class="adtbtn" id="admtab-negocios" onclick="switchAdminTab('negocios')">🏪 Negocios</div>
   </div>
   <div id="admin-conductores">
     <div class="adtab" style="margin-top:8px">
@@ -479,15 +487,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="plabel">¿A dónde vas?</div>
     <div class="dfrom"><div class="dotg"></div><div class="ftxt" id="otxt">Mi ubicación actual</div></div>
     <div class="acwrap"><div class="dotr"></div><input type="text" id="dac" placeholder="Escribe tu destino..." autocomplete="off"></div>
-    <!-- Destinos rápidos -->
-    <div class="plabel" style="margin-top:4px">Destinos frecuentes</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-      <div class="dest-chip" onclick="buscarDestino('restaurantes en Atenas Costa Rica')">🍽️ Restaurantes</div>
-      <div class="dest-chip" onclick="buscarDestino('negocios comerciales Atenas Costa Rica')">🏪 Negocios</div>
-      <div class="dest-chip" onclick="buscarDestino('clínica hospital salud Atenas Costa Rica')">🏥 Salud</div>
-      <div class="dest-chip" onclick="buscarDestino('hospedaje hotel Atenas Costa Rica')">🏨 Hospedaje</div>
-      <div class="dest-chip" onclick="buscarDestino('supermercado Atenas Costa Rica')">🛒 Supermercado</div>
-      <div class="dest-chip" onclick="buscarDestino('banco cajero ATM Atenas Costa Rica')">🏦 Bancos</div>
+    <!-- Servicios AVS -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px;margin-top:4px">
+      <div class="dest-chip" onclick="go('servicios')">🍽️<br><span style="font-size:10px">Restaurantes</span></div>
+      <div class="dest-chip" onclick="go('servicios')">🏥<br><span style="font-size:10px">Salud</span></div>
+      <div class="dest-chip" onclick="go('servicios')">🏨<br><span style="font-size:10px">Hospedaje</span></div>
+      <div class="dest-chip" onclick="go('servicios')">🛒<br><span style="font-size:10px">Mercado</span></div>
+      <div class="dest-chip" onclick="go('servicios')">🏪<br><span style="font-size:10px">Negocios</span></div>
+      <div class="dest-chip" onclick="go('servicios')">✨<br><span style="font-size:10px">Más</span></div>
     </div>
     <div class="tinfo" id="tinfo">
       <div class="tiitem"><div class="tilbl">Distancia</div><div class="tival" id="tdist">—</div></div>
@@ -678,6 +685,100 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <button class="btnp" onclick="guardarContactosEmergencia()" style="margin-top:16px">💾 Guardar contactos</button>
 </div>
 
+
+<!-- PANTALLA SERVICIOS AVS -->
+<div class="screen" id="servicios">
+  <div style="background:var(--bg);height:100%;overflow-y:auto;padding:48px 20px 32px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button onclick="go('pasajero')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
+      <div style="font-family:var(--font-d);font-size:20px;font-weight:700">Servicios AVS</div>
+    </div>
+    <div style="font-size:13px;color:var(--mt);margin-bottom:20px;line-height:1.5">
+      Conectamos con los mejores negocios de Atenas. Pedí lo que necesitás y nosotros coordinamos todo.
+    </div>
+    <!-- Grid de categorías -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">
+      <div class="serv-card" onclick="verNegocios('restaurantes')">
+        <div class="serv-ico">🍽️</div>
+        <div class="serv-name">Restaurantes</div>
+        <div class="serv-desc">Pedidos y delivery</div>
+      </div>
+      <div class="serv-card" onclick="verNegocios('salud')">
+        <div class="serv-ico">🏥</div>
+        <div class="serv-name">Salud</div>
+        <div class="serv-desc">Clínicas y farmacias</div>
+      </div>
+      <div class="serv-card" onclick="verNegocios('hospedaje')">
+        <div class="serv-ico">🏨</div>
+        <div class="serv-name">Hospedaje</div>
+        <div class="serv-desc">Hoteles y cabinas</div>
+      </div>
+      <div class="serv-card" onclick="verNegocios('supermercado')">
+        <div class="serv-ico">🛒</div>
+        <div class="serv-name">Supermercados</div>
+        <div class="serv-desc">Pedidos a domicilio</div>
+      </div>
+      <div class="serv-card" onclick="verNegocios('negocios')">
+        <div class="serv-ico">🏪</div>
+        <div class="serv-name">Negocios</div>
+        <div class="serv-desc">Comercios locales</div>
+      </div>
+      <div class="serv-card" onclick="verNegocios('otros')">
+        <div class="serv-ico">✨</div>
+        <div class="serv-name">Otros servicios</div>
+        <div class="serv-desc">Más opciones</div>
+      </div>
+    </div>
+    <!-- CTA para negocios -->
+    <div style="background:rgba(0,229,184,0.07);border:1px solid var(--bd2);border-radius:16px;padding:16px;text-align:center">
+      <div style="font-size:15px;font-weight:600;margin-bottom:6px">¿Tenés un negocio?</div>
+      <div style="font-size:12px;color:var(--mt);margin-bottom:12px;line-height:1.5">Unite a la red AVS y llegá a más clientes en Atenas. Comisión del 5% solo cuando vendés.</div>
+      <button class="btnp" style="margin-top:0" onclick="go('registro-negocio')">🏪 Registrá tu negocio</button>
+    </div>
+  </div>
+</div>
+
+<!-- LISTA DE NEGOCIOS POR CATEGORÍA -->
+<div class="screen" id="lista-negocios">
+  <div style="background:var(--bg);height:100%;overflow-y:auto;padding:48px 20px 32px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button onclick="go('servicios')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
+      <div style="font-family:var(--font-d);font-size:20px;font-weight:700" id="lista-titulo">Negocios</div>
+    </div>
+    <div id="lista-negocios-content"><div class="nolist">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- REGISTRO DE NEGOCIO -->
+<div class="screen" id="registro-negocio">
+  <div style="background:var(--bg);height:100%;overflow-y:auto;padding:48px 24px 40px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <button onclick="go('servicios')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
+      <div style="font-family:var(--font-d);font-size:20px;font-weight:700">Registrá tu negocio</div>
+    </div>
+    <div style="font-size:11px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Datos del negocio</div>
+    <input class="ifield" type="text" placeholder="Nombre del negocio" id="neg-nombre" style="margin-bottom:10px">
+    <input class="ifield" type="tel" placeholder="Teléfono / WhatsApp" id="neg-tel" style="margin-bottom:10px">
+    <input class="ifield" type="text" placeholder="Dirección en Atenas" id="neg-dir" style="margin-bottom:10px">
+    <input class="ifield" type="email" placeholder="Correo electrónico" id="neg-email" style="margin-bottom:10px">
+    <div style="font-size:11px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin:14px 0 10px">Categoría</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px" id="neg-cats">
+      <div class="vchip" onclick="selNegCat(this,'restaurantes')">🍽️ Restaurantes</div>
+      <div class="vchip" onclick="selNegCat(this,'salud')">🏥 Salud</div>
+      <div class="vchip" onclick="selNegCat(this,'hospedaje')">🏨 Hospedaje</div>
+      <div class="vchip" onclick="selNegCat(this,'supermercado')">🛒 Supermercado</div>
+      <div class="vchip" onclick="selNegCat(this,'negocios')">🏪 Negocio local</div>
+      <div class="vchip" onclick="selNegCat(this,'otros')">✨ Otro servicio</div>
+    </div>
+    <div style="font-size:11px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Descripción breve</div>
+    <textarea class="ifield" placeholder="¿Qué ofrecés? Horarios, especialidades..." id="neg-desc" rows="3" style="resize:none;margin-bottom:10px"></textarea>
+    <div style="background:rgba(0,229,184,0.07);border:1px solid var(--bd2);border-radius:12px;padding:12px;font-size:12px;color:var(--mt);margin-bottom:16px;line-height:1.6">
+      💡 AVS cobra <strong style="color:var(--g)">5% de comisión</strong> solo por transacciones realizadas. El saldo se recarga igual que los conductores vía SINPE.
+    </div>
+    <button class="btnp" onclick="enviarRegistroNegocio()">Enviar solicitud</button>
+  </div>
+</div>
+
 <div class="toast" id="toastEl"></div>
 
 <script>
@@ -860,7 +961,16 @@ function simDoc(tipo){regDocs[tipo]='subido';const el=document.getElementById('d
 function saveRegProgress(){const p={nombre:document.getElementById('rnombre')?.value||'',telefono:document.getElementById('rtelefono')?.value||'',correo:document.getElementById('rcorreo')?.value||'',cedula:document.getElementById('rcedula')?.value||'',placa:document.getElementById('rplaca')?.value||'',modelo:document.getElementById('rmodelo')?.value||'',capacidad:document.getElementById('rcapacidad')?.value||'',vehiculo:regVehiculo,features:regFeatures,docs:regDocs};localStorage.setItem('avs_reg',JSON.stringify(p));}
 function loadRegProgress(){try{const p=localStorage.getItem('avs_reg');if(!p)return;const prog=JSON.parse(p);['rnombre','rtelefono','rcorreo','rcedula','rplaca','rmodelo','rcapacidad'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=prog[id.replace('r','')]||'';});regVehiculo=prog.vehiculo||'sedan';regFeatures=prog.features||{ac:false,pet:false,carga:false};regDocs=prog.docs||{};document.querySelectorAll('#vtype-chips .vchip').forEach(c=>{c.classList.remove('sel');if(c.getAttribute('onclick')?.includes("'"+regVehiculo+"'"))c.classList.add('sel');});['ac','pet','carga'].forEach(f=>{const t=document.getElementById('tog-'+f);if(t&&regFeatures[f])t.classList.add('on');});Object.keys(regDocs).forEach(tipo=>{const el=document.getElementById('doc-'+tipo),st=document.getElementById('dst-'+tipo);if(el)el.classList.add('ok');if(st){st.textContent='✅ Documento cargado';st.classList.add('ok');}});}catch(e){}}
 async function enviarRegistro(){const nombre=document.getElementById('rnombre').value.trim(),telefono=document.getElementById('rtelefono').value.trim(),correo=document.getElementById('rcorreo').value.trim(),cedula=document.getElementById('rcedula').value.trim(),placa=document.getElementById('rplaca').value.trim(),modelo=document.getElementById('rmodelo').value.trim(),cap=document.getElementById('rcapacidad').value.trim();if(!nombre||!telefono||!placa||!modelo){toast('Completá todos los campos obligatorios');return;}const docsReq=['cedula','licencia','circulacion','seguro','revision','foto-ext','foto-int'];const faltantes=docsReq.filter(d=>!regDocs[d]);if(faltantes.length>0){toast('Falta subir '+faltantes.length+' documento(s)');return;}if(db){const{data:existe}=await db.from('usuarios').select('telefono').eq('telefono',telefono).single();if(existe){toast('Ya existe un registro con ese teléfono');return;}const{error}=await db.from('usuarios').insert({telefono,nombre,tipo:'conductor',placa,modelo_vehiculo:modelo,tipo_vehiculo:regVehiculo,capacidad:parseInt(cap)||4,tiene_ac:regFeatures.ac,pet_friendly:regFeatures.pet,acepta_carga:regFeatures.carga,cedula_identidad:cedula,correo,estado_verificacion:'pendiente',documentos_url:regDocs});if(error){toast('Error al enviar. Intentá de nuevo.');return;}}localStorage.removeItem('avs_reg');document.getElementById('registro').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;gap:16px"><div style="font-size:64px">⏳</div><div style="font-family:var(--font-d);font-size:22px;font-weight:700">Solicitud enviada</div><div style="font-size:14px;color:var(--mt);line-height:1.6">Tu solicitud fue recibida. El equipo AVS revisará tu documentación y te contactará al <strong style="color:var(--tx)">${telefono}</strong> en un plazo de 24-48 horas.</div><button class="btnp" onclick="go('login')" style="margin-top:20px;max-width:300px">Volver al inicio</button></div>`;}
-function switchAdminTab(tab){document.querySelectorAll('[id^="admtab-"]').forEach(el=>el.classList.remove('on'));document.getElementById('admtab-'+tab).classList.add('on');if(tab==='conductores'){document.getElementById('admin-conductores').style.display='block';document.getElementById('admin-recargas').style.display='none';cargarAdmin();}else{document.getElementById('admin-conductores').style.display='none';document.getElementById('admin-recargas').style.display='block';filtrarRecargas('pendiente');}}
+function switchAdminTab(tab){
+  document.querySelectorAll('[id^="admtab-"]').forEach(el=>el.classList.remove('on'));
+  document.getElementById('admtab-'+tab).classList.add('on');
+  document.getElementById('admin-conductores').style.display='none';
+  document.getElementById('admin-recargas').style.display='none';
+  document.getElementById('admin-negocios').style.display='none';
+  if(tab==='conductores'){document.getElementById('admin-conductores').style.display='block';cargarAdmin();}
+  else if(tab==='recargas'){document.getElementById('admin-recargas').style.display='block';filtrarRecargas('pendiente');}
+  else if(tab==='negocios'){document.getElementById('admin-negocios').style.display='block';filtrarNegocios('pendiente');}
+}
 let recargasFiltro='pendiente';
 function filtrarRecargas(estado){recargasFiltro=estado;document.querySelectorAll('[id^="recbtn-"]').forEach(b=>b.classList.remove('on'));document.getElementById('recbtn-'+estado).classList.add('on');cargarRecargas();}
 async function cargarRecargas(){if(!db)return;const{data}=await db.from('recargas').select('*').eq('estado',recargasFiltro).order('fecha',{ascending:false});const lista=document.getElementById('recargaslist');if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin recargas en este estado</div>';return;}lista.innerHTML=data.map(r=>`<div class="adcard" style="margin:8px 20px"><div class="adname">${r.conductor_nombre||'—'}</div><div class="adinfo">📱 ${r.conductor_telefono} · 📅 ${new Date(r.fecha).toLocaleDateString('es-CR')}</div><div class="adinfo">💬 Concepto: <strong>${r.concepto}</strong></div><div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0"><div style="font-family:var(--font-d);font-size:24px;font-weight:700;color:var(--g)">₡${parseInt(r.monto).toLocaleString('es-CR')}</div><div class="adbadge ${r.estado}">${r.estado.toUpperCase()}</div></div>${recargasFiltro==='pendiente'?`<div class="adacts"><button class="adaprob" onclick="acreditarRecarga('${r.id}','${r.conductor_telefono}',${r.monto})">✅ Acreditar saldo</button><button class="adrech" onclick="rechazarRecarga('${r.id}')">❌ Rechazar</button></div>`:''}</div>`).join('');}
