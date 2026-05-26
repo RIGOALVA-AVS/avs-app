@@ -228,10 +228,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 /* ===== LAYOUT PC — 2 columnas ===== */
 @media (min-width: 768px) {
-  /* Login PC */
+  /* Login PC — form izquierda, imagen derecha */
   #login { flex-direction: row; }
-  .lhero { flex: 1; height: 100vh; background-size: cover !important; }
-  .lsheet { width: 380px; flex: none; height: 100vh; overflow-y: auto; padding: 40px 32px; border-top: none; border-left: 2px solid rgba(0,229,184,0.35); }
+  .lhero { flex: 1; height: 100vh; background-size: cover !important; background-position: center center !important; order: 2; }
+  .lsheet { width: 400px; flex: none; height: 100vh; overflow-y: auto; padding: 48px 40px; border-top: none; border-right: 2px solid rgba(0,229,184,0.35); order: 1; display: flex; flex-direction: column; justify-content: center; }
 
   /* Pasajero PC — mapa grande + panel izquierdo */
   #pasajero { flex-direction: row; }
@@ -321,6 +321,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .adrech{flex:1;background:transparent;color:var(--rd);border:1px solid rgba(226,75,74,0.3);border-radius:10px;padding:10px;font-size:13px;cursor:pointer;}
 .addocs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
 .addoc{background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--mt);}
+.dest-chip{
+  background:var(--cd);border:1px solid var(--bd);border-radius:10px;
+  padding:8px 10px;font-size:12px;cursor:pointer;text-align:center;
+  color:var(--tx2);transition:all 0.2s;display:flex;align-items:center;
+  justify-content:center;gap:5px;
+}
+.dest-chip:active{border-color:var(--g);background:rgba(0,229,184,0.08);color:var(--g);}
 .catrow{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px;scrollbar-width:none;}
 .catrow::-webkit-scrollbar{display:none;}
 .catbtn{flex-shrink:0;background:var(--cd);border:1px solid var(--bd);border-radius:20px;padding:7px 14px;font-size:12px;cursor:pointer;white-space:nowrap;transition:all 0.2s;display:flex;align-items:center;gap:5px;}
@@ -449,6 +456,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="plabel">¿A dónde vas?</div>
     <div class="dfrom"><div class="dotg"></div><div class="ftxt" id="otxt">Mi ubicación actual</div></div>
     <div class="acwrap"><div class="dotr"></div><input type="text" id="dac" placeholder="Escribe tu destino..." autocomplete="off"></div>
+    <!-- Destinos rápidos -->
+    <div class="plabel" style="margin-top:4px">Destinos frecuentes</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+      <div class="dest-chip" onclick="buscarDestino('restaurantes en Atenas Costa Rica')">🍽️ Restaurantes</div>
+      <div class="dest-chip" onclick="buscarDestino('negocios comerciales Atenas Costa Rica')">🏪 Negocios</div>
+      <div class="dest-chip" onclick="buscarDestino('clínica hospital salud Atenas Costa Rica')">🏥 Salud</div>
+      <div class="dest-chip" onclick="buscarDestino('hospedaje hotel Atenas Costa Rica')">🏨 Hospedaje</div>
+      <div class="dest-chip" onclick="buscarDestino('supermercado Atenas Costa Rica')">🛒 Supermercado</div>
+      <div class="dest-chip" onclick="buscarDestino('banco cajero ATM Atenas Costa Rica')">🏦 Bancos</div>
+    </div>
     <div class="tinfo" id="tinfo">
       <div class="tiitem"><div class="tilbl">Distancia</div><div class="tival" id="tdist">—</div></div>
       <div class="tiitem"><div class="tilbl">Tiempo</div><div class="tival" id="tdur">—</div></div>
@@ -830,6 +847,17 @@ let adminFiltro='pendiente';
 function filtrarAdmin(estado){adminFiltro=estado;document.querySelectorAll('.adtbtn').forEach(b=>b.classList.remove('on'));document.getElementById('adbtn-'+estado).classList.add('on');cargarAdmin();}
 async function cargarAdmin(){if(!db)return;const{data}=await db.from('usuarios').select('*').eq('tipo','conductor').eq('estado_verificacion',adminFiltro).order('created_at',{ascending:false});const lista=document.getElementById('adminlist');if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin conductores en este estado</div>';return;}const iconos={sedan:'🚗',suv:'🚙',van:'🚐',ejecutivo:'👔'};lista.innerHTML=data.map(c=>`<div class="adcard"><div class="adname">${c.nombre} ${c.apellidos||''}</div><div class="adinfo">📱 ${c.telefono} · 📧 ${c.correo||'—'} · 🪪 ${c.cedula_identidad||'—'}</div><div class="adinfo">${iconos[c.tipo_vehiculo]||'🚗'} ${c.tipo_vehiculo||'—'} · ${c.modelo_vehiculo||'—'} · Placa: ${c.placa||'—'} · ${c.capacidad||4} pax</div><div class="adinfo">${c.tiene_ac?'❄️ A/C ':''}${c.pet_friendly?'🐾 Pet ':''}${c.acepta_carga?'🧳 Carga ':''}</div><div class="adbadge ${c.estado_verificacion}">${c.estado_verificacion?.toUpperCase()}</div><div class="addocs">${Object.keys(c.documentos_url||{}).map(d=>`<div class="addoc">✅ ${d}</div>`).join('')}</div>${adminFiltro==='pendiente'?`<div class="adacts"><button class="adaprob" onclick="adminAccion('${c.telefono}','aprobado')">✅ Aprobar</button><button class="adrech" onclick="adminAccion('${c.telefono}','rechazado')">❌ Rechazar</button></div>`:''}</div>`).join('');}
 async function adminAccion(telefono,estado){if(!db)return;await db.from('usuarios').update({estado_verificacion:estado}).eq('telefono',telefono);toast(estado==='aprobado'?'✅ Conductor aprobado':'❌ Conductor rechazado');cargarAdmin();}
+function buscarDestino(query){
+  const input = document.getElementById('dac');
+  input.value = query;
+  input.focus();
+  // Trigger autocomplete search
+  const event = new Event('input', {bubbles:true});
+  input.dispatchEvent(event);
+  // Scroll to input
+  input.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
 function selCat(el,cat){document.querySelectorAll('.catbtn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');selCategoria=cat;}
 let user={name:'',role:'',phone:''};
 let selFare=1500,selCom=0,selComConductor=0;
