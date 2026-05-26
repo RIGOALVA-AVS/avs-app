@@ -35,11 +35,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 @keyframes spin{to{transform:rotate(360deg);}}
 
 /* LOGIN */
-#login{background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') center top/cover no-repeat;justify-content:flex-end;position:relative;}
-#login::before{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,13,26,0.02) 0%,rgba(6,13,26,0.05) 40%,rgba(6,13,26,0.30) 65%,rgba(6,13,26,0.45) 100%);z-index:0;}
+#login{background:none;justify-content:flex-start;position:relative;}
+
 #login>*{position:relative;z-index:1;}
 
-.lhero{flex:0 0 50vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 24px 14px;gap:10px;}
+.lhero{flex:0 0 50vh;width:100%;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') center center/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 24px 14px;gap:10px;position:relative;overflow:hidden;}.lhero::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(8,15,30,0.3) 100%);pointer-events:none;}
 
 .avs-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;animation:fadeUp 0.9s ease both;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
@@ -58,7 +58,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .avs-city-dot{width:6px;height:6px;background:var(--g);border-radius:50%;box-shadow:0 0 6px var(--g);animation:blink 2s ease infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
 
-.lsheet{background:rgba(8,15,30,0.25);border-radius:28px 28px 0 0;padding:14px 24px 32px;border-top:1px solid rgba(0,229,184,0.28);box-shadow:0 -10px 48px rgba(0,0,0,0.15);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);flex:0 0 50vh;overflow-y:auto;}
+.lsheet{background:rgba(8,15,30,0.60);flex:0 0 50vh;padding:14px 24px 32px;border-top:2px solid rgba(0,229,184,0.35);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);overflow-y:auto;border-radius:0;}
 .lsheet-handle{width:36px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;margin:0 auto 14px;}
 .ltit{font-family:var(--font-d);font-size:19px;font-weight:700;margin-bottom:2px;}
 .ldesc{font-size:12px;color:var(--mt);margin-bottom:12px;}
