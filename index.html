@@ -358,31 +358,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
   <!-- Sheet del formulario — con OTP -->
   <div class="lsheet" id="loginSheet">
-    <!-- PASO 1: Datos básicos -->
-    <div id="step1">
-      <div class="ltit">Bienvenido 👋</div>
-      <div class="ldesc">Ingresá tus datos para continuar</div>
-      <div class="ilabel">Teléfono</div>
-      <input class="ifield" type="tel" placeholder="8888-8888" id="lphone">
-      <div class="ilabel" style="margin-top:4px">Nombre</div>
-      <input class="ifield" type="text" placeholder="Tu nombre completo" id="lname">
-      <div class="ilabel" style="margin-top:4px">Correo electrónico</div>
-      <input class="ifield" type="email" placeholder="tu@correo.com" id="lemail">
-      <button class="btnp" onclick="enviarOTP('pasajero')" style="margin-top:6px">🚗 Entrar como Pasajero</button>
-      <button class="btno" onclick="enviarOTP('conductor')">🧑‍✈️ Entrar como Conductor</button>
-      <div class="lsw">¿Conductor nuevo? <a onclick="go('registro'); setTimeout(loadRegProgress,100)">Registrate aquí</a></div>
-      <div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
-    </div>
-    <!-- PASO 2: Ingresar código OTP -->
-    <div id="step2" style="display:none">
-      <div class="ltit">Verificá tu correo 📧</div>
-      <div class="ldesc" id="otpDesc">Te enviamos un código de 6 dígitos</div>
-      <div class="ilabel" style="margin-top:8px">Código de verificación</div>
-      <input class="ifield otp-input" type="number" placeholder="_ _ _ _ _ _" id="lotpcode" maxlength="6" style="font-size:28px;letter-spacing:8px;text-align:center;font-family:var(--font-d);">
-      <button class="btnp" onclick="verificarOTP()" style="margin-top:12px">✅ Verificar y entrar</button>
-      <button class="btno" onclick="volverStep1()">← Cambiar datos</button>
-      <div class="lsw" style="margin-top:8px">¿No llegó? <a onclick="reenviarOTP()">Reenviar código</a></div>
-    </div>
+    <div class="ltit">Bienvenido 👋</div>
+    <div class="ldesc">Ingresá tus datos para continuar</div>
+    <div class="ilabel">Teléfono</div>
+    <input class="ifield" type="tel" placeholder="8888-8888" id="lphone">
+    <div class="ilabel" style="margin-top:4px">Nombre</div>
+    <input class="ifield" type="text" placeholder="Tu nombre completo" id="lname">
+    <button class="btnp" onclick="doLogin('pasajero')" style="margin-top:6px">🚗 Entrar como Pasajero</button>
+    <button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button>
+    <div class="lsw">¿Conductor nuevo? <a onclick="go('registro'); setTimeout(loadRegProgress,100)">Registrate aquí</a></div>
+    <div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
   </div>
 </div>
 
