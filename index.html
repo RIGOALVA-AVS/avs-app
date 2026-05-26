@@ -39,7 +39,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 #login::before{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,13,26,0.02) 0%,rgba(6,13,26,0.05) 40%,rgba(6,13,26,0.30) 65%,rgba(6,13,26,0.45) 100%);z-index:0;}
 #login>*{position:relative;z-index:1;}
 
-.lhero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 24px 20px;gap:10px;min-height:52vh;}
+.lhero{flex:0 0 35vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 24px 16px;gap:10px;}
 
 .avs-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;animation:fadeUp 0.9s ease both;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
@@ -58,21 +58,20 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .avs-city-dot{width:6px;height:6px;background:var(--g);border-radius:50%;box-shadow:0 0 6px var(--g);animation:blink 2s ease infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
 
-.lsheet{background:rgba(8,15,30,0.45);border-radius:28px 28px 0 0;padding:18px 24px 44px;border-top:1px solid rgba(0,229,184,0.28);box-shadow:0 -10px 48px rgba(0,0,0,0.25);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
-.lsheet-handle{width:36px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;margin:0 auto 20px;}
-.ltit{font-family:var(--font-d);font-size:21px;font-weight:700;margin-bottom:3px;}
-.ldesc{font-size:13px;color:var(--mt);margin-bottom:18px;}
-.ilabel{font-size:10px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;font-weight:500;display:block;}
-.ifield{width:100%;background:rgba(8,15,30,0.35);border:1px solid rgba(0,229,184,0.22);border-radius:14px;padding:14px 16px;color:var(--tx);font-size:15px;font-family:var(--font-b);outline:none;transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;}
+.lsheet{background:rgba(8,15,30,0.45);border-radius:28px 28px 0 0;padding:14px 24px 32px;border-top:1px solid rgba(0,229,184,0.28);box-shadow:0 -10px 48px rgba(0,0,0,0.25);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
+.lsheet-handle{width:36px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;margin:0 auto 14px;}
+.ltit{font-family:var(--font-d);font-size:19px;font-weight:700;margin-bottom:2px;}
+.ldesc{font-size:12px;color:var(--mt);margin-bottom:12px;}
+.ilabel{font-size:10px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;font-weight:500;display:block;}
+.ifield{width:100%;background:rgba(8,15,30,0.35);border:1px solid rgba(0,229,184,0.22);border-radius:14px;padding:11px 16px;color:var(--tx);font-size:15px;font-family:var(--font-b);outline:none;transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;}
 .ifield:focus{border-color:var(--g);background:rgba(8,15,30,0.55);box-shadow:0 0 0 3px rgba(0,229,184,0.12);}
 .ifield::placeholder{color:rgba(200,212,224,0.7);}
-
-.btnp{width:100%;background:var(--grad-btn);color:#080f1e;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:700;font-family:var(--font-d);cursor:pointer;margin-top:14px;letter-spacing:0.3px;box-shadow:0 4px 22px rgba(0,229,184,0.30);transition:transform 0.15s,box-shadow 0.15s;position:relative;overflow:hidden;}
+.btnp{width:100%;background:var(--grad-btn);color:#080f1e;border:none;border-radius:14px;padding:13px;font-size:15px;font-weight:700;font-family:var(--font-d);cursor:pointer;margin-top:10px;letter-spacing:0.3px;box-shadow:0 4px 22px rgba(0,229,184,0.30);transition:transform 0.15s,box-shadow 0.15s;position:relative;overflow:hidden;}
 .btnp::after{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:rgba(255,255,255,0.09);border-radius:14px 14px 0 0;pointer-events:none;}
-.btnp:active{transform:scale(0.98);box-shadow:0 2px 10px rgba(0,229,184,0.18);}
-.btno{width:100%;background:transparent;color:var(--g);border:1px solid rgba(0,229,184,0.22);border-radius:14px;padding:14px;font-size:14px;font-family:var(--font-b);cursor:pointer;margin-top:10px;transition:background 0.2s,border-color 0.2s;}
+.btnp:active{transform:scale(0.98);}
+.btno{width:100%;background:transparent;color:var(--g);border:1px solid rgba(0,229,184,0.22);border-radius:14px;padding:11px;font-size:14px;font-family:var(--font-b);cursor:pointer;margin-top:8px;transition:background 0.2s;}
 .btno:active{background:rgba(0,229,184,0.05);}
-.lsw{text-align:center;margin-top:12px;font-size:13px;color:var(--mt);}
+.lsw{text-align:center;margin-top:10px;font-size:13px;color:var(--mt);}
 .lsw a{color:var(--g);cursor:pointer;font-weight:500;text-decoration:none;}
 
 /* RESTO DE PANTALLAS */
@@ -320,7 +319,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="ldesc">Ingresá con tu número de teléfono</div>
     <div class="ilabel">Teléfono</div>
     <input class="ifield" type="tel" placeholder="8888-8888" id="lphone">
-    <div class="ilabel" style="margin-top:12px">Nombre</div>
+    <div class="ilabel" style="margin-top:8px">Nombre</div>
     <input class="ifield" type="text" placeholder="Tu nombre completo" id="lname">
     <button class="btnp" onclick="doLogin('pasajero')">🚗 Entrar como Pasajero</button>
     <button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button>
