@@ -39,7 +39,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 #login>*{position:relative;z-index:1;}
 
-.lhero{height:42vh;width:100%;flex-shrink:0;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') center center/90% auto no-repeat;background-color:#080f1e;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 24px 12px;position:relative;overflow:hidden;}.lhero::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 55%,rgba(8,15,30,0.2) 100%);pointer-events:none;}
+.lhero{height:44vh;width:100%;flex-shrink:0;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') center center/contain no-repeat;background-color:#080f1e;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0;position:relative;overflow:hidden;}
 
 .avs-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;animation:fadeUp 0.9s ease both;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
@@ -58,7 +58,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .avs-city-dot{width:6px;height:6px;background:var(--g);border-radius:50%;box-shadow:0 0 6px var(--g);animation:blink 2s ease infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
 
-.lsheet{background:rgba(8,15,30,0.80);height:58vh;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;padding:12px 24px 16px;border-top:2px solid rgba(0,229,184,0.35);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);overflow-y:auto;border-radius:0;}
+.lsheet{background:#0a1525;flex:1;display:flex;flex-direction:column;justify-content:center;padding:16px 24px 20px;border-top:2px solid rgba(0,229,184,0.35);overflow-y:auto;border-radius:0;}
 .lsheet-handle{display:none;}
 .ltit{font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:1px;}
 .ldesc{font-size:11px;color:var(--mt);margin-bottom:8px;}
