@@ -229,9 +229,32 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 /* ===== LAYOUT PC — 2 columnas ===== */
 @media (min-width: 768px) {
   /* Login PC — form izquierda, imagen derecha */
-  #login { flex-direction: row; }
-  .lhero { flex: 1; height: 100vh; background-size: cover !important; background-position: center center !important; order: 2; }
-  .lsheet { width: 400px; flex: none; height: 100vh; overflow-y: auto; padding: 48px 40px; border-top: none; border-right: 2px solid rgba(0,229,184,0.35); order: 1; display: flex; flex-direction: column; justify-content: center; }
+  #login { flex-direction: row !important; height: 100vh !important; overflow: hidden !important; }
+  #login .lhero { 
+    flex: 1 !important; 
+    height: 100vh !important; 
+    min-height: 100vh !important;
+    background-size: cover !important; 
+    background-position: center center !important; 
+    order: 2 !important;
+    pointer-events: auto !important;
+  }
+  #login .lsheet { 
+    width: 420px !important; 
+    flex: none !important; 
+    height: 100vh !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important; 
+    padding: 60px 40px !important; 
+    border-top: none !important; 
+    border-right: 2px solid rgba(0,229,184,0.35) !important; 
+    border-radius: 0 !important;
+    order: 1 !important; 
+    display: flex !important; 
+    flex-direction: column !important; 
+    justify-content: center !important;
+    background: #0a1525 !important;
+  }
 
   /* Pasajero PC — mapa grande + panel izquierdo */
   #pasajero { flex-direction: row; }
