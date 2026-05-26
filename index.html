@@ -888,7 +888,7 @@ let disponible=false,viajeId=null,viajeData=null,pollInterval=null,pasajeroWaitI
 function saveSession(){localStorage.setItem('avs_user',JSON.stringify(user));if(viajeId)localStorage.setItem('avs_viaje_id',viajeId);}
 function loadSession(){try{const u=localStorage.getItem('avs_user');if(u){user=JSON.parse(u);return true;}}catch(e){}return false;}
 function clearSession(){localStorage.removeItem('avs_user');localStorage.removeItem('avs_viaje_id');}
-function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');if(id==='registro')setTimeout(()=>{loadRegProgress();},100);if(id==='admin')cargarAdmin();if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);}
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');setTimeout(()=>{aplicarLayoutPC();if(id==='pasajero')aplicarLayoutPasajeroPC();},50);if(id==='registro')setTimeout(()=>{loadRegProgress();},100);if(id==='admin')cargarAdmin();if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);}
 function toast(msg){const t=document.getElementById('toastEl');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function logout(){clearSession();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
 function doLogin(role){
@@ -966,6 +966,86 @@ window.addEventListener('DOMContentLoaded',()=>{
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&disponible&&user.role==='conductor')cargarSolicitudes();});
 async function pedirPermisoNotificaciones(){if(!('Notification'in window)){toast('Tu dispositivo no soporta notificaciones');return false;}if(Notification.permission==='granted')return true;if(Notification.permission==='denied'){toast('Notificaciones bloqueadas');return false;}const perm=await Notification.requestPermission();return perm==='granted';}
 function notificarConductor(titulo,cuerpo){if(Notification.permission!=='granted')return;const n=new Notification(titulo,{body:cuerpo,icon:'/avs-app/icon-192.png',vibrate:[200,100,200],tag:'avs-viaje'});n.onclick=()=>{window.focus();n.close();};setTimeout(()=>n.close(),10000);}
+
+// ===== PC LAYOUT =====
+function aplicarLayoutPC() {
+  const esPC = window.innerWidth >= 768;
+  const login = document.getElementById('login');
+  const lhero = login ? login.querySelector('.lhero') : null;
+  const lsheet = login ? login.querySelector('.lsheet') : null;
+
+  if (!login || !lhero || !lsheet) return;
+
+  if (esPC) {
+    // Login PC: form izquierda, imagen derecha
+    login.style.flexDirection = 'row';
+    login.style.overflow = 'hidden';
+
+    lsheet.style.cssText = `
+      width: 420px;
+      flex: none;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 60px 40px;
+      border-top: none;
+      border-right: 2px solid rgba(0,229,184,0.35);
+      border-radius: 0;
+      background: #0a1525;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      order: 1;
+    `;
+
+    lhero.style.cssText = `
+      flex: 1;
+      height: 100vh;
+      min-height: 100vh;
+      background: url('https://rigoalva-avs.github.io/avs-app/bg-login.png') center center / cover no-repeat;
+      background-color: #080f1e;
+      order: 2;
+      pointer-events: none;
+    `;
+  } else {
+    // Mobile: reset to default
+    login.style.flexDirection = '';
+    lsheet.style.cssText = '';
+    lhero.style.cssText = '';
+  }
+}
+
+// Apply on load and resize
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(aplicarLayoutPC, 100);
+});
+window.addEventListener('resize', aplicarLayoutPC);
+
+function aplicarLayoutPasajeroPC() {
+  const esPC = window.innerWidth >= 768;
+  const pasajero = document.getElementById('pasajero');
+  if (!pasajero) return;
+  const mapc = pasajero.querySelector('.mapc');
+  const bpanel = pasajero.querySelector('.bpanel');
+  const bnav = pasajero.querySelector('.bnav');
+  const ahdr = pasajero.querySelector('.ahdr');
+
+  if (esPC && pasajero.classList.contains('active')) {
+    pasajero.style.flexDirection = 'row';
+    if (ahdr) ahdr.style.display = 'none';
+    if (bpanel) {
+      bpanel.style.cssText = 'width:380px;flex:none;order:1;border-radius:0;border-top:none;border-right:1px solid var(--bd2);padding:20px 18px;overflow-y:auto;';
+    }
+    if (mapc) { mapc.style.flex = '1'; mapc.style.order = '2'; }
+    if (bnav) bnav.style.display = 'none';
+  } else if (!esPC) {
+    pasajero.style.flexDirection = '';
+    if (ahdr) ahdr.style.display = '';
+    if (bpanel) bpanel.style.cssText = '';
+    if (mapc) { mapc.style.flex = ''; mapc.style.order = ''; }
+    if (bnav) bnav.style.display = '';
+  }
+}
+
 window.addEventListener('load',()=>{
   // Fix Chrome viewport height issue
   const setVH = () => {
