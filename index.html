@@ -180,6 +180,50 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .pitem{display:flex;align-items:center;justify-content:space-between;background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:6px;cursor:pointer;}
 .pil{display:flex;align-items:center;gap:12px;font-size:14px;}
 .blogout{width:100%;background:transparent;border:1px solid rgba(226,75,74,0.3);color:var(--rd);border-radius:14px;padding:14px;font-size:14px;cursor:pointer;margin-top:8px;}
+
+/* ===== BOTÓN DE PÁNICO ===== */
+.panic-btn {
+  position: fixed; bottom: 90px; right: 16px; z-index: 500;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, #ff4d4d, #cc0000);
+  border: 2px solid rgba(255,100,100,0.4);
+  box-shadow: 0 4px 20px rgba(255,77,77,0.45);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 22px;
+  transition: transform 0.15s, box-shadow 0.15s;
+  animation: panicPulse 3s ease infinite;
+}
+.panic-btn:active { transform: scale(0.92); }
+@keyframes panicPulse {
+  0%,100% { box-shadow: 0 4px 20px rgba(255,77,77,0.45); }
+  50% { box-shadow: 0 4px 28px rgba(255,77,77,0.75), 0 0 0 8px rgba(255,77,77,0.12); }
+}
+
+/* Modal pánico */
+.panic-modal {
+  position: fixed; inset: 0; z-index: 900;
+  background: rgba(6,13,26,0.92); backdrop-filter: blur(8px);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 32px 24px; gap: 16px;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.panic-modal.show { opacity: 1; pointer-events: all; }
+.panic-modal-ico { font-size: 64px; animation: shake 0.5s ease; }
+@keyframes shake {
+  0%,100%{transform:rotate(0)} 20%{transform:rotate(-8deg)}
+  40%{transform:rotate(8deg)} 60%{transform:rotate(-5deg)} 80%{transform:rotate(5deg)}
+}
+.panic-modal-tit { font-family: var(--font-d); font-size: 22px; font-weight: 800; color: #ff4d4d; text-align: center; }
+.panic-modal-sub { font-size: 13px; color: var(--mt); text-align: center; line-height: 1.5; }
+.panic-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.panic-wa  { background: #25D366; color: white; border: none; border-radius: 14px; padding: 15px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: var(--font-d); }
+.panic-sms { background: transparent; color: var(--tx); border: 1px solid rgba(255,255,255,0.2); border-radius: 14px; padding: 13px; font-size: 14px; cursor: pointer; }
+.panic-map { background: #4285F4; color: white; border: none; border-radius: 14px; padding: 13px; font-size: 14px; cursor: pointer; }
+.panic-cancel { background: transparent; color: var(--mt); border: none; font-size: 13px; cursor: pointer; margin-top: 4px; }
+
+/* Pantalla configurar contactos de emergencia */
+#emergencia { background: var(--bg); padding: 48px 20px 32px; overflow-y: auto; }
+
 .pac-container{background:var(--sf)!important;border:1px solid var(--bd)!important;border-radius:12px!important;box-shadow:none!important;}
 .pac-item{color:var(--tx)!important;padding:10px 14px!important;border-top:1px solid var(--bd)!important;}
 .pac-item:hover{background:var(--cd)!important;}
@@ -369,6 +413,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div id="fareSection" style="display:none"><div class="plabel">Seleccioná tu tarifa</div><div class="fchips" id="fchips"></div></div>
     <button class="btnp" style="margin-top:8px" onclick="solicitar()">Solicitar Viaje</button>
   </div>
+  <button class="panic-btn" onclick="abrirPanico()" title="Botón de pánico">🆘</button>
   <div class="bnav">
     <div class="nitem"><span class="nico on">🏠</span><span class="nlbl on">Inicio</span></div>
     <div class="nitem" onclick="abrirHistorial('pasajero')"><span class="nico">🗺️</span><span class="nlbl">Mis Viajes</span></div>
@@ -434,6 +479,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="shdr"><div class="stit">Solicitudes activas</div><div class="snew" id="snew">0</div></div>
     <div id="slist"><div class="nolist">🚗 Activá tu disponibilidad para recibir viajes</div></div>
   </div>
+  <button class="panic-btn" onclick="abrirPanico()" title="Botón de pánico">🆘</button>
   <div class="bnav">
     <div class="nitem"><span class="nico on">🏠</span><span class="nlbl on">Inicio</span></div>
     <div class="nitem" onclick="abrirHistorial('conductor')"><span class="nico">📋</span><span class="nlbl">Historial</span></div>
@@ -483,9 +529,42 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="pitem" onclick="toast('Próximamente')"><div class="pil"><span>👤</span><span>Datos personales</span></div><span>›</span></div>
     <div class="pitem" onclick="toast('Próximamente')"><div class="pil"><span>🗺️</span><span>Historial de viajes</span></div><span>›</span></div>
     <div class="pitem" onclick="toast('Próximamente')"><div class="pil"><span>💳</span><span>Métodos de pago</span></div><span>›</span></div>
+    <div class="pitem" onclick="go('emergencia')"><div class="pil"><span>🆘</span><span>Contactos de emergencia</span></div><span>›</span></div>
   </div>
   <button class="blogout" onclick="logout()">Cerrar sesión</button>
   <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--mt)">AVS v2.2 · Atenas · Costa Rica</div>
+</div>
+
+
+<!-- MODAL PÁNICO -->
+<div class="panic-modal" id="panicModal">
+  <div class="panic-modal-ico">🆘</div>
+  <div class="panic-modal-tit">¿Necesitás ayuda?</div>
+  <div class="panic-modal-sub" id="panicSub">Tu ubicación será compartida con tus contactos de emergencia</div>
+  <div class="panic-actions">
+    <button class="panic-wa" onclick="panicWhatsApp()">💬 Alertar por WhatsApp</button>
+    <button class="panic-sms" onclick="panicSMS()">📱 Alertar por SMS</button>
+    <button class="panic-map" onclick="panicCompartirMapa()">🗺️ Compartir mi ubicación</button>
+  </div>
+  <button class="panic-cancel" onclick="cerrarPanico()">✕ Cancelar — estoy bien</button>
+</div>
+
+<!-- PANTALLA CONTACTOS DE EMERGENCIA -->
+<div class="screen" id="emergencia">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+    <button onclick="go('perfil')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
+    <div style="font-family:var(--font-d);font-size:20px;font-weight:700">🆘 Contactos de emergencia</div>
+  </div>
+  <div style="background:rgba(255,77,77,0.08);border:1px solid rgba(255,77,77,0.25);border-radius:14px;padding:14px;margin-bottom:20px;font-size:13px;color:var(--tx2);line-height:1.6">
+    En caso de emergencia AVS alertará a estos contactos con tu ubicación GPS en tiempo real.
+  </div>
+  <div style="font-size:11px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Contacto 1</div>
+  <input class="ifield" type="text" placeholder="Nombre del contacto" id="ec1nombre" style="margin-bottom:8px">
+  <input class="ifield" type="tel" placeholder="Teléfono (WhatsApp)" id="ec1tel">
+  <div style="font-size:11px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin:14px 0 10px">Contacto 2 (opcional)</div>
+  <input class="ifield" type="text" placeholder="Nombre del contacto" id="ec2nombre" style="margin-bottom:8px">
+  <input class="ifield" type="tel" placeholder="Teléfono (WhatsApp)" id="ec2tel">
+  <button class="btnp" onclick="guardarContactosEmergencia()" style="margin-top:16px">💾 Guardar contactos</button>
 </div>
 
 <div class="toast" id="toastEl"></div>
@@ -545,7 +624,7 @@ let disponible=false,viajeId=null,viajeData=null,pollInterval=null,pasajeroWaitI
 function saveSession(){localStorage.setItem('avs_user',JSON.stringify(user));if(viajeId)localStorage.setItem('avs_viaje_id',viajeId);}
 function loadSession(){try{const u=localStorage.getItem('avs_user');if(u){user=JSON.parse(u);return true;}}catch(e){}return false;}
 function clearSession(){localStorage.removeItem('avs_user');localStorage.removeItem('avs_viaje_id');}
-function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');if(id==='registro')setTimeout(()=>{loadRegProgress();},100);if(id==='admin')cargarAdmin();}
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');if(id==='registro')setTimeout(()=>{loadRegProgress();},100);if(id==='admin')cargarAdmin();if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);}
 function toast(msg){const t=document.getElementById('toastEl');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function logout(){clearSession();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
 function doLogin(role){
