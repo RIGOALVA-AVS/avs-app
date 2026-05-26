@@ -58,7 +58,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .avs-city-dot{width:6px;height:6px;background:var(--g);border-radius:50%;box-shadow:0 0 6px var(--g);animation:blink 2s ease infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
 
-.lsheet{background:#0a1525;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;padding:10px 20px 16px;border-top:2px solid rgba(0,229,184,0.35);overflow-y:auto;border-radius:0;}
+.lsheet{background:#0a1525;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;padding:8px 20px 12px;border-top:2px solid rgba(0,229,184,0.35);overflow-y:auto;border-radius:0;}
 .lsheet-handle{display:none;}
 .ltit{font-family:var(--font-d);font-size:16px;font-weight:700;margin-bottom:0px;}
 .ldesc{font-size:11px;color:var(--mt);margin-bottom:6px;}
@@ -574,6 +574,125 @@ const SB_URL='https://xnwpxmmepewtthwdttev.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhud3B4bW1lcGV3dHRod2R0dGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzQ0MDIsImV4cCI6MjA5NDQ1MDQwMn0.PSyZzHqppCR3HLQBtQb0jaHbXO8x4KBseDHAuQTVwy8';
 let db=null;
 function initSupabase(){try{if(window.supabase&&window.supabase.createClient){db=window.supabase.createClient(SB_URL,SB_KEY);}}catch(e){}}
+
+// ===== OTP EMAIL =====
+let otpRole='',otpEmail='',otpPhone='',otpName='';
+
+async function enviarOTP(role){
+  const phone=document.getElementById('lphone').value.trim();
+  const name=document.getElementById('lname').value.trim();
+  const email=document.getElementById('lemail').value.trim();
+  if(!phone){toast('Ingresá tu teléfono');return;}
+  if(!name){toast('Ingresá tu nombre');return;}
+  if(!email||!email.includes('@')){toast('Ingresá un correo válido');return;}
+  if(role==='admin'){doLogin('admin');return;}
+  otpRole=role;otpPhone=phone;otpName=name;otpEmail=email;
+  toast('Enviando código...');
+  try{
+    if(db&&db.auth){
+      const{error}=await db.auth.signInWithOtp({email,options:{shouldCreateUser:true,data:{nombre:name,telefono:phone,tipo:role}}});
+      if(error){console.log('OTP error:',error);finalizarLogin();return;}
+      document.getElementById('step1').style.display='none';
+      document.getElementById('step2').style.display='block';
+      document.getElementById('otpDesc').textContent='Enviamos un código a '+email;
+      document.getElementById('lotpcode').focus();
+      toast('✅ Código enviado a '+email);
+    } else { finalizarLogin(); }
+  }catch(e){console.log('OTP catch:',e);finalizarLogin();}
+}
+
+async function verificarOTP(){
+  const code=document.getElementById('lotpcode').value.trim();
+  if(!code||code.length<6){toast('Ingresá el código de 6 dígitos');return;}
+  toast('Verificando...');
+  try{
+    const{data,error}=await db.auth.verifyOtp({email:otpEmail,token:code,type:'email'});
+    if(error){toast('Código incorrecto. Intentá de nuevo.');return;}
+    toast('✅ Verificado');finalizarLogin();
+  }catch(e){toast('Error verificando. Intentá de nuevo.');}
+}
+
+async function reenviarOTP(){
+  toast('Reenviando código...');
+  try{await db.auth.signInWithOtp({email:otpEmail,options:{shouldCreateUser:true}});toast('✅ Nuevo código enviado a '+otpEmail);}
+  catch(e){toast('Error al reenviar');}
+}
+
+function volverStep1(){
+  document.getElementById('step1').style.display='block';
+  document.getElementById('step2').style.display='none';
+}
+
+async function finalizarLogin(){
+  if(otpRole==='conductor'&&db){
+    const{data}=await db.from('usuarios').select('nombre,apellidos,estado_verificacion').eq('telefono',otpPhone).single();
+    if(data){
+      if(data.estado_verificacion==='pendiente'){showLoginMsg('⏳','Solicitud en revisión','Tu documentación está siendo revisada. Te contactaremos en 24-48 horas al número '+otpPhone+'.','Volver',()=>resetLoginSheet());return;}
+      if(data.estado_verificacion==='rechazado'){showLoginMsg('❌','Solicitud rechazada','Tu solicitud no fue aprobada. Registrate nuevamente.','Registrarme de nuevo',()=>go('registro'));return;}
+    } else {
+      showLoginMsg('🚗','No encontramos tu registro','Para operar como conductor primero debés registrarte y esperar aprobación.','Registrarme',()=>go('registro'));return;
+    }
+  }
+  user={name:otpName,role:otpRole,phone:otpPhone};saveSession();applyUser();
+  if(db){
+    const{data:existe}=await db.from('usuarios').select('telefono').eq('telefono',otpPhone).single();
+    if(existe){db.from('usuarios').update({nombre:otpName.split(' ')[0],apellidos:otpName.split(' ').slice(1).join(' ')||'-',tipo:otpRole}).eq('telefono',otpPhone);}
+    else{db.from('usuarios').insert({telefono:otpPhone,nombre:otpName.split(' ')[0],apellidos:otpName.split(' ').slice(1).join(' ')||'-',tipo:otpRole});}
+  }
+  go(otpRole==='conductor'?'conductor':'pasajero');
+}
+
+// ===== BOTÓN DE PÁNICO =====
+function abrirPanico(){
+  if(userLoc){const url=`https://maps.google.com/?q=${userLoc.lat},${userLoc.lng}`;document.getElementById('panicSub').innerHTML=`📍 Ubicación: <a href="${url}" style="color:var(--g)" target="_blank">Ver en mapa</a>`;}
+  document.getElementById('panicModal').classList.add('show');
+  if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);
+}
+function cerrarPanico(){document.getElementById('panicModal').classList.remove('show');}
+function getMensajePanico(){
+  const lat=userLoc?.lat||9.9799,lng=userLoc?.lng||(-84.3799);
+  const url=`https://maps.google.com/?q=${lat},${lng}`;
+  return `🆘 *ALERTA AVS*\n\n*${user.name||'Usuario'}* necesita ayuda.\n\n📍 Ubicación: ${url}\n⏰ ${new Date().toLocaleTimeString('es-CR')}\n_AVS — Atenas Viaje Seguro_`;
+}
+function panicWhatsApp(){
+  const contactos=JSON.parse(localStorage.getItem('avs_emergencia')||'[]');
+  if(!contactos.length){toast('⚠️ Configurá tus contactos de emergencia');cerrarPanico();setTimeout(()=>go('emergencia'),300);return;}
+  const msg=encodeURIComponent(getMensajePanico());
+  contactos.forEach((c,i)=>{const tel=('506'+c.tel.replace(/[^0-9]/g,'')).replace(/^506506/,'506');setTimeout(()=>window.open(`https://wa.me/${tel}?text=${msg}`,'_blank'),i*1500);});
+  toast('✅ Alertas enviadas por WhatsApp');
+  if(db)db.from('emergencias').insert({usuario_telefono:user.phone,usuario_nombre:user.name,lat:userLoc?.lat,lng:userLoc?.lng,fecha:new Date().toISOString(),tipo:'whatsapp'}).then(()=>{});
+}
+function panicSMS(){
+  const contactos=JSON.parse(localStorage.getItem('avs_emergencia')||'[]');
+  if(!contactos.length){toast('⚠️ Configurá tus contactos de emergencia');cerrarPanico();setTimeout(()=>go('emergencia'),300);return;}
+  const lat=userLoc?.lat||9.9799,lng=userLoc?.lng||(-84.3799);
+  const msg=encodeURIComponent(`🆘 ALERTA AVS: ${user.name} necesita ayuda. Ubicación: https://maps.google.com/?q=${lat},${lng}`);
+  const tels=contactos.map(c=>c.tel.replace(/[^0-9]/g,'')).join(',');
+  window.open(`sms:${tels}?body=${msg}`);
+  toast('✅ SMS de emergencia enviado');
+}
+function panicCompartirMapa(){
+  const lat=userLoc?.lat||9.9799,lng=userLoc?.lng||(-84.3799);
+  const url=`https://maps.google.com/?q=${lat},${lng}`;
+  if(navigator.share){navigator.share({title:'🆘 Mi ubicación — AVS',text:`${user.name} comparte ubicación desde AVS`,url});}
+  else{navigator.clipboard.writeText(url).then(()=>toast('📋 Link copiado — compartilo con quien necesites'));}
+}
+function guardarContactosEmergencia(){
+  const n1=document.getElementById('ec1nombre').value.trim(),t1=document.getElementById('ec1tel').value.trim();
+  const n2=document.getElementById('ec2nombre').value.trim(),t2=document.getElementById('ec2tel').value.trim();
+  if(!n1||!t1){toast('Ingresá al menos un contacto');return;}
+  const contactos=[{nombre:n1,tel:t1}];
+  if(n2&&t2)contactos.push({nombre:n2,tel:t2});
+  localStorage.setItem('avs_emergencia',JSON.stringify(contactos));
+  if(db&&user.phone)db.from('usuarios').update({contacto_emergencia1:JSON.stringify({nombre:n1,tel:t1}),contacto_emergencia2:n2&&t2?JSON.stringify({nombre:n2,tel:t2}):null}).eq('telefono',user.phone).then(()=>{});
+  toast('✅ Contactos guardados');setTimeout(()=>go('perfil'),1500);
+}
+function cargarContactosEmergencia(){
+  const contactos=JSON.parse(localStorage.getItem('avs_emergencia')||'[]');
+  if(contactos[0]){document.getElementById('ec1nombre').value=contactos[0].nombre||'';document.getElementById('ec1tel').value=contactos[0].tel||'';}
+  if(contactos[1]){document.getElementById('ec2nombre').value=contactos[1].nombre||'';document.getElementById('ec2tel').value=contactos[1].tel||'';}
+}
+
 const ATENAS={lat:9.9799,lng:-84.3799};
 let gmap,dmap,rmapInst,autocomplete,dirSvc,dirRend,dirRendR,dirRendD;
 let userLoc=ATENAS,destLoc=null;
