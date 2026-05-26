@@ -998,17 +998,16 @@ function aplicarLayoutPC() {
     `;
 
     lhero.style.cssText = `
-      flex: 1;
+      position: absolute;
+      top: 0; right: 0;
+      width: calc(100% - 420px);
       height: 100vh;
-      min-height: 100vh;
-      width: 0;
       background: url('https://rigoalva-avs.github.io/avs-app/bg-login.png') center center / cover no-repeat;
       background-color: #080f1e;
-      background-size: cover;
-      order: 2;
       pointer-events: none;
       overflow: hidden;
     `;
+    login.style.position = 'relative';
   } else {
     // Mobile: reset to default
     login.style.flexDirection = '';
