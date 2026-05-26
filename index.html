@@ -23,7 +23,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--font-b);color:var(--tx);}
-.screen{position:fixed;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity 0.35s cubic-bezier(.4,0,.2,1);overflow:hidden;height:100dvh;}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity 0.35s cubic-bezier(.4,0,.2,1);overflow:hidden;}
 .screen.active{opacity:1;pointer-events:all;}
 
 /* SPLASH */
@@ -39,7 +39,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 #login>*{position:relative;z-index:1;}
 
-.lhero{height:44dvh;width:100%;flex-shrink:0;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') center center/contain no-repeat;background-color:#080f1e;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0;position:relative;overflow:hidden;}
+.lhero{height:calc(var(--real-vh, 1vh) * 44);width:100%;flex-shrink:0;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') center center/contain no-repeat;background-color:#080f1e;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0;position:relative;overflow:hidden;}
 
 .avs-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;animation:fadeUp 0.9s ease both;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
@@ -568,7 +568,14 @@ window.addEventListener('DOMContentLoaded',()=>{
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&disponible&&user.role==='conductor')cargarSolicitudes();});
 async function pedirPermisoNotificaciones(){if(!('Notification'in window)){toast('Tu dispositivo no soporta notificaciones');return false;}if(Notification.permission==='granted')return true;if(Notification.permission==='denied'){toast('Notificaciones bloqueadas');return false;}const perm=await Notification.requestPermission();return perm==='granted';}
 function notificarConductor(titulo,cuerpo){if(Notification.permission!=='granted')return;const n=new Notification(titulo,{body:cuerpo,icon:'/avs-app/icon-192.png',vibrate:[200,100,200],tag:'avs-viaje'});n.onclick=()=>{window.focus();n.close();};setTimeout(()=>n.close(),10000);}
-window.addEventListener('load',()=>{if('serviceWorker'in navigator){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(reg=>reg.unregister());});}});
+window.addEventListener('load',()=>{
+  // Fix Chrome viewport height issue
+  const setVH = () => {
+    document.documentElement.style.setProperty('--real-vh', window.innerHeight * 0.01 + 'px');
+  };
+  setVH();
+  window.addEventListener('resize', setVH);
+if('serviceWorker'in navigator){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(reg=>reg.unregister());});}});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9LzLaIH_6QLfuHaBqUqMuabnTUBf8OzA&libraries=places,geometry&callback=initMap" async defer></script>
