@@ -1149,6 +1149,39 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
 </div>
 
+
+<!-- TRACKING PEDIDO -->
+<div class="screen" id="tracking-pedido">
+  <div style="background:var(--bg);height:100%;overflow-y:auto;padding:48px 20px 32px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <button onclick="go('servicios')" style="width:36px;height:36px;background:rgba(0,229,184,0.1);border:1px solid var(--bd2);border-radius:50%;color:var(--g);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>
+      <div style="font-family:var(--font-d);font-size:20px;font-weight:700">Estado del pedido</div>
+    </div>
+    <!-- Negocio info -->
+    <div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+      <div style="width:44px;height:44px;background:var(--grad-g);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px" id="track-negocio-ico">🏪</div>
+      <div>
+        <div style="font-family:var(--font-d);font-size:15px;font-weight:600" id="track-negocio-nombre">Negocio</div>
+        <div style="font-size:12px;color:var(--mt)" id="track-pedido-id">Pedido #</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--g)" id="track-total">₡0</div>
+        <div style="font-size:11px;color:var(--mt)" id="track-entrega-tipo">—</div>
+      </div>
+    </div>
+    <!-- Timeline de estados -->
+    <div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:20px;margin-bottom:20px">
+      <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px">Progreso del pedido</div>
+      <div id="track-timeline"></div>
+    </div>
+    <!-- Items del pedido -->
+    <div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:16px">
+      <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">Detalle</div>
+      <div id="track-items"></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toastEl"></div>
 
 <script>
@@ -1335,6 +1368,104 @@ async function confirmarSinpeNegocio(pedidoId, comisionAVS) {
   await db.from('negocios').update({saldo_avs:nuevoSaldo}).eq('id',negocioActual.id);
   document.getElementById('neg-saldo').textContent = '₡'+nuevoSaldo.toLocaleString('es-CR');
   toast(`✅ Pedido confirmado — Comisión AVS: ₡${comisionAVS.toLocaleString('es-CR')} descontada`);
+  cargarPedidosNegocio();
+}
+
+
+// ===== TRACKING PEDIDO EN TIEMPO REAL =====
+let trackingSub = null;
+let trackingPedidoId = null;
+
+const ESTADOS_PEDIDO = [
+  { id: 'pendiente',     ico: '📋', label: 'Pedido recibido',   sub: 'El negocio recibió tu pedido' },
+  { id: 'preparacion',   ico: '👨‍🍳', label: 'En preparación',   sub: 'Están preparando tu pedido' },
+  { id: 'listo',         ico: '✅', label: 'Listo',              sub: 'Tu pedido está listo' },
+  { id: 'en_camino',     ico: '🚗', label: 'En camino',          sub: 'El conductor está en camino' },
+  { id: 'entregado',     ico: '📦', label: 'Entregado',          sub: '¡Disfrutá tu pedido!' },
+];
+
+function getEstadoIdx(estado) {
+  return ESTADOS_PEDIDO.findIndex(e => e.id === estado);
+}
+
+function renderTimeline(estadoActual) {
+  const idx = getEstadoIdx(estadoActual);
+  const container = document.getElementById('track-timeline');
+  if (!container) return;
+  container.innerHTML = ESTADOS_PEDIDO.map((e, i) => {
+    const done = i < idx;
+    const active = i === idx;
+    const pending = i > idx;
+    return `
+      <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:${i < ESTADOS_PEDIDO.length-1 ? '0' : '0'}">
+        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+          <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;
+            background:${active?'var(--g)':done?'rgba(0,229,184,0.2)':'var(--cd)'};
+            border:2px solid ${active||done?'var(--g)':'var(--bd)'};
+            ${active?'box-shadow:0 0 12px rgba(0,229,184,0.4);':''}
+            transition:all 0.3s;">
+            ${done?'✓':e.ico}
+          </div>
+          ${i < ESTADOS_PEDIDO.length-1 ? `<div style="width:2px;height:32px;background:${done?'var(--g)':'var(--bd)'};margin:4px 0;transition:background 0.3s;opacity:${done?'0.5':'0.2'}"></div>` : ''}
+        </div>
+        <div style="padding-top:8px;opacity:${pending?'0.4':'1'};transition:opacity 0.3s">
+          <div style="font-size:14px;font-weight:${active?'600':'400'};color:${active?'var(--g)':'var(--tx)'}">${e.label}</div>
+          <div style="font-size:12px;color:var(--mt);margin-top:2px">${active?'<span style="color:var(--g)">← Ahora</span>':e.sub}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function abrirTracking(pedidoId) {
+  trackingPedidoId = pedidoId;
+  go('tracking-pedido');
+  if (!db) return;
+
+  // Load pedido data
+  const { data: p } = await db.from('pedidos').select('*').eq('id', pedidoId).single();
+  if (!p) { toast('Pedido no encontrado'); return; }
+
+  document.getElementById('track-negocio-nombre').textContent = p.negocio_nombre || 'Negocio';
+  document.getElementById('track-pedido-id').textContent = 'Pedido #' + pedidoId.slice(0,8).toUpperCase();
+  document.getElementById('track-total').textContent = '₡' + parseInt(p.total||0).toLocaleString('es-CR');
+  document.getElementById('track-entrega-tipo').textContent = p.tipo_entrega === 'delivery' ? '🚗 Delivery AVS' : '🏪 Recoger en local';
+
+  // Items
+  const items = JSON.parse(p.items || '[]');
+  document.getElementById('track-items').innerHTML = items.map(i =>
+    `<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:0.5px solid var(--bd)">
+      <span>${i.cantidad}x ${i.nombre}</span>
+      <span style="color:var(--g)">₡${(i.precio*i.cantidad).toLocaleString('es-CR')}</span>
+    </div>`
+  ).join('') + `<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:600;padding-top:10px">
+    <span>Total</span><span style="color:var(--g)">₡${parseInt(p.total||0).toLocaleString('es-CR')}</span>
+  </div>`;
+
+  renderTimeline(p.estado || 'pendiente');
+
+  // Subscribe to realtime updates
+  if (trackingSub) { trackingSub.unsubscribe(); trackingSub = null; }
+  trackingSub = db.channel('tracking-' + pedidoId)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'pedidos',
+      filter: `id=eq.${pedidoId}`
+    }, payload => {
+      const nuevoEstado = payload.new.estado;
+      renderTimeline(nuevoEstado);
+      const estadoInfo = ESTADOS_PEDIDO.find(e => e.id === nuevoEstado);
+      if (estadoInfo) {
+        toast(estadoInfo.ico + ' ' + estadoInfo.label);
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      }
+    })
+    .subscribe();
+}
+
+// Add estado buttons to negocio pedidos panel
+async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
+  if (!db) return;
+  await db.from('pedidos').update({ estado: nuevoEstado }).eq('id', pedidoId);
+  toast('Estado actualizado: ' + ESTADOS_PEDIDO.find(e=>e.id===nuevoEstado)?.label);
   cargarPedidosNegocio();
 }
 
