@@ -1752,6 +1752,7 @@ async function abrirCarrito(negocioId, negocioNombre) {
 }
 
 
+
 async function confirmarPedido() {
   if (carritoItems.length === 0) { toast('Agregá items al pedido'); return; }
   const subtotal = carritoItems.reduce((s, i) => s + (i.precio * i.cantidad), 0);
@@ -1759,58 +1760,32 @@ async function confirmarPedido() {
   const comision = Math.round(totalConDelivery * 0.08);
   const total = totalConDelivery + comision;
   const totalNegocio = subtotal - Math.round(subtotal * 0.08);
-  const entregaTexto = tipoEntrega === 'delivery'
-    ? '🚗 Delivery AVS (₡' + tarifaDelivery.toLocaleString('es-CR') + ')'
-    : '🏪 Recoger en local';
-
-  if (!confirm('Confirmar pedido por ₡' + total.toLocaleString('es-CR') + '?
-' + entregaTexto)) return;
-
+  const entregaTexto = tipoEntrega === 'delivery' ? 'Delivery AVS' : 'Recoger en local';
+  if (!confirm('Confirmar pedido por \u20a1' + total.toLocaleString('es-CR') + '? ' + entregaTexto)) return;
   const notas = document.getElementById('carrito-notas') ? document.getElementById('carrito-notas').value.trim() : '';
-
-  if (!db) { toast('Sin conexión a la base de datos'); return; }
-
+  if (!db) { toast('Sin conexion'); return; }
   const { data: pedidoData, error } = await db.from('pedidos').insert({
-    negocio_id: carritoNegocioId,
-    negocio_nombre: carritoNegocioNombre,
-    usuario_telefono: user.phone,
-    usuario_nombre: user.name,
-    items: JSON.stringify(carritoItems),
-    subtotal,
-    tarifa_delivery: tarifaDelivery,
-    total,
-    comision_avs: comision,
-    total_negocio: totalNegocio,
-    tipo_entrega: tipoEntrega,
-    estado: 'pendiente',
-    notas
+    negocio_id: carritoNegocioId, negocio_nombre: carritoNegocioNombre,
+    usuario_telefono: user.phone, usuario_nombre: user.name,
+    items: JSON.stringify(carritoItems), subtotal,
+    tarifa_delivery: tarifaDelivery, total, comision_avs: comision,
+    total_negocio: totalNegocio, tipo_entrega: tipoEntrega,
+    estado: 'pendiente', notas
   }).select().single();
-
-  if (error) { toast('Error al procesar pedido: ' + error.message); return; }
-
-  // Enviar prefactura por WhatsApp
+  if (error) { toast('Error: ' + error.message); return; }
   if (pedidoData) {
     const { data: negData } = await db.from('negocios').select('sinpe,nombre').eq('id', carritoNegocioId).single();
     const sinpeNeg = negData?.sinpe || '88001234';
-    const itemsTexto = carritoItems.map(i => '• ' + i.cantidad + 'x ' + i.nombre + ' — ₡' + (i.precio*i.cantidad).toLocaleString('es-CR')).join('\n');
-    const msg = encodeURIComponent(
-      '🧾 *PREFACTURA AVS*\n' +
-      '📍 ' + carritoNegocioNombre + '\n\n' +
-      itemsTexto + '\n\n' +
-      (tipoEntrega==='delivery' ? '🚗 Delivery AVS: ₡' + tarifaDelivery.toLocaleString('es-CR') + '\n' : '🏪 Recoger en local\n') +
-      '💰 *Total: ₡' + total.toLocaleString('es-CR') + '*\n\n' +
-      'Pagá por SINPE al:\n' +
-      '📱 *' + sinpeNeg + '* · ' + carritoNegocioNombre + '\n' +
-      'Concepto: *AVS-' + pedidoData.id.slice(0,8).toUpperCase() + '*\n\n' +
-      '_AVS — Atenas Viaje Seguro_'
-    );
+    const lineas = carritoItems.map(i => i.cantidad + 'x ' + i.nombre + ' - \u20a1' + (i.precio*i.cantidad).toLocaleString('es-CR')).join(', ');
+    const txt = '🧾 PREFACTURA AVS - ' + carritoNegocioNombre + ' | ' + lineas + ' | Total: \u20a1' + total.toLocaleString('es-CR') + ' | SINPE: ' + sinpeNeg + ' | Concepto: AVS-' + pedidoData.id.slice(0,8).toUpperCase();
     const telUser = ('506' + user.phone.replace(/[^0-9]/g,'')).replace(/^506506/,'506');
-    setTimeout(() => window.open('https://wa.me/' + telUser + '?text=' + msg, '_blank'), 500);
-    toast('✅ Prefactura enviada por WhatsApp');
+    setTimeout(() => window.open('https://wa.me/' + telUser + '?text=' + encodeURIComponent(txt), '_blank'), 500);
+    toast('Prefactura enviada por WhatsApp');
     carritoItems = []; tipoEntrega = 'recoger'; tarifaDelivery = 0;
     setTimeout(() => abrirTracking(pedidoData.id), 2000);
   }
 }
+
 
 function toggleFoto(id) {
   const wrap = document.getElementById('img-wrap-' + id);
