@@ -8,6 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>AVS — Atenas Viaje Seguro</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -607,6 +608,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 </div>
 
 <div class="screen" id="buscando">
+  <div style="position:absolute;top:48px;left:16px">
+    <button onclick="cancelar()" style="background:rgba(8,15,30,0.7);border:1px solid var(--bd);border-radius:20px;padding:8px 16px;color:var(--mt);font-size:13px;cursor:pointer;backdrop-filter:blur(8px)">← Cancelar</button>
+  </div>
   <div class="banim"><div class="bring1"></div><div class="bring2"></div><div class="bico">🚗</div></div>
   <div class="btit">Buscando conductor...</div>
   <div class="bsub">Encontrando el mejor conductor cerca de vos</div>
@@ -625,7 +629,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 </div>
 
 <div class="screen" id="casignado">
-  <div class="ahdr"><div class="alogo">AVS</div><div style="font-size:13px;color:var(--g)">✅ En camino</div></div>
+  <div class="ahdr">
+    <div class="alogo">AVS</div>
+    <div style="font-size:13px;color:var(--g)">✅ En camino</div>
+  </div>
   <button class="panic-btn" onclick="abrirPanico()" title="Botón de pánico">🆘</button>
   <div class="tmap"><div id="rmap"></div></div>
   <div class="csheet">
@@ -838,7 +845,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 <div class="screen" id="lista-negocios">
   <div style="background:var(--bg);height:100%;overflow-y:auto;padding:48px 20px 32px">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <button onclick="go('servicios')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
+      <button onclick="go('servicios')" style="width:36px;height:36px;background:rgba(0,229,184,0.1);border:1px solid var(--bd2);border-radius:50%;color:var(--g);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>
       <div style="font-family:var(--font-d);font-size:20px;font-weight:700" id="lista-titulo">Negocios</div>
     </div>
     <div id="lista-negocios-content"><div class="nolist">Cargando...</div></div>
@@ -947,7 +954,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 <div class="screen" id="carrito">
   <div style="padding:48px 20px 32px;display:flex;flex-direction:column;height:100%">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <button id="carrito-back" onclick="go('lista-negocios')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
+      <button id="carrito-back" onclick="go('lista-negocios')" style="width:36px;height:36px;background:rgba(0,229,184,0.1);border:1px solid var(--bd2);border-radius:50%;color:var(--g);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>
       <div style="font-family:var(--font-d);font-size:20px;font-weight:700" id="carrito-negocio-nombre">Negocio</div>
     </div>
     <div id="carrito-menu" style="flex:1;overflow-y:auto"></div>
@@ -993,6 +1000,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 <!-- PANTALLA CALIFICACIÓN -->
 <div class="screen" id="calificacion">
+  <div style="position:absolute;top:48px;right:16px">
+    <button onclick="saltarCalificacion()" style="background:transparent;border:none;color:var(--mt);font-size:13px;cursor:pointer">Omitir ✕</button>
+  </div>
   <div class="cal-avatar" id="cal-avatar">R</div>
   <div class="cal-tit" id="cal-tit">¿Cómo estuvo el viaje?</div>
   <div class="cal-sub" id="cal-sub">Calificá a tu conductor</div>
