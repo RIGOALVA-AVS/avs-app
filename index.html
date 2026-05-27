@@ -1365,10 +1365,10 @@ function conductorFinalizar(){
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   if(loadSession()&&user.name&&user.role){applyUser();setTimeout(async()=>{const savedViajeId=localStorage.getItem('avs_viaje_id');if(savedViajeId&&db&&user.role==='usuario'){viajeId=savedViajeId;const{data:v}=await db.from('viajes').select('estado').eq('id',viajeId).single();if(v&&v.estado==='solicitado'){go('buscando');toast('Retomando búsqueda...');pasajeroWaitInterval=setInterval(async()=>{try{const{data:vv}=await db.from('viajes').select('estado,conductor_nombre,conductor_placa').eq('id',viajeId).single();if(vv&&vv.estado==='aceptado'){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;if(vv.conductor_nombre)document.getElementById('cnom').textContent=vv.conductor_nombre;if(vv.conductor_placa)document.getElementById('cplate').textContent=vv.conductor_placa;trazarRutaPasajero();go('casignado');mostrarSOS(true);toast('¡Conductor en camino!');if(codigoViaje){document.getElementById('codigoPasajeroText').textContent=codigoViaje;document.getElementById('codigoDisplay').textContent=codigoViaje;}}else if(vv&&(vv.estado==='cancelado'||vv.estado==='rechazado')){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;viajeId=null;localStorage.removeItem('avs_viaje_id');go('pasajero');}}catch(e){}},2000);}else if(v&&v.estado==='aceptado'){trazarRutaPasajero();go('casignado');}else{viajeId=null;localStorage.removeItem('avs_viaje_id');go(user.role==='conductor'?'conductor':'pasajero');}}else{go(user.role==='conductor'?'conductor':'pasajero');}},1500);}else{
-    // Check territorio
+    // Check territorio - show selector briefly then go to login
     const terrGuardado = localStorage.getItem('avs_territorio');
-    if(!terrGuardado){mostrarSelectorTerritorio();}
-    setTimeout(()=>go('login'),terrGuardado?2000:100);
+    if(!terrGuardado){ localStorage.setItem('avs_territorio','atenas'); }
+    setTimeout(()=>go('login'),2000);
   }
 });
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&disponible&&user.role==='conductor')cargarSolicitudes();});
