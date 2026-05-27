@@ -413,9 +413,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   z-index:2;
 }
 @media(min-width:768px){
-  .login-serv-btn{padding:10px 6px;width:100%;}
-  .login-serv-btn span:first-child{font-size:26px;}
-  .login-serv-btn span:last-child{font-size:10px;}
+  .login-serv-btn{padding:10px 4px;width:84px;}
+  .login-serv-btn span:first-child{font-size:24px;}
+  .login-serv-btn span:last-child{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;}
 }
   background:rgba(8,15,30,0.65);
   border:1px solid rgba(0,229,184,0.30);
@@ -1585,11 +1585,6 @@ function aplicarLayoutPC() {
       order: 1;
     `;
 
-    // PC: image is 65% of remaining space, icons on far left vertically
-    const totalW = window.innerWidth;
-    const imgW = Math.round((totalW - 380) * 0.65);
-    const iconsW = totalW - 380 - imgW;
-
     lhero.style.cssText = `
       position: absolute;
       top: 0; right: 0;
@@ -1600,44 +1595,22 @@ function aplicarLayoutPC() {
       overflow: hidden;
       display: flex;
       flex-direction: row;
+      align-items: stretch;
     `;
-
-    // Icons column on left
+    // Icons column
     const iconsCol = lhero.querySelector('.serv-icons-grid');
-    if (iconsCol) {
-      iconsCol.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        width: ${iconsW}px;
-        min-width: 90px;
-        max-width: 110px;
-        height: 100vh;
-        padding: 40px 8px;
-        background: rgba(8,15,30,0.85);
-        backdrop-filter: blur(12px);
-        border-right: 1px solid rgba(0,229,184,0.15);
-        z-index: 2;
-        justify-content: center;
-        flex-shrink: 0;
-      `;
+    if(iconsCol){
+      iconsCol.style.cssText='display:flex;flex-direction:column;gap:8px;width:100px;flex-shrink:0;height:100vh;padding:30px 8px;background:rgba(8,15,30,0.88);backdrop-filter:blur(12px);border-right:1px solid rgba(0,229,184,0.15);z-index:2;justify-content:center;align-items:center;';
     }
-
-    // Image fills rest
-    const imgDiv = document.createElement('div');
-    imgDiv.style.cssText = `
-      flex: 1;
-      height: 100vh;
-      background: url('https://rigoalva-avs.github.io/avs-app/bg-login.png') center center / cover no-repeat;
-      background-color: #080f1e;
-    `;
-    lhero.appendChild(imgDiv);
-
-    // Move city tag inside image div
-    const cityTag = lhero.querySelector('.avs-city-tag');
-    if (cityTag) { imgDiv.appendChild(cityTag); cityTag.style.cssText='position:absolute;bottom:20px;left:50%;transform:translateX(-50%);'; imgDiv.style.position='relative'; }
-
-    login.style.position = 'relative';
+    // Image area
+    const existingImg = lhero.querySelector('.pc-img-area');
+    if(!existingImg){
+      const imgDiv = document.createElement('div');
+      imgDiv.className='pc-img-area';
+      imgDiv.style.cssText='flex:1;height:100vh;background:url(\'https://rigoalva-avs.github.io/avs-app/bg-login.png\') center center/65% auto no-repeat;background-color:#080f1e;';
+      lhero.appendChild(imgDiv);
+    }
+    login.style.position='relative';
   } else {
     // Mobile: reset to default
     login.style.flexDirection = '';
