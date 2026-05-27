@@ -76,57 +76,87 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   display:none;
 }
 @media (max-width:1023px){
-  #login{flex-direction:column;}
+  #login{flex-direction:column !important;height:auto !important;min-height:100vh;overflow-y:auto !important;}
   #login .lsheet{
-    width:100%;min-width:0;flex:1;
-    height:auto;min-height:56vh;
-    padding:20px 22px 36px;
-    border-right:none;
-    border-top:2px solid rgba(0,229,184,0.35);
-    overflow-y:auto;
-    order:2;
-    background:#0a1525;
-    display:block;
+    width:100% !important;min-width:0 !important;flex:none !important;
+    height:auto !important;min-height:auto !important;
+    padding:18px 22px 32px !important;
+    border-right:none !important;
+    border-top:2px solid rgba(0,229,184,0.35) !important;
+    overflow-y:visible !important;
+    order:2 !important;
+    background:#0a1525 !important;
+    display:block !important;
   }
-  /* Hero móvil: la imagen con iconos sí se muestra arriba */
   #login .login-pc-img{
-    display:flex;
-    flex:0 0 44vh;
-    height:44vh;
-    width:100%;
-    order:1;
-    background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') center top/cover no-repeat !important;
-    align-items:flex-end;
-    justify-content:center;
-    padding-bottom:10px;
-  }
-  /* En móvil los iconos van abajo del hero, en fila */
-  #login .login-pc-img > div{
-    position:relative !important;
+    display:flex !important;
+    flex:none !important;
+    height:44vh !important;
+    min-height:340px !important;
     width:100% !important;
+    order:1 !important;
+    background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') center top/cover no-repeat !important;
+    background-color:#080f1e !important;
+    position:relative !important;
+    align-items:flex-end !important;
+    justify-content:center !important;
+    padding:0 !important;
+  }
+  /* Botón Municipalidad superpuesto arriba-izquierda */
+  #login-muni-mobile{
+    display:flex !important;
+    position:absolute !important;
+    top:14px !important;
+    left:14px !important;
+    z-index:5;
+    align-items:center;gap:6px;
+    background:rgba(30,58,138,0.75);
+    border:1px solid rgba(96,165,250,0.5);
+    backdrop-filter:blur(8px);
+    color:#fff;
+    border-radius:20px;
+    padding:7px 12px;
+    font-size:12px;font-weight:600;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(0,0,0,0.3);
+  }
+  /* Iconos en grid 3x2 abajo del hero (sobre la imagen) */
+  #login .login-pc-img > div.login-icons-wrap{
+    position:relative !important;
+    width:92% !important;
+    max-width:380px !important;
     height:auto !important;
     top:auto !important;left:auto !important;
     flex-direction:row !important;
     flex-wrap:wrap !important;
     background:rgba(6,12,24,0.55) !important;
-    backdrop-filter:blur(6px) !important;
-    padding:8px 6px !important;
+    backdrop-filter:blur(8px) !important;
+    padding:8px !important;
     gap:6px !important;
     justify-content:center !important;
+    border-radius:14px !important;
+    margin-bottom:10px !important;
+    display:grid !important;
+    grid-template-columns:repeat(3,1fr) !important;
   }
-  #login .login-pc-img > div > div:first-child{display:none !important;}
+  #login .login-pc-img > div.login-icons-wrap > div:first-child{display:none !important;}
   #login .login-pc-img .login-serv-btn{
-    width:auto !important;
-    min-width:50px;
-    padding:4px 6px !important;
+    width:100% !important;
+    padding:6px 4px !important;
     flex-direction:column !important;
+    background:rgba(8,15,30,0.5) !important;
+    border:1px solid rgba(0,229,184,0.25) !important;
+    border-radius:10px !important;
   }
   #login .login-pc-img .login-serv-btn span:first-child{font-size:18px !important;}
-  #login .login-pc-img .login-serv-btn span:last-child{font-size:8px !important;}
+  #login .login-pc-img .login-serv-btn span:last-child{font-size:9px !important;color:#fff !important;}
+  /* En móvil, ocultar Municipalidad y Funcionario del sheet (ya están como botón flotante) */
+  .login-pc-only{display:none !important;}
 }
 @media (min-width:1024px){
   #login{flex-direction:row;height:100vh;overflow:hidden;}
   #login .login-pc-img{display:block;}
+  #login-muni-mobile{display:none !important;}
 }
 .ltit{font-family:var(--font-d);font-size:16px;font-weight:700;margin-bottom:0px;}
 .ldesc{font-size:11px;color:var(--mt);margin-bottom:6px;}
@@ -607,16 +637,21 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <button class="btnp" onclick="doLogin('usuario')" style="margin-top:6px">🚗 Entrar como Usuario</button>
     <button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button>
     <button class="btno" onclick="doLoginNegocio()" style="margin-top:6px">🏪 Acceso negocio</button>
-    <button class="btno" onclick="abrirPortalMunicipal()" style="margin-top:6px;border-color:rgba(96,165,250,0.4);color:#60a5fa">🏛️ Municipalidad</button>
+    <button class="btno login-pc-only" onclick="abrirPortalMunicipal()" style="margin-top:6px;border-color:rgba(96,165,250,0.4);color:#60a5fa">🏛️ Municipalidad</button>
     <div class="lsw">¿Conductor nuevo? <a onclick="go('registro'); setTimeout(loadRegProgress,100)">Registrate aquí</a></div>
     <div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
-    <div class="lsw" style="margin-top:3px">¿Funcionario municipal? <a onclick="doLoginFuncionario()" style="color:#60a5fa">Ingresar</a></div>
+    <div class="lsw login-pc-only" style="margin-top:3px">¿Funcionario municipal? <a onclick="doLoginFuncionario()" style="color:#60a5fa">Ingresar</a></div>
   </div>
 
   <!-- Columna 2: Imagen con iconos superpuestos (solo PC) -->
   <div class="login-pc-img" style="flex:1;height:100vh;position:relative;order:2;overflow:hidden;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') left top/auto 80% no-repeat;background-color:#080f1e;">
-    <!-- Iconos superpuestos directamente sobre la imagen -->
-    <div style="position:absolute;top:0;left:0;height:100%;width:100px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;padding:20px 6px;background:rgba(6,12,24,0.70);backdrop-filter:blur(8px);z-index:2;">
+    <!-- Botón Municipalidad flotante (solo móvil) -->
+    <div id="login-muni-mobile" onclick="abrirPortalMunicipal()">
+      <span style="font-size:14px">🏛️</span>
+      <span>Municipalidad</span>
+    </div>
+    <!-- Iconos superpuestos -->
+    <div class="login-icons-wrap" style="position:absolute;top:0;left:0;height:100%;width:100px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;padding:20px 6px;background:rgba(6,12,24,0.70);backdrop-filter:blur(8px);z-index:2;">
       <div style="font-size:9px;color:rgba(0,229,184,0.7);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;text-align:center;">Servicios</div>
       <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🍽️ Restaurantes')"><span>🍽️</span><span>Restaurantes</span></div>
       <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏥 Salud')"><span>🏥</span><span>Salud</span></div>
