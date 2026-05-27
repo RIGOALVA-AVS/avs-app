@@ -1754,7 +1754,7 @@ async function abrirCarrito(negocioId, negocioNombre) {
 
 
 async function confirmarPedido() {
-  if (carritoItems.length === 0) { toast('Agregá items al pedido'); return; }
+  if (carritoItems.length === 0) { toast('Agrega items al pedido'); return; }
   const subtotal = carritoItems.reduce((s, i) => s + (i.precio * i.cantidad), 0);
   const totalConDelivery = subtotal + tarifaDelivery;
   const comision = Math.round(totalConDelivery * 0.08);
@@ -1777,7 +1777,7 @@ async function confirmarPedido() {
     const { data: negData } = await db.from('negocios').select('sinpe,nombre').eq('id', carritoNegocioId).single();
     const sinpeNeg = negData?.sinpe || '88001234';
     const lineas = carritoItems.map(i => i.cantidad + 'x ' + i.nombre + ' - \u20a1' + (i.precio*i.cantidad).toLocaleString('es-CR')).join(', ');
-    const txt = '🧾 PREFACTURA AVS - ' + carritoNegocioNombre + ' | ' + lineas + ' | Total: \u20a1' + total.toLocaleString('es-CR') + ' | SINPE: ' + sinpeNeg + ' | Concepto: AVS-' + pedidoData.id.slice(0,8).toUpperCase();
+    const txt = 'PREFACTURA AVS - ' + carritoNegocioNombre + ' | ' + lineas + ' | Total: \u20a1' + total.toLocaleString('es-CR') + ' | SINPE: ' + sinpeNeg + ' | Concepto: AVS-' + pedidoData.id.slice(0,8).toUpperCase();
     const telUser = ('506' + user.phone.replace(/[^0-9]/g,'')).replace(/^506506/,'506');
     setTimeout(() => window.open('https://wa.me/' + telUser + '?text=' + encodeURIComponent(txt), '_blank'), 500);
     toast('Prefactura enviada por WhatsApp');
