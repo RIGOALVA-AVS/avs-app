@@ -982,11 +982,46 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Tu pedido</div>
       <div id="carrito-items-lista"></div>
       <div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:14px;color:var(--mt)">Total</span>
-        <span style="font-family:var(--font-d);font-size:20px;font-weight:800;color:var(--g)" id="carrito-total">₡0</span>
+        <span style="font-size:14px;color:var(--mt)">Subtotal</span>
+        <span style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--tx)" id="carrito-subtotal">₡0</span>
+      </div>
+      <!-- Opción entrega -->
+      <div style="margin-top:12px">
+        <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">¿Cómo recibís el pedido?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div id="opt-recoger" onclick="selEntrega('recoger')" style="background:rgba(0,229,184,0.08);border:2px solid var(--g);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.2s">
+            <div style="font-size:22px">🏪</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px">Recoger</div>
+            <div style="font-size:10px;color:var(--mt)">En el local</div>
+          </div>
+          <div id="opt-delivery" onclick="selEntrega('delivery')" style="background:var(--cd);border:2px solid var(--bd);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.2s">
+            <div style="font-size:22px">🚗</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px">Delivery AVS</div>
+            <div style="font-size:10px;color:var(--mt)">A tu ubicación</div>
+          </div>
+        </div>
+      </div>
+      <!-- Info delivery -->
+      <div id="delivery-info" style="display:none;background:rgba(0,229,184,0.05);border:1px solid var(--bd2);border-radius:12px;padding:12px;margin-top:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:13px;color:var(--mt)">Tarifa delivery</span>
+          <span style="font-family:var(--font-d);font-size:14px;font-weight:600;color:var(--g)" id="delivery-tarifa">Calculando...</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;color:var(--mt)">Tiempo estimado</span>
+          <span style="font-size:13px;font-weight:600" id="delivery-tiempo">~15-25 min</span>
+        </div>
+      </div>
+      <!-- Total final -->
+      <div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font-size:14px;color:var(--mt)">Total</span>
+          <div style="font-size:10px;color:var(--mt)" id="comision-label">Incluye 8% comisión AVS</div>
+        </div>
+        <span style="font-family:var(--font-d);font-size:22px;font-weight:800;color:var(--g)" id="carrito-total">₡0</span>
       </div>
       <textarea class="ifield" placeholder="Notas para el negocio (opcional)" id="carrito-notas" rows="2" style="margin-top:10px;resize:none"></textarea>
-      <button class="btnp" onclick="confirmarPedido()" style="margin-top:10px">✅ Confirmar pedido</button>
+      <button class="btnp" onclick="confirmarPedido()" style="margin-top:10px" id="btn-confirmar-pedido">✅ Confirmar y pagar</button>
     </div>
     <div id="carrito-vacio" style="text-align:center;padding:40px 20px;color:var(--mt)">
       <div style="font-size:48px;margin-bottom:12px">🛒</div>
@@ -1176,6 +1211,83 @@ async function cargarHistorialRecargasUsuario() {
         ${r.estado==='acreditado'?'✅ Acreditado':'⏳ Pendiente'}
       </div>
     </div>`).join('');
+}
+
+
+// ===== DELIVERY MARKETPLACE =====
+let tipoEntrega = 'recoger';
+let tarifaDelivery = 0;
+
+function selEntrega(tipo) {
+  tipoEntrega = tipo;
+  const optR = document.getElementById('opt-recoger');
+  const optD = document.getElementById('opt-delivery');
+  const infoD = document.getElementById('delivery-info');
+  
+  if (tipo === 'recoger') {
+    optR.style.background = 'rgba(0,229,184,0.08)';
+    optR.style.borderColor = 'var(--g)';
+    optD.style.background = 'var(--cd)';
+    optD.style.borderColor = 'var(--bd)';
+    infoD.style.display = 'none';
+    tarifaDelivery = 0;
+  } else {
+    optD.style.background = 'rgba(0,229,184,0.08)';
+    optD.style.borderColor = 'var(--g)';
+    optR.style.background = 'var(--cd)';
+    optR.style.borderColor = 'var(--bd)';
+    infoD.style.display = 'block';
+    calcularDelivery();
+  }
+  actualizarTotalCarrito();
+}
+
+function calcularDelivery() {
+  // Calculate distance from user to negocio
+  if (!userLoc || !db) {
+    tarifaDelivery = 1500;
+    document.getElementById('delivery-tarifa').textContent = '₡1.500';
+    document.getElementById('delivery-tiempo').textContent = '~15-25 min';
+    actualizarTotalCarrito();
+    return;
+  }
+  // Use AVS tariff: base ₡1200 + ₡462/km
+  if (carritoNegocioId && db) {
+    db.from('negocios').select('lat,lng').eq('id', carritoNegocioId).single().then(({data}) => {
+      if (data && data.lat && data.lng) {
+        const R = 6371;
+        const dLat = (data.lat - userLoc.lat) * Math.PI/180;
+        const dLng = (data.lng - userLoc.lng) * Math.PI/180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(userLoc.lat*Math.PI/180)*Math.cos(data.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+        const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        tarifaDelivery = Math.max(1200, Math.round(1200 + km * 462));
+        const mins = Math.round(km * 3 + 10);
+        document.getElementById('delivery-tarifa').textContent = '₡' + tarifaDelivery.toLocaleString('es-CR');
+        document.getElementById('delivery-tiempo').textContent = `~${mins}-${mins+10} min`;
+      } else {
+        tarifaDelivery = 1500;
+        document.getElementById('delivery-tarifa').textContent = '₡1.500';
+        document.getElementById('delivery-tiempo').textContent = '~15-25 min';
+      }
+      actualizarTotalCarrito();
+    });
+  } else {
+    tarifaDelivery = 1500;
+    document.getElementById('delivery-tarifa').textContent = '₡1.500';
+    actualizarTotalCarrito();
+  }
+}
+
+function actualizarTotalCarrito() {
+  const subtotal = carritoItems.reduce((s, i) => s + (i.precio * i.cantidad), 0);
+  const totalConDelivery = subtotal + tarifaDelivery;
+  const comision = Math.round(totalConDelivery * 0.08);
+  const total = totalConDelivery + comision;
+  
+  const subEl = document.getElementById('carrito-subtotal');
+  const totEl = document.getElementById('carrito-total');
+  if (subEl) subEl.textContent = '₡' + subtotal.toLocaleString('es-CR');
+  if (totEl) totEl.textContent = '₡' + total.toLocaleString('es-CR');
 }
 
 // ===== CALIFICACIONES =====
