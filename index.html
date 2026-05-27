@@ -388,6 +388,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .chat-input input:focus{border-color:var(--g);}
 .chat-send{width:40px;height:40px;background:var(--g);border:none;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 
+
+/* ===== CALIFICACIONES ===== */
+#calificacion{background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;gap:16px;}
+.cal-avatar{width:72px;height:72px;background:var(--grad-g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:26px;font-weight:700;color:#080f1e;}
+.cal-tit{font-family:var(--font-d);font-size:22px;font-weight:700;text-align:center;}
+.cal-sub{font-size:13px;color:var(--mt);text-align:center;}
+.stars-wrap{display:flex;gap:8px;justify-content:center;}
+.star-btn{font-size:40px;cursor:pointer;transition:transform 0.15s;filter:grayscale(1);opacity:0.4;}
+.star-btn.sel{filter:grayscale(0);opacity:1;transform:scale(1.15);}
+.cal-comentario{width:100%;background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:12px 16px;color:var(--tx);font-size:14px;font-family:var(--font-b);outline:none;resize:none;}
+.cal-comentario:focus{border-color:var(--g);}
+
 .login-serv-btn{
   background:rgba(0,229,184,0.05);
   border:1px solid rgba(0,229,184,0.15);
@@ -974,6 +986,26 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
 </div>
 
+
+<!-- PANTALLA CALIFICACIÓN -->
+<div class="screen" id="calificacion">
+  <div class="cal-avatar" id="cal-avatar">R</div>
+  <div class="cal-tit" id="cal-tit">¿Cómo estuvo el viaje?</div>
+  <div class="cal-sub" id="cal-sub">Calificá a tu conductor</div>
+  <div class="stars-wrap" id="stars-wrap">
+    <span class="star-btn" onclick="selStar(1)">⭐</span>
+    <span class="star-btn" onclick="selStar(2)">⭐</span>
+    <span class="star-btn" onclick="selStar(3)">⭐</span>
+    <span class="star-btn" onclick="selStar(4)">⭐</span>
+    <span class="star-btn" onclick="selStar(5)">⭐</span>
+  </div>
+  <!-- Tags rápidos -->
+  <div id="cal-tags" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:320px"></div>
+  <textarea class="cal-comentario" id="cal-comentario" placeholder="Comentario opcional..." rows="3"></textarea>
+  <button class="btnp" onclick="enviarCalificacion()" style="width:100%;max-width:320px">Enviar calificación</button>
+  <button onclick="saltarCalificacion()" style="background:transparent;border:none;color:var(--mt);font-size:13px;cursor:pointer;margin-top:4px">Omitir</button>
+</div>
+
 <div class="toast" id="toastEl"></div>
 
 <script>
@@ -1260,7 +1292,23 @@ function cancelar(){if(viajeId&&db)db.from('viajes').update({estado:'cancelado'}
 function confirmarFinalizar(){
   if(confirm('¿Confirmar que llegaste a tu destino y finalizar el viaje?')){finalizar();}
 }
-async function finalizar(){if(viajeId&&db)await db.from('viajes').update({estado:'completado',tarifa_final:selFare}).eq('id',viajeId);detenerTracking();viajeId=null;localStorage.removeItem('avs_viaje_id');mostrarSOS(false);toast('¡Viaje finalizado!');setTimeout(()=>go('pasajero'),2000);}
+async function finalizar(){
+  const vid = viajeId;
+  const condNom = document.getElementById('cnom').textContent;
+  const condPlate = document.getElementById('cplate').textContent;
+  if(vid&&db)await db.from('viajes').update({estado:'completado',tarifa_final:selFare}).eq('id',vid);
+  detenerTracking();
+  viajeId=null;localStorage.removeItem('avs_viaje_id');mostrarSOS(false);
+  toast('¡Viaje finalizado!');
+  setTimeout(()=>{
+    // Get conductor phone from viaje
+    if(db&&vid){
+      db.from('viajes').select('conductor_nombre,conductor_placa').eq('id',vid).single().then(({data})=>{
+        mostrarCalificacion(vid,'usuario',condNom,'');
+      });
+    } else { go('pasajero'); }
+  },1500);
+}
 async function toggleDisp(el){disponible=!disponible;document.getElementById('ddot').classList.toggle('on',disponible);document.getElementById('dlbl').textContent=disponible?'Disponible':'Desconectado';toast(disponible?'Estás disponible':'Desconectado');if(disponible){await pedirPermisoNotificaciones();cargarSolicitudes();let ultimosIds=[];pollInterval=setInterval(async()=>{if(!db)return;const{data}=await db.from('viajes').select('id').eq('estado','solicitado');const nuevosIds=data?data.map(v=>v.id):[];const nuevos=nuevosIds.filter(id=>!ultimosIds.includes(id));if(nuevos.length>0){notificarConductor('🚗 AVS — Nueva solicitud','Tenés '+nuevos.length+' solicitud(es) de viaje esperando');cargarSolicitudes();}ultimosIds=nuevosIds;},5000);}else{if(pollInterval){clearInterval(pollInterval);pollInterval=null;}document.getElementById('slist').innerHTML='<div class="nolist">🚗 Activá tu disponibilidad para recibir viajes</div>';document.getElementById('snew').textContent='0';}}
 async function cargarSolicitudes(){if(!db){document.getElementById('slist').innerHTML='<div class="nolist">Sin conexión a base de datos</div>';return;}const{data}=await db.from('viajes').select('*').eq('estado','solicitado').order('fecha_solicitud',{ascending:false}).limit(10);if(!data||data.length===0){document.getElementById('slist').innerHTML='<div class="nolist">Sin solicitudes activas</div>';document.getElementById('snew').textContent='0';return;}document.getElementById('snew').textContent=data.length;document.getElementById('slist').innerHTML=data.map(v=>{const tarifa=parseInt(v.tarifa_estimada||0),comAVS=parseInt(v.comision_avs||Math.round(tarifa*0.12)),totalCond=parseInt(v.total_conductor||tarifa-comAVS);return`<div class="scard" id="card-${v.id}"><div class="shd"><div class="spas">👤 Pasajero</div><div style="font-family:var(--font-d);font-size:13px;color:var(--mt)">🔑 ${v.codigo_confirmacion||'—'}</div></div><div class="sroute"><div class="spl"><span style="color:var(--g)">●</span>${v.origen_descripcion}</div><div style="width:2px;height:10px;background:var(--mt);margin-left:5px"></div><div class="spl"><span style="color:var(--rd)">●</span>${v.destino_descripcion}</div></div><div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Tarifa del viaje</span><span>₡${tarifa.toLocaleString('es-CR')}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Comisión AVS (12%)</span><span style="color:var(--rd)">−₡${comAVS.toLocaleString('es-CR')}</span></div><div style="border-top:1px solid var(--bd);padding-top:6px;margin-top:2px;display:flex;justify-content:space-between;font-weight:600"><span style="color:var(--g)">Conductor</span><span style="color:var(--g);font-family:var(--font-d);font-size:15px">₡${totalCond.toLocaleString('es-CR')}</span></div></div><div class="sact"><button class="bacp" onclick="aceptar('${v.id}',${v.origen_lat},${v.origen_lng},'${v.origen_descripcion}',${v.destino_lat},${v.destino_lng},'${v.destino_descripcion}')">Aceptar viaje</button><button class="brec" onclick="rechazar('${v.id}')">Rechazar</button></div></div>`;}).join('');}
 async function aceptar(id,oriLat,oriLng,oriDesc,dstLat,dstLng,dstDesc){if(db){const updateData={estado:'aceptado'};try{updateData.conductor_nombre=user.name;updateData.conductor_placa='BPJ207 · Toyota Corolla';}catch(e){}const{error}=await db.from('viajes').update(updateData).eq('id',id);if(error)await db.from('viajes').update({estado:'aceptado'}).eq('id',id);}viajeId=id;viajeData={oriLat,oriLng,oriDesc,dstLat,dstLng,dstDesc};saveSession();const card=document.getElementById('card-'+id);if(card)card.remove();document.getElementById('snew').textContent=document.querySelectorAll('#slist .scard').length;toast('Viaje aceptado — abriendo mapa');mostrarSOS(true);go('condmap');document.getElementById('dtit').textContent='En camino a: '+oriDesc;document.getElementById('dsub').textContent='Calculando ruta...';iniciarCompartirUbicacion();setTimeout(()=>abrirMapaConductor(oriLat,oriLng,dstLat,dstLng,oriDesc),600);}
@@ -1293,7 +1341,16 @@ function mostrarViajeActivoConductor(){
   const indicator = document.getElementById('viaje-activo-ind');
   if(indicator) indicator.style.display = viajeId ? 'flex' : 'none';
 }
-function conductorFinalizar(){if(viajeId&&db)db.from('viajes').update({estado:'completado'}).eq('id',viajeId);detenerTracking();viajeId=null;viajeData=null;localStorage.removeItem('avs_viaje_id');mostrarSOS(false);toast('¡Viaje completado!');setTimeout(()=>go('conductor'),1500);}
+function conductorFinalizar(){
+  const vid = viajeId;
+  if(vid&&db)db.from('viajes').update({estado:'completado'}).eq('id',vid);
+  detenerTracking();
+  viajeId=null;viajeData=null;localStorage.removeItem('avs_viaje_id');mostrarSOS(false);
+  toast('¡Viaje completado!');
+  setTimeout(()=>{
+    mostrarCalificacion(vid,'conductor',user.name.split(' ')[0],'');
+  },1500);
+}
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   if(loadSession()&&user.name&&user.role){applyUser();setTimeout(async()=>{const savedViajeId=localStorage.getItem('avs_viaje_id');if(savedViajeId&&db&&user.role==='usuario'){viajeId=savedViajeId;const{data:v}=await db.from('viajes').select('estado').eq('id',viajeId).single();if(v&&v.estado==='solicitado'){go('buscando');toast('Retomando búsqueda...');pasajeroWaitInterval=setInterval(async()=>{try{const{data:vv}=await db.from('viajes').select('estado,conductor_nombre,conductor_placa').eq('id',viajeId).single();if(vv&&vv.estado==='aceptado'){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;if(vv.conductor_nombre)document.getElementById('cnom').textContent=vv.conductor_nombre;if(vv.conductor_placa)document.getElementById('cplate').textContent=vv.conductor_placa;trazarRutaPasajero();go('casignado');mostrarSOS(true);toast('¡Conductor en camino!');if(codigoViaje){document.getElementById('codigoPasajeroText').textContent=codigoViaje;document.getElementById('codigoDisplay').textContent=codigoViaje;}}else if(vv&&(vv.estado==='cancelado'||vv.estado==='rechazado')){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;viajeId=null;localStorage.removeItem('avs_viaje_id');go('pasajero');}}catch(e){}},2000);}else if(v&&v.estado==='aceptado'){trazarRutaPasajero();go('casignado');}else{viajeId=null;localStorage.removeItem('avs_viaje_id');go(user.role==='conductor'?'conductor':'pasajero');}}else{go(user.role==='conductor'?'conductor':'pasajero');}},1500);}else{
