@@ -423,13 +423,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   .pc-icons-col{display:none !important;}
   .pc-img-col{
     display:flex !important;flex:1;height:100vh;order:2;
-    background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') left 15%/cover no-repeat;
+    background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') left top/cover no-repeat;
     background-color:#080f1e;position:relative;
-    align-items:flex-end;justify-content:center;
-    padding:0 0 20px 0;
+    align-items:flex-start;justify-content:flex-start;
+    padding:0;
   }
   .pc-img-col-icons{
-    display:flex;flex-direction:row;gap:8px;flex-wrap:nowrap;
+    display:flex;flex-direction:column;gap:8px;
+    height:100vh;width:100px;flex-shrink:0;
+    padding:32px 8px;
+    background:rgba(6,12,24,0.80);
+    backdrop-filter:blur(12px);
+    border-right:1px solid rgba(0,229,184,0.15);
+    justify-content:center;align-items:center;
     position:relative;z-index:2;
   }
   .pc-img-col-icons .login-serv-btn{
