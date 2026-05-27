@@ -36,7 +36,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 @keyframes spin{to{transform:rotate(360deg);}}
 
 /* LOGIN */
-#login{background:none;justify-content:flex-start;position:relative;overflow-y:auto;gap:0 !important;}
+#login{background:none;justify-content:flex-start;position:relative;overflow-y:auto;}
+@media(min-width:768px){
+  #login{flex-direction:row !important;height:100vh !important;overflow:hidden !important;gap:0 !important;}
+  #login .lhero{display:none !important;width:0 !important;height:0 !important;overflow:hidden !important;flex:none !important;padding:0 !important;margin:0 !important;min-height:0 !important;}
+  #login .lsheet{order:1 !important;width:340px !important;min-width:340px !important;flex:none !important;height:100vh !important;min-height:100vh !important;overflow-y:auto !important;padding:40px 28px !important;border-top:none !important;border-right:2px solid rgba(0,229,184,0.2) !important;border-radius:0 !important;background:#0a1525 !important;display:flex !important;flex-direction:column !important;justify-content:center !important;}
+  #login .pc-img-col{order:2 !important;display:flex !important;flex:1 !important;height:100vh !important;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') left top/cover no-repeat !important;background-color:#080f1e !important;align-items:flex-start !important;justify-content:flex-start !important;}
+  #login .pc-icons-col{display:none !important;}
+}
 
 #login>*{position:relative;z-index:1;}
 
