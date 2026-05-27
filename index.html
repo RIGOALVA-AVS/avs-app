@@ -412,6 +412,21 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   position:relative;
   z-index:2;
 }
+
+/* PC-only columns */
+.pc-icons-col{display:none;}
+.pc-img-col{display:none;}
+@media(min-width:768px){
+  #login{flex-direction:row !important;overflow:hidden !important;}
+  #login .lhero{display:none !important;}
+  #login .lsheet{width:360px !important;flex:none !important;height:100vh !important;overflow-y:auto !important;padding:48px 36px !important;border-top:none !important;border-right:2px solid rgba(0,229,184,0.25) !important;border-radius:0 !important;background:#0a1525 !important;display:flex !important;flex-direction:column !important;justify-content:center !important;order:1 !important;}
+  .pc-icons-col{display:flex !important;flex-direction:column !important;width:110px;flex-shrink:0;height:100vh;padding:32px 8px;gap:8px;background:rgba(6,12,24,0.92);backdrop-filter:blur(12px);border-right:1px solid rgba(0,229,184,0.12);justify-content:center;align-items:center;order:2;}
+  .pc-icons-col .login-serv-btn{width:90px;padding:9px 4px;}
+  .pc-icons-col .login-serv-btn span:first-child{font-size:22px;}
+  .pc-icons-col .login-serv-btn span:last-child{font-size:9px;}
+  .pc-img-col{display:block !important;flex:1;height:100vh;order:3;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') center center/65% auto no-repeat;background-color:#080f1e;}
+}
+
 @media(min-width:768px){
   .login-serv-btn{padding:10px 4px;width:84px;}
   .login-serv-btn span:first-child{font-size:24px;}
@@ -517,38 +532,23 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
 </div>
 
-<!-- ===== LOGIN CON NUEVO DISEÑO ===== -->
+<!-- ===== LOGIN ===== -->
 <div class="screen" id="login">
-  <!-- Hero con imagen + iconos de servicios encima -->
+
+  <!-- MÓVIL: imagen arriba, form abajo -->
   <div class="lhero">
-    <div class="avs-city-tag">
-      <div class="avs-city-dot"></div>
-      Atenas · Costa Rica
-    </div>
-    <!-- Servicios visibles sobre la imagen -->
+    <div class="avs-city-tag"><div class="avs-city-dot"></div>Atenas · Costa Rica</div>
     <div class="serv-icons-grid">
-      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🍽️ Restaurantes')">
-        <span>🍽️</span><span>Restaurantes</span>
-      </div>
-      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏥 Salud')">
-        <span>🏥</span><span>Salud</span>
-      </div>
-      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏨 Hospedaje')">
-        <span>🏨</span><span>Hospedaje</span>
-      </div>
-      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🛒 Mercado')">
-        <span>🛒</span><span>Mercado</span>
-      </div>
-      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏪 Negocios')">
-        <span>🏪</span><span>Negocios</span>
-      </div>
-      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🚗 Transporte')">
-        <span>🚗</span><span>Transporte</span>
-      </div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🍽️ Restaurantes')"><span>🍽️</span><span>Restaurantes</span></div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏥 Salud')"><span>🏥</span><span>Salud</span></div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏨 Hospedaje')"><span>🏨</span><span>Hospedaje</span></div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🛒 Mercado')"><span>🛒</span><span>Mercado</span></div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏪 Negocios')"><span>🏪</span><span>Negocios</span></div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🚗 Transporte')"><span>🚗</span><span>Transporte</span></div>
     </div>
   </div>
 
-  <!-- Sheet del formulario -->
+  <!-- Form -->
   <div class="lsheet" id="loginSheet">
     <div class="ltit">Bienvenido 👋</div>
     <div class="ldesc">Ingresá tus datos para continuar</div>
@@ -562,6 +562,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="lsw">¿Conductor nuevo? <a onclick="go('registro'); setTimeout(loadRegProgress,100)">Registrate aquí</a></div>
     <div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
   </div>
+
+  <!-- PC ONLY: iconos columna + imagen (ocultos en móvil via CSS) -->
+  <div class="pc-icons-col">
+    <div style="font-size:9px;color:rgba(0,229,184,0.6);letter-spacing:1.5px;text-transform:uppercase;text-align:center;margin-bottom:12px">Servicios</div>
+    <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🍽️ Restaurantes')"><span>🍽️</span><span>Restaurantes</span></div>
+    <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏥 Salud')"><span>🏥</span><span>Salud</span></div>
+    <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏨 Hospedaje')"><span>🏨</span><span>Hospedaje</span></div>
+    <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🛒 Mercado')"><span>🛒</span><span>Mercado</span></div>
+    <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏪 Negocios')"><span>🏪</span><span>Negocios</span></div>
+    <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🚗 Transporte')"><span>🚗</span><span>Transporte</span></div>
+  </div>
+  <div class="pc-img-col"></div>
+
 </div>
 
 <!-- PASAJERO -->
@@ -1556,7 +1569,7 @@ async function pedirPermisoNotificaciones(){if(!('Notification'in window)){toast
 function notificarConductor(titulo,cuerpo){if(Notification.permission!=='granted')return;const n=new Notification(titulo,{body:cuerpo,icon:'/avs-app/icon-192.png',vibrate:[200,100,200],tag:'avs-viaje'});n.onclick=()=>{window.focus();n.close();};setTimeout(()=>n.close(),10000);}
 
 // ===== PC LAYOUT =====
-function aplicarLayoutPC() {
+function aplicarLayoutPC_disabled() {
   const esPC = window.innerWidth >= 768;
   const login = document.getElementById('login');
   const lhero = login ? login.querySelector('.lhero') : null;
