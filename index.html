@@ -401,8 +401,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .cal-comentario:focus{border-color:var(--g);}
 
 .login-serv-btn{
-  background:rgba(0,229,184,0.05);
-  border:1px solid rgba(0,229,184,0.15);
+  background:rgba(8,15,30,0.65);
+  border:1px solid rgba(0,229,184,0.30);
   border-radius:10px;
   padding:8px 4px;
   text-align:center;
@@ -410,10 +410,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   display:flex;flex-direction:column;
   align-items:center;gap:3px;
   transition:all 0.2s;
+  backdrop-filter:blur(8px);
 }
-.login-serv-btn:active{border-color:var(--g);background:rgba(0,229,184,0.10);}
+.login-serv-btn:active{border-color:var(--g);background:rgba(0,229,184,0.15);}
 .login-serv-btn span:first-child{font-size:22px;}
-.login-serv-btn span:last-child{font-size:9px;color:var(--mt);letter-spacing:0.5px;}
+.login-serv-btn span:last-child{font-size:9px;color:rgba(255,255,255,0.8);letter-spacing:0.5px;}
 
 .dest-chip{
   background:var(--cd);border:1px solid var(--bd);border-radius:10px;
@@ -502,15 +503,36 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 <!-- ===== LOGIN CON NUEVO DISEÑO ===== -->
 <div class="screen" id="login">
-  <!-- Hero limpio — imagen de fondo ya trae el logo AVS -->
+  <!-- Hero con imagen + iconos de servicios encima -->
   <div class="lhero">
     <div class="avs-city-tag">
       <div class="avs-city-dot"></div>
       Atenas · Costa Rica
     </div>
+    <!-- Servicios visibles sobre la imagen -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;max-width:340px;margin-top:10px;position:relative;z-index:2">
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🍽️ Restaurantes')">
+        <span>🍽️</span><span>Restaurantes</span>
+      </div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏥 Salud')">
+        <span>🏥</span><span>Salud</span>
+      </div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏨 Hospedaje')">
+        <span>🏨</span><span>Hospedaje</span>
+      </div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🛒 Mercado')">
+        <span>🛒</span><span>Mercado</span>
+      </div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏪 Negocios')">
+        <span>🏪</span><span>Negocios</span>
+      </div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🚗 Transporte')">
+        <span>🚗</span><span>Transporte</span>
+      </div>
+    </div>
   </div>
 
-  <!-- Sheet del formulario — con OTP -->
+  <!-- Sheet del formulario -->
   <div class="lsheet" id="loginSheet">
     <div class="ltit">Bienvenido 👋</div>
     <div class="ldesc">Ingresá tus datos para continuar</div>
@@ -523,30 +545,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <button class="btno" onclick="doLoginNegocio()" style="margin-top:6px">🏪 Acceso negocio</button>
     <div class="lsw">¿Conductor nuevo? <a onclick="go('registro'); setTimeout(loadRegProgress,100)">Registrate aquí</a></div>
     <div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
-    <!-- Servicios preview -->
-    <div style="margin-top:14px;border-top:1px solid rgba(0,229,184,0.12);padding-top:12px">
-      <div style="font-size:10px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;text-align:center;margin-bottom:10px">Servicios disponibles</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-        <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🍽️ Restaurantes')">
-          <span>🍽️</span><span>Restaurantes</span>
-        </div>
-        <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏥 Salud')">
-          <span>🏥</span><span>Salud</span>
-        </div>
-        <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏨 Hospedaje')">
-          <span>🏨</span><span>Hospedaje</span>
-        </div>
-        <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🛒 Mercado')">
-          <span>🛒</span><span>Mercado</span>
-        </div>
-        <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏪 Negocios')">
-          <span>🏪</span><span>Negocios</span>
-        </div>
-        <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🚗 Transporte')">
-          <span>🚗</span><span>Transporte</span>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
