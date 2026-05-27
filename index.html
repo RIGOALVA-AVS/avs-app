@@ -36,7 +36,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 @keyframes spin{to{transform:rotate(360deg);}}
 
 /* LOGIN */
-#login{background:none;justify-content:flex-start;position:relative;overflow-y:auto;}
+#login{background:none;justify-content:flex-start;position:relative;overflow-y:auto;gap:0 !important;}
 
 #login>*{position:relative;z-index:1;}
 
@@ -391,7 +391,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .pc-img-col{display:none;}
 @media(min-width:768px){
   #login{flex-direction:row !important;overflow:hidden !important;}
-  #login .lhero{display:none !important;}
+  #login .lhero{display:none !important;width:0 !important;padding:0 !important;margin:0 !important;}
   #login .lsheet{width:360px !important;flex:none !important;height:100vh !important;overflow-y:auto !important;padding:48px 36px !important;border-top:none !important;border-right:none !important;border-radius:0 !important;background:#0a1525 !important;display:flex !important;flex-direction:column !important;justify-content:center !important;order:1 !important;}
   .pc-icons-col{display:none !important;}
   .pc-img-col{
