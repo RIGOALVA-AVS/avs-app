@@ -1295,7 +1295,7 @@ function calcularDelivery() {
   // Calculate distance from user to negocio
   if (!userLoc || !db) {
     tarifaDelivery = 1500;
-    document.getElementById('delivery-tarifa').textContent = '₡1.500';
+    document.getElementById('delivery-tarifa').textContent = '₡1.500 (moto hasta 2km)';
     document.getElementById('delivery-tiempo').textContent = '~15-25 min';
     actualizarTotalCarrito();
     return;
@@ -1309,7 +1309,10 @@ function calcularDelivery() {
         const dLng = (data.lng - userLoc.lng) * Math.PI/180;
         const a = Math.sin(dLat/2)**2 + Math.cos(userLoc.lat*Math.PI/180)*Math.cos(data.lat*Math.PI/180)*Math.sin(dLng/2)**2;
         const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        tarifaDelivery = Math.max(1200, Math.round(1200 + km * 462));
+        // Moto: hasta 2km=1500, hasta 3.5km=2000 / Vehículo: base 1200+462/km
+        if (km <= 2) { tarifaDelivery = 1500; }
+        else if (km <= 3.5) { tarifaDelivery = 2000; }
+        else { tarifaDelivery = Math.round(1200 + km * 462); }
         const mins = Math.round(km * 3 + 10);
         document.getElementById('delivery-tarifa').textContent = '₡' + tarifaDelivery.toLocaleString('es-CR');
         document.getElementById('delivery-tiempo').textContent = `~${mins}-${mins+10} min`;
