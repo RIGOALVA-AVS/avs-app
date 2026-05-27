@@ -1309,10 +1309,12 @@ function calcularDelivery() {
         const dLng = (data.lng - userLoc.lng) * Math.PI/180;
         const a = Math.sin(dLat/2)**2 + Math.cos(userLoc.lat*Math.PI/180)*Math.cos(data.lat*Math.PI/180)*Math.sin(dLng/2)**2;
         const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        // Moto: hasta 2km=1500, hasta 3.5km=2000 / Vehículo: base 1200+462/km
+        // Escala moto AVS: hasta 2km=1500, 2-3.5km=2000, 3.5-4km=2500, 4-5km=3000, +5km=3000+462/km extra
         if (km <= 2) { tarifaDelivery = 1500; }
         else if (km <= 3.5) { tarifaDelivery = 2000; }
-        else { tarifaDelivery = Math.round(1200 + km * 462); }
+        else if (km <= 4) { tarifaDelivery = 2500; }
+        else if (km <= 5) { tarifaDelivery = 3000; }
+        else { tarifaDelivery = Math.round(3000 + (km - 5) * 462); }
         const mins = Math.round(km * 3 + 10);
         document.getElementById('delivery-tarifa').textContent = '₡' + tarifaDelivery.toLocaleString('es-CR');
         document.getElementById('delivery-tiempo').textContent = `~${mins}-${mins+10} min`;
