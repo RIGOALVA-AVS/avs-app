@@ -352,6 +352,25 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .serv-desc{font-size:11px;color:var(--mt);}
 
 
+
+/* ===== MULTI-TERRITORIO ===== */
+.terr-selector{position:fixed;inset:0;z-index:800;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:16px;}
+.terr-logo{width:80px;height:80px;border-radius:24px;background:var(--grad-g);display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 0 32px rgba(0,229,184,0.3);}
+.terr-tit{font-family:var(--font-d);font-size:24px;font-weight:800;text-align:center;}
+.terr-sub{font-size:13px;color:var(--mt);text-align:center;line-height:1.5;}
+.terr-card{width:100%;background:var(--sf);border:1px solid var(--bd2);border-radius:16px;padding:16px 20px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all 0.2s;max-width:380px;}
+.terr-card:active,.terr-card.sel{border-color:var(--g);background:rgba(0,229,184,0.07);}
+.terr-card-ico{font-size:32px;flex-shrink:0;}
+.terr-card-info{flex:1;}
+.terr-card-name{font-family:var(--font-d);font-size:16px;font-weight:700;}
+.terr-card-desc{font-size:12px;color:var(--mt);margin-top:2px;}
+.terr-card-badge{font-size:10px;background:rgba(0,229,184,0.15);color:var(--g);border-radius:20px;padding:3px 10px;font-weight:600;}
+
+/* Panel negocio */
+#panel-negocio{background:var(--bg);overflow-y:auto;padding:48px 20px 32px;}
+.neg-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.neg-avatar{width:52px;height:52px;background:var(--grad-g);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:22px;}
+
 .login-serv-btn{
   background:rgba(0,229,184,0.05);
   border:1px solid rgba(0,229,184,0.15);
@@ -472,6 +491,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <input class="ifield" type="text" placeholder="Tu nombre completo" id="lname" enterkeyhint="done" onkeydown="if(event.key==='Enter'){this.blur();}">
     <button class="btnp" onclick="doLogin('usuario')" style="margin-top:6px">🚗 Entrar como Usuario</button>
     <button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button>
+    <button class="btno" onclick="doLoginNegocio()" style="margin-top:6px">🏪 Acceso negocio</button>
     <div class="lsw">¿Conductor nuevo? <a onclick="go('registro'); setTimeout(loadRegProgress,100)">Registrate aquí</a></div>
     <div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
     <!-- Servicios preview -->
@@ -819,6 +839,100 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
 </div>
 
+
+<!-- SELECTOR DE TERRITORIO -->
+<div id="territorio-selector" class="terr-selector" style="display:none">
+  <div class="terr-logo">🗺️</div>
+  <div class="terr-tit">AVS Marketplace</div>
+  <div class="terr-sub" id="terr-gps-msg">Detectando tu ubicación...</div>
+  <div id="terr-lista" style="width:100%;max-width:380px;display:flex;flex-direction:column;gap:10px;margin-top:8px"></div>
+  <div style="font-size:12px;color:var(--mt);margin-top:8px">¿No encontrás tu cantón? <a onclick="solicitarTerritorio()" style="color:var(--g);cursor:pointer">Solicitalo aquí</a></div>
+</div>
+
+<!-- PANEL NEGOCIO -->
+<div class="screen" id="panel-negocio">
+  <div class="neg-header">
+    <div class="neg-avatar" id="neg-avatar-ico">🏪</div>
+    <div>
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:700" id="neg-panel-nombre">Mi Negocio</div>
+      <div style="font-size:12px;color:var(--mt)" id="neg-panel-cat">Categoría</div>
+    </div>
+    <button onclick="logout()" style="margin-left:auto;background:transparent;border:none;color:var(--mt);font-size:12px;cursor:pointer">Salir</button>
+  </div>
+  <!-- Saldo -->
+  <div style="background:var(--grad-card);border:1px solid var(--bd2);border-radius:20px;padding:18px;margin-bottom:16px">
+    <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Saldo AVS disponible</div>
+    <div style="font-family:var(--font-d);font-size:28px;font-weight:800;background:var(--grad-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" id="neg-saldo">₡0</div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <div class="rchip" onclick="abrirSINPENegocio(10000)" style="flex:1">₡10.000</div>
+      <div class="rchip" onclick="abrirSINPENegocio(25000)" style="flex:1">₡25.000</div>
+      <div class="rchip" onclick="abrirSINPENegocio(50000)" style="flex:1">₡50.000</div>
+    </div>
+  </div>
+  <!-- Tabs -->
+  <div class="adtab" style="margin-bottom:16px">
+    <div class="adtbtn on" id="negtab-menu" onclick="switchNegTab('menu')">📋 Mi Menú</div>
+    <div class="adtbtn" id="negtab-pedidos" onclick="switchNegTab('pedidos')">📦 Pedidos</div>
+    <div class="adtbtn" id="negtab-stats" onclick="switchNegTab('stats')">📊 Stats</div>
+  </div>
+  <!-- Contenido tabs -->
+  <div id="neg-tab-menu">
+    <button class="btnp" onclick="mostrarFormItem()" style="margin-bottom:12px">+ Agregar item al menú</button>
+    <div id="neg-menu-lista"><div class="nolist">Sin items en el menú</div></div>
+    <!-- Form nuevo item -->
+    <div id="form-item" style="display:none;background:var(--sf);border:1px solid var(--bd2);border-radius:16px;padding:16px;margin-top:12px">
+      <div style="font-family:var(--font-d);font-size:15px;font-weight:600;margin-bottom:12px">Nuevo item</div>
+      <input class="ifield" type="text" placeholder="Nombre del producto/servicio" id="item-nombre" style="margin-bottom:8px">
+      <input class="ifield" type="text" placeholder="Descripción breve" id="item-desc" style="margin-bottom:8px">
+      <input class="ifield" type="number" placeholder="Precio en colones" id="item-precio" style="margin-bottom:8px">
+      <input class="ifield" type="text" placeholder="Categoría (ej: Platos, Bebidas, Servicios)" id="item-cat" style="margin-bottom:12px">
+      <div style="display:flex;gap:8px">
+        <button class="btnp" onclick="guardarItem()" style="margin-top:0;flex:2">Guardar</button>
+        <button class="btno" onclick="document.getElementById('form-item').style.display='none'" style="margin-top:0;flex:1">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  <div id="neg-tab-pedidos" style="display:none"><div class="nolist" id="neg-pedidos-lista">Cargando pedidos...</div></div>
+  <div id="neg-tab-stats" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px">Pedidos hoy</div>
+        <div style="font-family:var(--font-d);font-size:24px;font-weight:800;color:var(--g)" id="stat-pedidos">0</div>
+      </div>
+      <div style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px">Ventas hoy</div>
+        <div style="font-family:var(--font-d);font-size:24px;font-weight:800;color:var(--g)" id="stat-ventas">₡0</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CARRITO DE COMPRAS -->
+<div class="screen" id="carrito">
+  <div style="padding:48px 20px 32px;display:flex;flex-direction:column;height:100%">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button id="carrito-back" onclick="go('lista-negocios')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
+      <div style="font-family:var(--font-d);font-size:20px;font-weight:700" id="carrito-negocio-nombre">Negocio</div>
+    </div>
+    <div id="carrito-menu" style="flex:1;overflow-y:auto"></div>
+    <!-- Resumen pedido -->
+    <div id="carrito-resumen" style="display:none;background:var(--sf);border:1px solid var(--bd2);border-radius:16px;padding:16px;margin-top:12px">
+      <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Tu pedido</div>
+      <div id="carrito-items-lista"></div>
+      <div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:14px;color:var(--mt)">Total</span>
+        <span style="font-family:var(--font-d);font-size:20px;font-weight:800;color:var(--g)" id="carrito-total">₡0</span>
+      </div>
+      <textarea class="ifield" placeholder="Notas para el negocio (opcional)" id="carrito-notas" rows="2" style="margin-top:10px;resize:none"></textarea>
+      <button class="btnp" onclick="confirmarPedido()" style="margin-top:10px">✅ Confirmar pedido</button>
+    </div>
+    <div id="carrito-vacio" style="text-align:center;padding:40px 20px;color:var(--mt)">
+      <div style="font-size:48px;margin-bottom:12px">🛒</div>
+      <div>Seleccioná items del menú para agregarlos a tu pedido</div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toastEl"></div>
 
 <script>
@@ -1041,6 +1155,20 @@ function clearSession(){localStorage.removeItem('avs_user');localStorage.removeI
 function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');setTimeout(()=>{aplicarLayoutPC();if(id==='usuario')aplicarLayoutPasajeroPC();},50);if(id==='registro')setTimeout(()=>{loadRegProgress();},100);if(id==='admin')cargarAdmin();if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);}
 function toast(msg){const t=document.getElementById('toastEl');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function logout(){clearSession();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
+async function doLoginNegocio(){
+  const phone = document.getElementById('lphone').value.trim();
+  if(!phone){toast('Ingresá el teléfono del negocio');return;}
+  const ok = await loginNegocio(phone);
+  if(!ok){toast('Negocio no encontrado o no aprobado');return;}
+  const iconos = {restaurantes:'🍽️',salud:'🏥',hospedaje:'🏨',supermercado:'🛒',negocios:'🏪',otros:'✨'};
+  document.getElementById('neg-avatar-ico').textContent = iconos[negocioActual.categoria]||'🏪';
+  document.getElementById('neg-panel-nombre').textContent = negocioActual.nombre;
+  document.getElementById('neg-panel-cat').textContent = negocioActual.categoria;
+  go('panel-negocio');
+  cargarMenuNegocio();
+  cargarStatsNegocio();
+}
+
 function doLogin(role){
   const phone=document.getElementById('lphone').value.trim();
   const name=document.getElementById('lname').value.trim()||'Usuario';
@@ -1127,7 +1255,12 @@ function mostrarViajeActivoConductor(){
 function conductorFinalizar(){if(viajeId&&db)db.from('viajes').update({estado:'completado'}).eq('id',viajeId);detenerTracking();viajeId=null;viajeData=null;localStorage.removeItem('avs_viaje_id');mostrarSOS(false);toast('¡Viaje completado!');setTimeout(()=>go('conductor'),1500);}
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
-  if(loadSession()&&user.name&&user.role){applyUser();setTimeout(async()=>{const savedViajeId=localStorage.getItem('avs_viaje_id');if(savedViajeId&&db&&user.role==='usuario'){viajeId=savedViajeId;const{data:v}=await db.from('viajes').select('estado').eq('id',viajeId).single();if(v&&v.estado==='solicitado'){go('buscando');toast('Retomando búsqueda...');pasajeroWaitInterval=setInterval(async()=>{try{const{data:vv}=await db.from('viajes').select('estado,conductor_nombre,conductor_placa').eq('id',viajeId).single();if(vv&&vv.estado==='aceptado'){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;if(vv.conductor_nombre)document.getElementById('cnom').textContent=vv.conductor_nombre;if(vv.conductor_placa)document.getElementById('cplate').textContent=vv.conductor_placa;trazarRutaPasajero();go('casignado');mostrarSOS(true);toast('¡Conductor en camino!');if(codigoViaje){document.getElementById('codigoPasajeroText').textContent=codigoViaje;document.getElementById('codigoDisplay').textContent=codigoViaje;}}else if(vv&&(vv.estado==='cancelado'||vv.estado==='rechazado')){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;viajeId=null;localStorage.removeItem('avs_viaje_id');go('pasajero');}}catch(e){}},2000);}else if(v&&v.estado==='aceptado'){trazarRutaPasajero();go('casignado');}else{viajeId=null;localStorage.removeItem('avs_viaje_id');go(user.role==='conductor'?'conductor':'pasajero');}}else{go(user.role==='conductor'?'conductor':'pasajero');}},1500);}else{setTimeout(()=>go('login'),2000);}
+  if(loadSession()&&user.name&&user.role){applyUser();setTimeout(async()=>{const savedViajeId=localStorage.getItem('avs_viaje_id');if(savedViajeId&&db&&user.role==='usuario'){viajeId=savedViajeId;const{data:v}=await db.from('viajes').select('estado').eq('id',viajeId).single();if(v&&v.estado==='solicitado'){go('buscando');toast('Retomando búsqueda...');pasajeroWaitInterval=setInterval(async()=>{try{const{data:vv}=await db.from('viajes').select('estado,conductor_nombre,conductor_placa').eq('id',viajeId).single();if(vv&&vv.estado==='aceptado'){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;if(vv.conductor_nombre)document.getElementById('cnom').textContent=vv.conductor_nombre;if(vv.conductor_placa)document.getElementById('cplate').textContent=vv.conductor_placa;trazarRutaPasajero();go('casignado');mostrarSOS(true);toast('¡Conductor en camino!');if(codigoViaje){document.getElementById('codigoPasajeroText').textContent=codigoViaje;document.getElementById('codigoDisplay').textContent=codigoViaje;}}else if(vv&&(vv.estado==='cancelado'||vv.estado==='rechazado')){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;viajeId=null;localStorage.removeItem('avs_viaje_id');go('pasajero');}}catch(e){}},2000);}else if(v&&v.estado==='aceptado'){trazarRutaPasajero();go('casignado');}else{viajeId=null;localStorage.removeItem('avs_viaje_id');go(user.role==='conductor'?'conductor':'pasajero');}}else{go(user.role==='conductor'?'conductor':'pasajero');}},1500);}else{
+    // Check territorio
+    const terrGuardado = localStorage.getItem('avs_territorio');
+    if(!terrGuardado){mostrarSelectorTerritorio();}
+    setTimeout(()=>go('login'),terrGuardado?2000:100);
+  }
 });
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&disponible&&user.role==='conductor')cargarSolicitudes();});
 async function pedirPermisoNotificaciones(){if(!('Notification'in window)){toast('Tu dispositivo no soporta notificaciones');return false;}if(Notification.permission==='granted')return true;if(Notification.permission==='denied'){toast('Notificaciones bloqueadas');return false;}const perm=await Notification.requestPermission();return perm==='granted';}
