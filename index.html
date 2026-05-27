@@ -1696,6 +1696,93 @@ let disponible=false,viajeId=null,viajeData=null,pollInterval=null,pasajeroWaitI
 function saveSession(){localStorage.setItem('avs_user',JSON.stringify(user));if(viajeId)localStorage.setItem('avs_viaje_id',viajeId);}
 function loadSession(){try{const u=localStorage.getItem('avs_user');if(u){user=JSON.parse(u);return true;}}catch(e){}return false;}
 function clearSession(){localStorage.removeItem('avs_user');localStorage.removeItem('avs_viaje_id');}
+
+// ===== NEGOCIOS MARKETPLACE =====
+async function verNegocios(cat) {
+  const titulos = {restaurantes:'🍽️ Restaurantes',salud:'🏥 Salud',hospedaje:'🏨 Hospedaje',supermercado:'🛒 Supermercados',negocios:'🏪 Negocios',otros:'✨ Otros servicios'};
+  document.getElementById('lista-titulo').textContent = titulos[cat]||cat;
+  go('lista-negocios');
+  const content = document.getElementById('lista-negocios-content');
+  content.innerHTML = '<div class="nolist">Cargando...</div>';
+  if(!db){content.innerHTML='<div class="nolist">Sin conexión</div>';return;}
+  const{data}=await db.from('negocios').select('*').eq('categoria',cat).eq('estado','aprobado');
+  if(!data||data.length===0){
+    content.innerHTML=`<div style="text-align:center;padding:40px 20px">
+      <div style="font-size:48px;margin-bottom:12px">🔜</div>
+      <div style="font-family:var(--font-d);font-size:16px;font-weight:600;margin-bottom:8px">Próximamente</div>
+      <div style="font-size:13px;color:var(--mt);line-height:1.5">Estamos incorporando negocios de Atenas.</div>
+      <button class="btnp" onclick="go('registro-negocio')" style="margin-top:16px;max-width:280px">Registrá tu negocio</button>
+    </div>`;return;
+  }
+  content.innerHTML=data.map(n=>`
+    <div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;margin-bottom:14px;overflow:hidden">
+      <div style="padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div style="font-family:var(--font-d);font-size:16px;font-weight:600">${n.nombre}</div>
+            <div style="font-size:12px;color:var(--mt);margin-top:2px">📍 ${n.direccion||'Atenas'}</div>
+          </div>
+          <div style="background:rgba(0,229,184,0.1);border:1px solid var(--bd);border-radius:8px;padding:3px 10px;font-size:11px;color:var(--g)">✅ Abierto</div>
+        </div>
+        <div style="font-size:13px;color:var(--tx2);margin-bottom:12px;line-height:1.5">${n.descripcion||''}</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="abrirCarrito('${n.id}','${n.nombre}')" style="flex:2;background:var(--grad-btn);border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;color:#080f1e;cursor:pointer">🛒 Ver menú</button>
+          <button onclick="window.open('https://wa.me/506${n.telefono.replace(/[^0-9]/g,'')}?text='+encodeURIComponent('Hola ${n.nombre}, te contacto desde AVS 👋'),'_blank')" style="flex:1;background:transparent;border:1px solid rgba(37,211,102,0.4);border-radius:10px;padding:11px;font-size:14px;color:#25D366;cursor:pointer">💬</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function filtrarNegocios(estado){
+  negociosFiltro=estado;
+  document.querySelectorAll('[id^="negbtn-"]').forEach(b=>b.classList.remove('on'));
+  document.getElementById('negbtn-'+estado).classList.add('on');
+  cargarNegociosAdmin();
+}
+
+async function cargarNegociosAdmin(){
+  if(!db)return;
+  const{data}=await db.from('negocios').select('*').eq('estado',negociosFiltro).order('fecha',{ascending:false});
+  const lista=document.getElementById('negocioslist');
+  if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin negocios en este estado</div>';return;}
+  lista.innerHTML=data.map(n=>`
+    <div class="adcard" style="margin:8px 20px">
+      <div class="adname">${n.nombre}</div>
+      <div class="adinfo">📱 ${n.telefono} · 📍 ${n.direccion||'—'} · ${n.categoria}</div>
+      <div class="adinfo">${n.descripcion||''}</div>
+      <div class="adbadge ${n.estado}">${n.estado.toUpperCase()}</div>
+      ${negociosFiltro==='pendiente'?`<div class="adacts">
+        <button class="adaprob" onclick="accionNegocio('${n.id}','aprobado')">✅ Aprobar</button>
+        <button class="adrech" onclick="accionNegocio('${n.id}','rechazado')">❌ Rechazar</button>
+      </div>`:''}
+    </div>`).join('');
+}
+
+async function accionNegocio(id,estado){
+  if(!db)return;
+  await db.from('negocios').update({estado}).eq('id',id);
+  toast(estado==='aprobado'?'✅ Negocio aprobado':'❌ Negocio rechazado');
+  cargarNegociosAdmin();
+}
+
+let negociosFiltro='pendiente';
+
+async function enviarRegistroNegocio(){
+  const nombre=document.getElementById('neg-nombre').value.trim();
+  const tel=document.getElementById('neg-tel').value.trim();
+  const dir=document.getElementById('neg-dir').value.trim();
+  const email=document.getElementById('neg-email').value.trim();
+  const desc=document.getElementById('neg-desc').value.trim();
+  if(!nombre||!tel){toast('Ingresá nombre y teléfono');return;}
+  if(db){
+    const{error}=await db.from('negocios').insert({nombre,telefono:tel,direccion:dir,correo:email,descripcion:desc,categoria:negCategoria,estado:'pendiente',fecha:new Date().toISOString()});
+    if(error){toast('Error al registrar. Intentá de nuevo.');return;}
+  }
+  toast('✅ Solicitud enviada — te contactaremos pronto');
+  setTimeout(()=>go('servicios'),1500);
+}
+
+
 function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');setTimeout(()=>{if(id==='usuario')aplicarLayoutPasajeroPC();},50);if(id==='registro')setTimeout(()=>{loadRegProgress();},100);if(id==='admin')cargarAdmin();if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);}
 function toast(msg){const t=document.getElementById('toastEl');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function logout(){clearSession();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
