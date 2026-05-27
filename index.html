@@ -401,7 +401,27 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .cal-comentario{width:100%;background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:12px 16px;color:var(--tx);font-size:14px;font-family:var(--font-b);outline:none;resize:none;}
 .cal-comentario:focus{border-color:var(--g);}
 
-.login-serv-btn{
+/* Icons grid - 3 cols mobile, 6 cols PC */
+.serv-icons-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6px;
+  width:100%;
+  max-width:340px;
+  margin-top:10px;
+  position:relative;
+  z-index:2;
+}
+@media(min-width:768px){
+  .serv-icons-grid{
+    grid-template-columns:repeat(6,1fr);
+    max-width:780px;
+    gap:10px;
+  }
+  .login-serv-btn span:first-child{font-size:28px;}
+  .login-serv-btn span:last-child{font-size:11px;}
+  .login-serv-btn{padding:12px 8px;}
+}
   background:rgba(8,15,30,0.65);
   border:1px solid rgba(0,229,184,0.30);
   border-radius:10px;
@@ -511,7 +531,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       Atenas · Costa Rica
     </div>
     <!-- Servicios visibles sobre la imagen -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;max-width:340px;margin-top:10px;position:relative;z-index:2">
+    <div class="serv-icons-grid">
       <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🍽️ Restaurantes')">
         <span>🍽️</span><span>Restaurantes</span>
       </div>
