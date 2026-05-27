@@ -1814,7 +1814,7 @@ function renderNegocios(data, content) {
         <div style="font-size:13px;color:var(--tx2);margin-bottom:12px;line-height:1.5">${n.descripcion||''}</div>
         <div style="display:flex;gap:8px">
           <button onclick="abrirCarrito('${n.id}','${n.nombre}')" style="flex:2;background:var(--grad-btn);border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;color:#080f1e;cursor:pointer">🛒 Ver menú</button>
-          <button onclick="window.open('https://wa.me/506${n.telefono.replace(/[^0-9]/g,'')}','_blank')" style="flex:1;background:transparent;border:1px solid rgba(37,211,102,0.4);border-radius:10px;padding:11px;font-size:14px;color:#25D366;cursor:pointer">💬</button>
+          <button onclick="window.open('https://wa.me/506'+n.telefono.replace(/[^0-9]/g,''),'_blank')" style="flex:1;background:transparent;border:1px solid rgba(37,211,102,0.4);border-radius:10px;padding:11px;font-size:14px;color:#25D366;cursor:pointer">💬</button>
         </div>
       </div>
     </div>`).join('');
