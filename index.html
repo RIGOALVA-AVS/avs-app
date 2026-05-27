@@ -1009,6 +1009,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 <div class="toast" id="toastEl"></div>
 
 <script>
+// ===== CALIFICACIONES =====
+let calEstrellas=0,calViajeId=null,calRol='',calDestinatarioTel='';
+const CAL_TAGS_USUARIO=['Puntual ⏰','Amable 😊','Conducción segura 🛡️','Vehículo limpio 🚗','Buena ruta 🗺️'];
+const CAL_TAGS_CONDUCTOR=['Respetuoso 😊','Puntual ⏰','Dirección clara 📍','Buen trato 👍','Pagó correcto 💳'];
+let calTagsSel=[];
+function mostrarCalificacion(vId,rol,destNom,destTel){calViajeId=vId;calRol=rol;calDestinatarioTel=destTel;calEstrellas=0;calTagsSel=[];document.getElementById('cal-avatar').textContent=destNom.charAt(0).toUpperCase();document.getElementById('cal-tit').textContent=rol==='usuario'?'¿Cómo estuvo el viaje?':'¿Cómo fue el pasajero?';document.getElementById('cal-sub').textContent='Calificá a '+destNom;document.getElementById('cal-comentario').value='';document.querySelectorAll('.star-btn').forEach(s=>s.classList.remove('sel'));const tags=rol==='usuario'?CAL_TAGS_USUARIO:CAL_TAGS_CONDUCTOR;document.getElementById('cal-tags').innerHTML=tags.map(t=>`<div onclick="toggleTag(this,'${t}')" style="background:var(--cd);border:1px solid var(--bd);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;transition:all 0.2s">${t}</div>`).join('');go('calificacion');}
+function selStar(n){calEstrellas=n;document.querySelectorAll('.star-btn').forEach((s,i)=>s.classList.toggle('sel',i<n));}
+function toggleTag(el,tag){const idx=calTagsSel.indexOf(tag);if(idx>=0){calTagsSel.splice(idx,1);el.style.borderColor='var(--bd)';el.style.background='var(--cd)';el.style.color='var(--tx)';}else{calTagsSel.push(tag);el.style.borderColor='var(--g)';el.style.background='rgba(0,229,184,0.08)';el.style.color='var(--g)';}}
+async function enviarCalificacion(){if(calEstrellas===0){toast('Seleccioná al menos una estrella');return;}const comentario=document.getElementById('cal-comentario').value.trim();if(db){await db.from('calificaciones').insert({viaje_id:calViajeId,de_rol:calRol,de_telefono:user.phone,de_nombre:user.name,para_telefono:calDestinatarioTel,estrellas:calEstrellas,tags:JSON.stringify(calTagsSel),comentario,fecha:new Date().toISOString()});const{data:cals}=await db.from('calificaciones').select('estrellas').eq('para_telefono',calDestinatarioTel);if(cals&&cals.length>0){const prom=cals.reduce((s,c)=>s+c.estrellas,0)/cals.length;await db.from('usuarios').update({calificacion_promedio:Math.round(prom*10)/10,total_calificaciones:cals.length}).eq('telefono',calDestinatarioTel);}}toast('✅ ¡Gracias por tu calificación!');saltarCalificacion();}
+function saltarCalificacion(){if(calRol==='usuario')go('pasajero');else go('conductor');}
+
 const SB_URL='https://xnwpxmmepewtthwdttev.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhud3B4bW1lcGV3dHRod2R0dGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzQ0MDIsImV4cCI6MjA5NDQ1MDQwMn0.PSyZzHqppCR3HLQBtQb0jaHbXO8x4KBseDHAuQTVwy8';
 let db=null;
