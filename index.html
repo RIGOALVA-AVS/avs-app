@@ -1335,11 +1335,18 @@ function actualizarTotalCarrito() {
   const totalConDelivery = subtotal + tarifaDelivery;
   const comision = Math.round(totalConDelivery * 0.08);
   const total = totalConDelivery + comision;
-  
   const subEl = document.getElementById('carrito-subtotal');
   const totEl = document.getElementById('carrito-total');
+  const lblEl = document.getElementById('comision-label');
   if (subEl) subEl.textContent = '₡' + subtotal.toLocaleString('es-CR');
   if (totEl) totEl.textContent = '₡' + total.toLocaleString('es-CR');
+  if (lblEl) {
+    if (tipoEntrega === 'delivery') {
+      lblEl.textContent = 'Subtotal + delivery ₡' + tarifaDelivery.toLocaleString('es-CR') + ' + 8% AVS';
+    } else {
+      lblEl.textContent = 'Incluye 8% comision AVS';
+    }
+  }
 }
 
 
