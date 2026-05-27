@@ -351,6 +351,22 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .serv-name{font-family:var(--font-d);font-size:14px;font-weight:700;margin-bottom:3px;}
 .serv-desc{font-size:11px;color:var(--mt);}
 
+
+.login-serv-btn{
+  background:rgba(0,229,184,0.05);
+  border:1px solid rgba(0,229,184,0.15);
+  border-radius:10px;
+  padding:8px 4px;
+  text-align:center;
+  cursor:pointer;
+  display:flex;flex-direction:column;
+  align-items:center;gap:3px;
+  transition:all 0.2s;
+}
+.login-serv-btn:active{border-color:var(--g);background:rgba(0,229,184,0.10);}
+.login-serv-btn span:first-child{font-size:22px;}
+.login-serv-btn span:last-child{font-size:9px;color:var(--mt);letter-spacing:0.5px;}
+
 .dest-chip{
   background:var(--cd);border:1px solid var(--bd);border-radius:10px;
   padding:8px 10px;font-size:12px;cursor:pointer;text-align:center;
@@ -458,6 +474,30 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button>
     <div class="lsw">¿Conductor nuevo? <a onclick="go('registro'); setTimeout(loadRegProgress,100)">Registrate aquí</a></div>
     <div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
+    <!-- Servicios preview -->
+    <div style="margin-top:14px;border-top:1px solid rgba(0,229,184,0.12);padding-top:12px">
+      <div style="font-size:10px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;text-align:center;margin-bottom:10px">Servicios disponibles</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+        <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🍽️ Restaurantes')">
+          <span>🍽️</span><span>Restaurantes</span>
+        </div>
+        <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏥 Salud')">
+          <span>🏥</span><span>Salud</span>
+        </div>
+        <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏨 Hospedaje')">
+          <span>🏨</span><span>Hospedaje</span>
+        </div>
+        <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🛒 Mercado')">
+          <span>🛒</span><span>Mercado</span>
+        </div>
+        <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏪 Negocios')">
+          <span>🏪</span><span>Negocios</span>
+        </div>
+        <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🚗 Transporte')">
+          <span>🚗</span><span>Transporte</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1012,6 +1052,22 @@ function doLogin(role){
   go('pasajero');
 }
 function showLoginMsg(ico,titulo,desc,btnTxt,btnAction){document.querySelector('#login .lsheet').innerHTML=`<div style="text-align:center;padding:10px 0 20px"><div style="font-size:52px;margin-bottom:12px">${ico}</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">${titulo}</div><div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:20px">${desc}</div><button class="btnp" onclick="(${btnAction.toString()})()">${btnTxt}</button><button class="btno" onclick="resetLoginSheet()" style="margin-top:8px">← Volver al inicio</button></div>`;}
+
+function mostrarRegistroRequerido(servicio) {
+  const sheet = document.querySelector('#login .lsheet');
+  const orig = sheet.innerHTML;
+  sheet.innerHTML = `
+    <div style="text-align:center;padding:16px 0">
+      <div style="font-size:48px;margin-bottom:10px">${servicio.split(' ')[0]}</div>
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:6px">${servicio}</div>
+      <div style="font-size:13px;color:var(--mt);line-height:1.5;margin-bottom:16px">
+        Para acceder a este servicio necesitás registrarte en AVS. Es gratis y solo toma un minuto.
+      </div>
+      <button class="btnp" onclick="resetLoginSheet()" style="margin-top:0">👤 Registrarme ahora</button>
+      <button class="btno" onclick="resetLoginSheet()">← Volver</button>
+    </div>`;
+}
+
 function resetLoginSheet(){document.querySelector('#login .lsheet').innerHTML=`<div class="ltit">Bienvenido 👋</div><div class="ldesc">Ingresá con tu número de teléfono</div><div class="ilabel">Teléfono</div><input class="ifield" type="tel" placeholder="8888-8888" id="lphone" enterkeyhint="next" onkeydown="if(event.key==='Enter'){document.getElementById('lname').focus();}"><div class="ilabel" style="margin-top:4px">Nombre</div><input class="ifield" type="text" placeholder="Tu nombre completo" id="lname" enterkeyhint="done" onkeydown="if(event.key==='Enter'){this.blur();}"><button class="btnp" onclick="doLogin('usuario')" style="margin-top:6px">🚗 Entrar como Usuario</button><button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button><div class="lsw">¿Conductor nuevo? <a onclick="go('registro');setTimeout(loadRegProgress,100)">Registrate aquí</a></div><div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>`;}
 function applyUser(){const ini=user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'U';['uinit','pinit','cinit'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ini;});document.getElementById('pnom').textContent=user.name;document.getElementById('prol').textContent=(user.role==='conductor'?'Conductor':'Usuario')+' · Atenas';document.getElementById('chnom').textContent=user.name.split(' ')[0];document.getElementById('cnom').textContent=user.name;}
 function selFareChip(el,fare,comAVS,totalCond){document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');selFare=fare;selCom=comAVS||Math.round(fare*0.12);selComConductor=totalCond||fare-selCom;}
