@@ -947,7 +947,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <input class="ifield" type="text" placeholder="Nombre del producto/servicio" id="item-nombre" style="margin-bottom:8px">
       <input class="ifield" type="text" placeholder="Descripción breve" id="item-desc" style="margin-bottom:8px">
       <input class="ifield" type="number" placeholder="Precio en colones" id="item-precio" style="margin-bottom:8px">
-      <input class="ifield" type="text" placeholder="Categoría (ej: Platos, Bebidas, Servicios)" id="item-cat" style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--mt);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Categoría</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px" id="cat-chips">
+        <div class="vchip" onclick="selItemCat(this,'Platos principales')">🍽️ Platos</div>
+        <div class="vchip" onclick="selItemCat(this,'Bebidas')">🥤 Bebidas</div>
+        <div class="vchip" onclick="selItemCat(this,'Postres')">🍰 Postres</div>
+        <div class="vchip" onclick="selItemCat(this,'Extras')">➕ Extras</div>
+        <div class="vchip" onclick="selItemCat(this,'Entradas')">🥗 Entradas</div>
+        <div class="vchip" onclick="selItemCat(this,'Salsas')">🥫 Salsas</div>
+      </div>
+      <input class="ifield" type="text" placeholder="O escribí categoría personalizada" id="item-cat" style="margin-bottom:8px">
+      <div style="font-size:11px;color:var(--mt);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Foto del plato (URL)</div>
+      <input class="ifield" type="url" placeholder="https://... o dejá vacío" id="item-foto" style="margin-bottom:8px">
+      <div style="font-size:10px;color:var(--mt);margin-bottom:12px">Tip: subí la foto a Google Drive o WhatsApp y copiá el enlace</div>
       <div style="display:flex;gap:8px">
         <button class="btnp" onclick="guardarItem()" style="margin-top:0;flex:2">Guardar</button>
         <button class="btno" onclick="document.getElementById('form-item').style.display='none'" style="margin-top:0;flex:1">Cancelar</button>
@@ -1288,6 +1300,42 @@ function actualizarTotalCarrito() {
   const totEl = document.getElementById('carrito-total');
   if (subEl) subEl.textContent = '₡' + subtotal.toLocaleString('es-CR');
   if (totEl) totEl.textContent = '₡' + total.toLocaleString('es-CR');
+}
+
+
+// ===== PREFACTURA Y CONFIRMACIÓN SINPE =====
+async function enviarPrefactura(pedidoId, negocioNombre, negocioSinpe, items, total, tipoEntrega, userPhone) {
+  const itemsTexto = JSON.parse(items).map(i => `• ${i.cantidad}x ${i.nombre} — ₡${(i.precio*i.cantidad).toLocaleString('es-CR')}`).join('\n');
+  const entregaTxt = tipoEntrega === 'delivery' ? '🚗 Delivery AVS' : '🏪 Recoger en local';
+  const msg = encodeURIComponent(
+    `🧾 *PREFACTURA AVS*\n` +
+    `📍 ${negocioNombre}\n\n` +
+    `${itemsTexto}\n\n` +
+    `${entregaTxt}\n` +
+    `💰 *Total: ₡${total.toLocaleString('es-CR')}*\n\n` +
+    `Para confirmar tu pedido realizá el pago SINPE al:\n` +
+    `📱 *${negocioSinpe}* — ${negocioNombre}\n` +
+    `Concepto: *AVS-${pedidoId.slice(0,8)}*\n\n` +
+    `_AVS — Atenas Viaje Seguro_`
+  );
+  const telUser = ('506'+userPhone.replace(/[^0-9]/g,'')).replace(/^506506/,'506');
+  window.open(`https://wa.me/${telUser}?text=${msg}`, '_blank');
+  if (db) await db.from('pedidos').update({prefactura_enviada:true}).eq('id',pedidoId);
+}
+
+async function confirmarSinpeNegocio(pedidoId, comisionAVS) {
+  if (!db || !negocioActual) return;
+  if (!confirm('¿Confirmás que recibiste el pago SINPE del cliente?')) return;
+  // Mark as confirmed
+  await db.from('pedidos').update({sinpe_confirmado:true, estado:'confirmado'}).eq('id',pedidoId);
+  // Deduct commission from negocio saldo
+  const {data:neg} = await db.from('negocios').select('saldo_avs').eq('id',negocioActual.id).single();
+  const saldoActual = parseInt(neg?.saldo_avs||0);
+  const nuevoSaldo = saldoActual - comisionAVS;
+  await db.from('negocios').update({saldo_avs:nuevoSaldo}).eq('id',negocioActual.id);
+  document.getElementById('neg-saldo').textContent = '₡'+nuevoSaldo.toLocaleString('es-CR');
+  toast(`✅ Pedido confirmado — Comisión AVS: ₡${comisionAVS.toLocaleString('es-CR')} descontada`);
+  cargarPedidosNegocio();
 }
 
 // ===== CALIFICACIONES =====
