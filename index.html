@@ -550,7 +550,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 <!-- PASAJERO -->
 <div class="screen" id="pasajero">
-  <div class="ahdr"><div class="alogo">AVS</div><div class="aavt" id="uinit" onclick="go('perfil')">RA</div></div>
+  <div class="ahdr">
+      <div class="alogo">AVS</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div onclick="abrirSaldoUsuario()" style="background:rgba(0,229,184,0.1);border:1px solid var(--bd2);border-radius:20px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--g);font-family:var(--font-d);font-weight:600" id="usuario-saldo-hdr">₡0</div>
+        <div class="aavt" id="uinit" onclick="go('perfil')">RA</div>
+      </div>
+    </div>
   <div class="mapc"><div id="gmap"></div><div class="mbadge" id="mbadge">📍 Atenas, Alajuela</div></div>
   <div class="bpanel">
     <div class="bhandle"></div>
@@ -595,7 +601,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <div class="bnav">
     <div class="nitem"><span class="nico on">🏠</span><span class="nlbl on">Inicio</span></div>
     <div class="nitem" onclick="abrirHistorial('usuario')"><span class="nico">🗺️</span><span class="nlbl">Mis Viajes</span></div>
-    <div class="nitem" onclick="toast('Próximamente')"><span class="nico">💳</span><span class="nlbl">Billetera</span></div>
+    <div class="nitem" onclick="abrirSaldoUsuario()"><span class="nico">💳</span><span class="nlbl">Saldo</span></div>
     <div class="nitem" onclick="go('perfil')"><span class="nico">👤</span><span class="nlbl">Perfil</span></div>
   </div>
 </div>
@@ -1004,9 +1010,145 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <button onclick="saltarCalificacion()" style="background:transparent;border:none;color:var(--mt);font-size:13px;cursor:pointer;margin-top:4px">Omitir</button>
 </div>
 
+
+<!-- RECARGA SALDO USUARIO -->
+<div class="screen" id="saldo-usuario">
+  <div style="padding:48px 24px 32px;display:flex;flex-direction:column;gap:14px;height:100%;overflow-y:auto">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button onclick="go('pasajero')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
+      <div style="font-family:var(--font-d);font-size:20px;font-weight:700">Mi Saldo AVS</div>
+    </div>
+    <!-- Saldo actual -->
+    <div style="background:var(--grad-card);border:1px solid var(--bd2);border-radius:20px;padding:20px;text-align:center">
+      <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">Saldo disponible</div>
+      <div style="font-family:var(--font-d);font-size:40px;font-weight:800;background:var(--grad-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" id="usuario-saldo-display">₡0</div>
+      <div style="font-size:12px;color:var(--mt);margin-top:6px">Usá tu saldo para transporte y servicios AVS</div>
+    </div>
+    <!-- Chips de recarga -->
+    <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1.5px">Seleccioná monto a recargar</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div class="rchip" onclick="selMontoUsuario(2000)" id="monto-2000">₡2.000</div>
+      <div class="rchip" onclick="selMontoUsuario(5000)" id="monto-5000">₡5.000</div>
+      <div class="rchip" onclick="selMontoUsuario(10000)" id="monto-10000">₡10.000</div>
+      <div class="rchip" onclick="selMontoUsuario(15000)" id="monto-15000">₡15.000</div>
+      <div class="rchip" onclick="selMontoUsuario(20000)" id="monto-20000">₡20.000</div>
+      <div class="rchip" onclick="selMontoUsuario(50000)" id="monto-50000">₡50.000</div>
+    </div>
+    <!-- Instrucciones SINPE -->
+    <div id="sinpe-usuario-instrucciones" style="display:none;background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:18px">
+      <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Instrucciones de pago</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:26px;height:26px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--bg);flex-shrink:0">1</div>
+        <div style="font-size:13px">Abrí tu app bancaria o SINPE Móvil</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:26px;height:26px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--bg);flex-shrink:0">2</div>
+        <div style="font-size:13px">Enviá <strong id="sinpe-u-monto2" style="color:var(--g)">₡0</strong> al número:</div>
+      </div>
+      <div style="background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:11px;color:var(--mt);margin-bottom:2px">SINPE AVS</div>
+          <div style="font-family:var(--font-d);font-size:22px;font-weight:700;letter-spacing:2px">8891-5166</div>
+          <div style="font-size:11px;color:var(--mt);margin-top:2px">Rigoberto Alvarado · AVS</div>
+        </div>
+        <button onclick="navigator.clipboard.writeText('88915166').then(()=>toast('Número copiado'))" style="background:var(--g);border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:600;color:var(--bg);cursor:pointer">Copiar</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:26px;height:26px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--bg);flex-shrink:0">3</div>
+        <div style="font-size:13px">Concepto: <strong style="color:var(--g)" id="sinpe-u-concepto">AVS-RECARGA</strong></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:26px;height:26px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--bg);flex-shrink:0">4</div>
+        <div style="font-size:13px">Confirmá el pago y tocá el botón de abajo</div>
+      </div>
+    </div>
+    <div style="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);border-radius:12px;padding:12px;font-size:12px;color:var(--am);line-height:1.5">
+      ⚠️ Tu saldo será acreditado en 1-2 horas hábiles. Para consultas escribí al WhatsApp AVS.
+    </div>
+    <button class="btnp" id="btn-confirmar-recarga-usuario" onclick="confirmarRecargaUsuario()" style="display:none">✅ Ya realicé el pago</button>
+    <button class="btno" onclick="go('pasajero')">Cancelar</button>
+    <!-- Historial de recargas -->
+    <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1.5px;margin-top:8px">Últimas recargas</div>
+    <div id="historial-recargas-usuario"><div class="nolist">Sin recargas registradas</div></div>
+  </div>
+</div>
+
 <div class="toast" id="toastEl"></div>
 
 <script>
+
+// ===== SALDO USUARIO =====
+let montoUsuarioSel = 0;
+
+async function abrirSaldoUsuario() {
+  go('saldo-usuario');
+  // Load current saldo
+  if (db && user.phone) {
+    const { data } = await db.from('usuarios').select('saldo_avs').eq('telefono', user.phone).single();
+    const saldo = parseInt(data?.saldo_avs || 0);
+    document.getElementById('usuario-saldo-display').textContent = '₡' + saldo.toLocaleString('es-CR');
+  }
+  cargarHistorialRecargasUsuario();
+}
+
+function selMontoUsuario(monto) {
+  montoUsuarioSel = monto;
+  // Reset all chips
+  [2000,5000,10000,15000,20000,50000].forEach(m => {
+    const el = document.getElementById('monto-' + m);
+    if (el) { el.style.background='rgba(0,229,184,0.06)'; el.style.borderColor='var(--bd2)'; el.style.color='var(--g)'; }
+  });
+  // Highlight selected
+  const sel = document.getElementById('monto-' + monto);
+  if (sel) { sel.style.background='rgba(0,229,184,0.18)'; sel.style.borderColor='var(--g)'; sel.style.color='var(--g)'; }
+
+  const fmt = '₡' + monto.toLocaleString('es-CR');
+  const concepto = 'AVSU-' + user.phone + '-' + monto;
+  document.getElementById('sinpe-u-monto2').textContent = fmt;
+  document.getElementById('sinpe-u-concepto').textContent = concepto;
+  document.getElementById('sinpe-usuario-instrucciones').style.display = 'block';
+  document.getElementById('btn-confirmar-recarga-usuario').style.display = 'block';
+}
+
+async function confirmarRecargaUsuario() {
+  if (!montoUsuarioSel) { toast('Seleccioná un monto'); return; }
+  if (!db) { toast('Sin conexión'); return; }
+  const concepto = 'AVSU-' + user.phone + '-' + montoUsuarioSel;
+  const { error } = await db.from('recargas').insert({
+    conductor_telefono: user.phone,
+    conductor_nombre: user.name + ' (Usuario)',
+    monto: montoUsuarioSel,
+    concepto,
+    estado: 'pendiente',
+    fecha: new Date().toISOString()
+  });
+  if (error) { toast('Error al registrar. Intentá de nuevo.'); return; }
+  toast('✅ Pago registrado — acreditaremos en 1-2 horas');
+  montoUsuarioSel = 0;
+  document.getElementById('sinpe-usuario-instrucciones').style.display = 'none';
+  document.getElementById('btn-confirmar-recarga-usuario').style.display = 'none';
+  cargarHistorialRecargasUsuario();
+}
+
+async function cargarHistorialRecargasUsuario() {
+  if (!db || !user.phone) return;
+  const { data } = await db.from('recargas')
+    .select('*').eq('conductor_telefono', user.phone)
+    .order('fecha', { ascending: false }).limit(5);
+  const lista = document.getElementById('historial-recargas-usuario');
+  if (!data || data.length === 0) { lista.innerHTML = '<div class="nolist">Sin recargas registradas</div>'; return; }
+  lista.innerHTML = data.map(r => `
+    <div style="background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:13px;font-weight:600">₡${parseInt(r.monto).toLocaleString('es-CR')}</div>
+        <div style="font-size:11px;color:var(--mt);margin-top:2px">${new Date(r.fecha).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'})}</div>
+      </div>
+      <div style="font-size:11px;padding:3px 10px;border-radius:20px;background:${r.estado==='acreditado'?'rgba(0,212,170,0.1)':'rgba(245,166,35,0.1)'};color:${r.estado==='acreditado'?'var(--g)':'var(--am)'}">
+        ${r.estado==='acreditado'?'✅ Acreditado':'⏳ Pendiente'}
+      </div>
+    </div>`).join('');
+}
+
 // ===== CALIFICACIONES =====
 let calEstrellas=0,calViajeId=null,calRol='',calDestinatarioTel='';
 const CAL_TAGS_USUARIO=['Puntual ⏰','Amable 😊','Conducción segura 🛡️','Vehículo limpio 🚗','Buena ruta 🗺️'];
@@ -1279,7 +1421,22 @@ function mostrarRegistroRequerido(servicio) {
 }
 
 function resetLoginSheet(){document.querySelector('#login .lsheet').innerHTML=`<div class="ltit">Bienvenido 👋</div><div class="ldesc">Ingresá con tu número de teléfono</div><div class="ilabel">Teléfono</div><input class="ifield" type="tel" placeholder="8888-8888" id="lphone" enterkeyhint="next" onkeydown="if(event.key==='Enter'){document.getElementById('lname').focus();}"><div class="ilabel" style="margin-top:4px">Nombre</div><input class="ifield" type="text" placeholder="Tu nombre completo" id="lname" enterkeyhint="done" onkeydown="if(event.key==='Enter'){this.blur();}"><button class="btnp" onclick="doLogin('usuario')" style="margin-top:6px">🚗 Entrar como Usuario</button><button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button><div class="lsw">¿Conductor nuevo? <a onclick="go('registro');setTimeout(loadRegProgress,100)">Registrate aquí</a></div><div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>`;}
-function applyUser(){const ini=user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'U';['uinit','pinit','cinit'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ini;});document.getElementById('pnom').textContent=user.name;document.getElementById('prol').textContent=(user.role==='conductor'?'Conductor':'Usuario')+' · Atenas';document.getElementById('chnom').textContent=user.name.split(' ')[0];document.getElementById('cnom').textContent=user.name;}
+function applyUser(){
+  const ini=user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'U';
+  ['uinit','pinit','cinit'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ini;});
+  document.getElementById('pnom').textContent=user.name;
+  document.getElementById('prol').textContent=(user.role==='conductor'?'Conductor':'Usuario')+' · Atenas';
+  document.getElementById('chnom').textContent=user.name.split(' ')[0];
+  document.getElementById('cnom').textContent=user.name;
+  // Load saldo
+  if(db&&user.phone&&user.role!=='conductor'&&user.role!=='admin'){
+    db.from('usuarios').select('saldo_avs').eq('telefono',user.phone).single().then(({data})=>{
+      const s=parseInt(data?.saldo_avs||0);
+      const hdr=document.getElementById('usuario-saldo-hdr');
+      if(hdr)hdr.textContent='₡'+s.toLocaleString('es-CR');
+    });
+  }
+}
 function selFareChip(el,fare,comAVS,totalCond){document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');selFare=fare;selCom=comAVS||Math.round(fare*0.12);selComConductor=totalCond||fare-selCom;}
 function generarCodigoViaje(){
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
