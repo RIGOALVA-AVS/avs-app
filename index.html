@@ -1415,7 +1415,7 @@ let disponible=false,viajeId=null,viajeData=null,pollInterval=null,pasajeroWaitI
 function saveSession(){localStorage.setItem('avs_user',JSON.stringify(user));if(viajeId)localStorage.setItem('avs_viaje_id',viajeId);}
 function loadSession(){try{const u=localStorage.getItem('avs_user');if(u){user=JSON.parse(u);return true;}}catch(e){}return false;}
 function clearSession(){localStorage.removeItem('avs_user');localStorage.removeItem('avs_viaje_id');}
-function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');setTimeout(()=>{aplicarLayoutPC();if(id==='usuario')aplicarLayoutPasajeroPC();},50);if(id==='registro')setTimeout(()=>{loadRegProgress();},100);if(id==='admin')cargarAdmin();if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);}
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');setTimeout(()=>{if(id==='usuario')aplicarLayoutPasajeroPC();},50);if(id==='registro')setTimeout(()=>{loadRegProgress();},100);if(id==='admin')cargarAdmin();if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);}
 function toast(msg){const t=document.getElementById('toastEl');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function logout(){clearSession();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
 async function doLoginNegocio(){
@@ -1635,9 +1635,9 @@ function aplicarLayoutPC_disabled() {
 
 // Apply on load and resize
 window.addEventListener('DOMContentLoaded', () => {
-  setTimeout(aplicarLayoutPC, 100);
+  
 });
-window.addEventListener('resize', aplicarLayoutPC);
+
 
 function aplicarLayoutPasajeroPC() {
   const esPC = window.innerWidth >= 768;
