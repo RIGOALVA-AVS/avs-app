@@ -552,19 +552,21 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
   </div>
 
-  <!-- Columna 2: Iconos (100px) sobre imagen -->
-  <div style="width:100px;min-width:100px;flex:none;height:100vh;background:rgba(6,12,24,0.82);backdrop-filter:blur(12px);border-right:1px solid rgba(0,229,184,0.15);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;padding:20px 6px;order:2;z-index:2;">
-    <div style="font-size:9px;color:rgba(0,229,184,0.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;text-align:center;">Servicios</div>
-    <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🍽️ Restaurantes')"><span>🍽️</span><span>Restaurantes</span></div>
-    <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏥 Salud')"><span>🏥</span><span>Salud</span></div>
-    <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏨 Hospedaje')"><span>🏨</span><span>Hospedaje</span></div>
-    <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🛒 Mercado')"><span>🛒</span><span>Mercado</span></div>
-    <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏪 Negocios')"><span>🏪</span><span>Negocios</span></div>
-    <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🚗 Transporte')"><span>🚗</span><span>Transporte</span></div>
+  <!-- Columna 2: Imagen con iconos superpuestos -->
+  <div style="flex:1;height:100vh;position:relative;order:2;background-color:#080f1e;overflow:hidden;">
+    <!-- Imagen al 85% del tamaño, pegada arriba-izquierda -->
+    <div style="position:absolute;inset:0;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') left top/85% auto no-repeat;background-color:#080f1e;"></div>
+    <!-- Iconos superpuestos en columna izquierda -->
+    <div style="position:absolute;top:0;left:0;height:100%;width:100px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;padding:20px 6px;background:rgba(6,12,24,0.70);backdrop-filter:blur(8px);z-index:2;">
+      <div style="font-size:9px;color:rgba(0,229,184,0.7);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;text-align:center;">Servicios</div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🍽️ Restaurantes')"><span>🍽️</span><span>Restaurantes</span></div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏥 Salud')"><span>🏥</span><span>Salud</span></div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏨 Hospedaje')"><span>🏨</span><span>Hospedaje</span></div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🛒 Mercado')"><span>🛒</span><span>Mercado</span></div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏪 Negocios')"><span>🏪</span><span>Negocios</span></div>
+      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🚗 Transporte')"><span>🚗</span><span>Transporte</span></div>
+    </div>
   </div>
-
-  <!-- Columna 3: Imagen (resto) -->
-  <div style="flex:1;height:100vh;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') left top/cover no-repeat;background-color:#080f1e;order:3;"></div>
 
 </div>
 
