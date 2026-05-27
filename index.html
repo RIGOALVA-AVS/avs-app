@@ -423,20 +423,21 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   .pc-icons-col{display:none !important;}
   .pc-img-col{
     display:flex !important;flex:1;height:100vh;order:2;
-    background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') left top/cover no-repeat;
+    background:url('https://rigoalva-avs.github.io/avs-app/bg-login.png') left 15%/cover no-repeat;
     background-color:#080f1e;position:relative;
-    align-items:flex-start;justify-content:flex-start;
+    align-items:flex-end;justify-content:flex-start;
+    padding:0 0 20px 20px;
   }
-  /* Icons column overlaid on left side of image */
   .pc-img-col-icons{
-    display:flex;flex-direction:column;gap:8px;
-    height:100vh;padding:32px 8px;
-    background:rgba(6,12,24,0.82);backdrop-filter:blur(12px);
-    border-right:1px solid rgba(0,229,184,0.12);
-    justify-content:center;align-items:center;
-    width:100px;flex-shrink:0;z-index:2;
+    display:flex;flex-direction:row;gap:8px;flex-wrap:nowrap;
+    position:relative;z-index:2;
   }
-  .pc-img-col-icons .login-serv-btn{width:84px;padding:9px 4px;background:rgba(0,229,184,0.06);border-color:rgba(0,229,184,0.2);}
+  .pc-img-col-icons .login-serv-btn{
+    width:86px;padding:9px 4px;
+    background:rgba(6,12,24,0.80);
+    backdrop-filter:blur(10px);
+    border-color:rgba(0,229,184,0.25);
+  }
   .pc-img-col-icons .login-serv-btn span:first-child{font-size:22px;}
   .pc-img-col-icons .login-serv-btn span:last-child{font-size:9px;}
 }
