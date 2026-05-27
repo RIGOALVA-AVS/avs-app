@@ -1655,14 +1655,19 @@ function iconoVehiculo(tipo){
 async function mostrarConductoresActivos(){
   if(!db||!gmap||!userLoc)return;
   try{
-    const hace2min = new Date(Date.now()-120000).toISOString();
-    const{data}=await db.from('conductores')
-      .select('telefono,lat,lng,tipo_vehiculo,estado_disponibilidad,ultima_actualizacion')
+    const hace5min = new Date(Date.now()-300000).toISOString();
+    const{data}=await db.from('usuarios')
+      .select('telefono,nombre,lat,lng,tipo_vehiculo,estado_disponibilidad,ultima_actualizacion')
+      .eq('tipo','conductor')
       .eq('estado_disponibilidad','disponible')
-      .gt('ultima_actualizacion',hace2min);
+      .gt('ultima_actualizacion',hace5min);
     conductoresActivosMarkers.forEach(m=>m.setMap(null));
     conductoresActivosMarkers=[];
-    if(!data||data.length===0)return;
+    if(!data||data.length===0){
+      const contEl=document.getElementById('conductores-activos-count');
+      if(contEl)contEl.textContent='Sin conductores cerca';
+      return;
+    }
     data.forEach(c=>{
       if(!c.lat||!c.lng)return;
       const icon = iconoVehiculo(c.tipo_vehiculo);
@@ -1677,13 +1682,13 @@ async function mostrarConductoresActivos(){
         icon:{path:google.maps.SymbolPath.CIRCLE,scale:18,fillColor:'#0d1f14',fillOpacity:0.85,strokeColor:'#00d4aa',strokeWeight:2},
         title:`${icon} Conductor AVS · ~${minsLlegada} min`
       });
-      const info=new google.maps.InfoWindow({content:`<div style="color:#000;padding:4px 8px;font-size:13px"><b>${icon} Conductor AVS</b><br>~${minsLlegada} min de tu ubicación</div>`});
+      const info=new google.maps.InfoWindow({content:`<div style="color:#000;padding:4px 8px;font-size:13px"><b>${icon} Conductor AVS</b><br>~${minsLlegada} min de tu ubicación<br><small style="color:#666">${km.toFixed(1)} km</small></div>`});
       m.addListener('click',()=>info.open(gmap,m));
       conductoresActivosMarkers.push(m);
     });
     const contEl=document.getElementById('conductores-activos-count');
-    if(contEl)contEl.textContent=data.length+' cerca';
-  }catch(e){}
+    if(contEl)contEl.textContent=data.length+' conductores cerca';
+  }catch(e){console.warn('mostrarConductoresActivos:',e);}
 }
 function iniciarSeguimientoConductoresActivos(){
   if(conductoresActivosInterval)clearInterval(conductoresActivosInterval);
@@ -2128,7 +2133,7 @@ async function reportarUbicacionConductor(){
   if(!navigator.geolocation)return;
   navigator.geolocation.getCurrentPosition(async pos=>{
     try{
-      await db.from('conductores').update({
+      await db.from('usuarios').update({
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
         estado_disponibilidad: disponible?'disponible':'offline',
@@ -2160,7 +2165,7 @@ async function toggleDisp(el){
   }else{
     if(pollInterval){clearInterval(pollInterval);pollInterval=null;}
     if(conductorReportInterval){clearInterval(conductorReportInterval);conductorReportInterval=null;}
-    if(db&&user&&user.phone){try{await db.from('conductores').update({estado_disponibilidad:'offline'}).eq('telefono',user.phone);}catch(e){}}
+    if(db&&user&&user.phone){try{await db.from('usuarios').update({estado_disponibilidad:'offline'}).eq('telefono',user.phone);}catch(e){}}
     document.getElementById('slist').innerHTML='<div class="nolist">🚗 Activá tu disponibilidad para recibir viajes</div>';
     document.getElementById('snew').textContent='0';
   }
