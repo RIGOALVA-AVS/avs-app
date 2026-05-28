@@ -201,7 +201,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .fchip.sel{border-color:var(--g);background:rgba(0,229,184,0.07);box-shadow:0 0 0 1px var(--g);}
 .famt{font-family:var(--font-d);font-size:13px;font-weight:700;}
 .ftyp{font-size:10px;color:var(--mt);margin-top:3px;}
-.bnav{display:flex;background:var(--sf);border-top:1px solid var(--bd);padding:8px 0 20px;}
+.bnav{display:flex;background:var(--sf);border-top:1px solid var(--bd);padding:8px 0 12px;position:fixed;bottom:0;left:0;right:0;z-index:50;backdrop-filter:blur(10px);background:rgba(13,21,37,0.92);}
 .nitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;cursor:pointer;}
 .nico{font-size:20px;color:var(--mt);}
 .nico.on{color:var(--g);}
@@ -239,7 +239,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .dtit{font-family:var(--font-d);font-size:16px;font-weight:600;margin-bottom:4px;}
 .dsub{font-size:13px;color:var(--mt);margin-bottom:16px;}
 .bfin{width:100%;background:var(--g);color:var(--bg);border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:600;font-family:var(--font-d);cursor:pointer;}
-#conductor{background:var(--bg);}
+#conductor{background:var(--bg);padding-bottom:90px;overflow-y:auto;}
 .chdr{padding:48px 20px 16px;display:flex;justify-content:space-between;align-items:flex-start;}
 .cgreet{font-size:12px;color:var(--mt);font-weight:500;letter-spacing:0.5px;}
 .chname{font-family:var(--font-d);font-size:22px;font-weight:800;letter-spacing:-0.5px;}
@@ -339,7 +339,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     display: flex; flex-direction: column; gap: 10px;
   }
   .bhandle { display: none; }
-  .bnav { display: none; }
+  /* En PC la barra inferior queda fija abajo, pero se ve más compacta */
+  .bnav { max-width: 540px; left: 50%; transform: translateX(-50%); border-radius: 14px 14px 0 0; }
 
   /* Header PC dentro del panel */
   .pc-header {
