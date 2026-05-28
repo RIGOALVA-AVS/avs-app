@@ -1994,11 +1994,23 @@ async function mostrarConductoresActivos(){
   if(!db||!gmap||!userLoc)return;
   try{
     const hace5min = new Date(Date.now()-300000).toISOString();
-    const{data}=await db.from('usuarios')
-      .select('telefono,nombre,lat,lng,tipo_vehiculo,estado_disponibilidad,ultima_actualizacion')
-      .eq('tipo','conductor')
-      .eq('estado_disponibilidad','disponible')
-      .gt('ultima_actualizacion',hace5min);
+    // Traemos: (conductores activos recientes) + (conductores demo 8888* siempre)
+    const [recientes, demos] = await Promise.all([
+      db.from('usuarios')
+        .select('telefono,nombre,lat,lng,tipo_vehiculo,estado_disponibilidad,ultima_actualizacion')
+        .eq('tipo','conductor')
+        .eq('estado_disponibilidad','disponible')
+        .gt('ultima_actualizacion',hace5min),
+      db.from('usuarios')
+        .select('telefono,nombre,lat,lng,tipo_vehiculo,estado_disponibilidad,ultima_actualizacion')
+        .eq('tipo','conductor')
+        .eq('estado_disponibilidad','disponible')
+        .like('telefono','8888%')
+    ]);
+    const dataMap = new Map();
+    (recientes.data||[]).forEach(c => dataMap.set(c.telefono, c));
+    (demos.data||[]).forEach(c => dataMap.set(c.telefono, c));
+    const data = Array.from(dataMap.values());
     conductoresActivosMarkers.forEach(m=>m.setMap(null));
     conductoresActivosMarkers=[];
     if(!data||data.length===0){
