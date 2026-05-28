@@ -3260,19 +3260,20 @@ const DEMO_VIAJE = [
   {
     kicker: 'Paso 4 — Conductor asignado',
     title: 'Carlos Méndez acepta el viaje',
-    narration: 'María ve en tiempo real quién la recogerá: nombre real, foto, calificación promedio, vehículo y placa. Llega en 4 minutos.',
+    narration: 'María ve en tiempo real quién la recogerá: nombre real, calificación promedio, vehículo y placa. Para viajes interurbanos largos como Atenas → Alajuela, AVS asigna automáticamente un sedán o SUV. Llega en 6 minutos.',
     visual: `
       <div class="demo-card" style="max-width:380px;margin:0 auto;display:flex;gap:14px;align-items:center;padding:18px">
         <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#00d4aa,#0a8870);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#000">CM</div>
         <div style="flex:1;text-align:left">
           <div style="font-size:16px;font-weight:700;margin-bottom:2px">Carlos Méndez</div>
-          <div style="font-size:13px;color:#aaa;margin-bottom:4px">🛵 Honda Wave · BPJ-001</div>
+          <div style="font-size:13px;color:#aaa;margin-bottom:4px">🚗 Hyundai Accent · BMR-742</div>
           <div style="font-size:13px;color:#f5a623">⭐ 4.9 · 187 viajes</div>
         </div>
       </div>
-      <div style="margin-top:18px;display:flex;justify-content:center;gap:8px">
-        <span class="demo-status-pill active">🛵 En camino — 4 min</span>
+      <div style="margin-top:18px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap">
+        <span class="demo-status-pill active">🚗 En camino — 6 min al pickup</span>
       </div>
+      <div style="margin-top:12px;font-size:12px;color:#aaa">Después del pickup, viaje de 35 min hasta el Hospital San Rafael</div>
     `
   },
   {
@@ -3288,22 +3289,22 @@ const DEMO_VIAJE = [
   {
     kicker: 'Paso 6 — En viaje',
     title: 'GPS en tiempo real durante todo el trayecto',
-    narration: 'María comparte su recorrido con contactos de confianza. Si hay una emergencia, el botón SOS envía su ubicación exacta por WhatsApp y SMS al instante.',
+    narration: 'María comparte su recorrido con contactos de confianza durante los 27 km. Si hay una emergencia, el botón SOS envía su ubicación exacta por WhatsApp y SMS al instante a sus contactos de emergencia.',
     visual: `
       <div class="demo-map-sim">
         <div class="map-pin" style="left:18%;top:60%;color:#00d4aa">🏠</div>
         <div class="map-route" style="left:22%;top:62%;width:60%;transform:rotate(-15deg)"></div>
-        <div class="map-vehicle" style="left:50%;top:48%">🛵</div>
+        <div class="map-vehicle" style="left:50%;top:48%">🚗</div>
         <div class="map-pin" style="left:82%;top:25%;color:#f5a623">🏥</div>
       </div>
       <div style="display:flex;gap:14px;justify-content:center;margin-top:18px;flex-wrap:wrap">
         <div style="background:#0f1d12;border:1px solid rgba(0,212,170,0.3);border-radius:12px;padding:10px 16px">
           <div style="font-size:11px;color:#888">VELOCIDAD</div>
-          <div style="font-size:16px;color:#00d4aa;font-weight:700">52 km/h</div>
+          <div style="font-size:16px;color:#00d4aa;font-weight:700">65 km/h</div>
         </div>
         <div style="background:#0f1d12;border:1px solid rgba(245,166,35,0.3);border-radius:12px;padding:10px 16px">
           <div style="font-size:11px;color:#888">RESTANTE</div>
-          <div style="font-size:16px;color:#f5a623;font-weight:700">9 min</div>
+          <div style="font-size:16px;color:#f5a623;font-weight:700">12 min · 8 km</div>
         </div>
         <div style="background:#2d1010;border:1px solid #ff4444;border-radius:12px;padding:10px 16px">
           <div style="font-size:11px;color:#aaa">EMERGENCIA</div>
