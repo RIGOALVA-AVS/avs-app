@@ -2538,23 +2538,243 @@ async function doLoginNegocio(){
   cargarStatsNegocio();
 }
 
-function doLogin(role){
-  const phone=document.getElementById('lphone').value.trim();
-  const name=document.getElementById('lname').value.trim()||'Usuario';
-  if(!phone){toast('Ingresá tu número');return;}
-  // === ACCESO SECRETO MODO DEMO ===
-  if(phone==='00000'){
-    if(typeof iniciarModoDemo === 'function'){
-      iniciarModoDemo();
+// ============== SEGURIDAD DE LOGIN ==============
+// Validación formato Costa Rica: 8 dígitos, empieza con 6/7/8 (móviles)
+function validarTelefonoCR(tel){
+  const t = String(tel||'').replace(/\D/g,'');
+  if(t.length !== 8) return { ok:false, msg:'El teléfono debe tener 8 dígitos' };
+  if(!/^[678]/.test(t)) return { ok:false, msg:'Los móviles en Costa Rica empiezan con 6, 7 u 8' };
+  return { ok:true, telefono:t };
+}
+function validarNombreCompleto(nom){
+  const n = String(nom||'').trim();
+  if(n.length < 6) return { ok:false, msg:'Ingresá tu nombre completo (mínimo 6 caracteres)' };
+  if(!n.includes(' ')) return { ok:false, msg:'Ingresá nombre y apellido' };
+  if(!/^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s']+$/.test(n)) return { ok:false, msg:'El nombre solo puede tener letras' };
+  return { ok:true, nombre:n };
+}
+// Estado de intentos por teléfono (anti-brute-force)
+function getIntentos(tel){
+  try{ return JSON.parse(localStorage.getItem('login-intentos-'+tel) || '{"count":0,"bloqueadoHasta":0}'); }
+  catch(e){ return {count:0,bloqueadoHasta:0}; }
+}
+function setIntentos(tel, obj){
+  try{ localStorage.setItem('login-intentos-'+tel, JSON.stringify(obj)); }catch(e){}
+}
+function estaBloqueado(tel){
+  const i = getIntentos(tel);
+  if(i.bloqueadoHasta && Date.now() < i.bloqueadoHasta){
+    const minRestantes = Math.ceil((i.bloqueadoHasta - Date.now())/60000);
+    return { bloqueado:true, minRestantes };
+  }
+  return { bloqueado:false };
+}
+
+// === OTP visual provisional ===
+let otpExpect = null, otpTel = null, otpRol = null, otpNom = null;
+
+function generarOTP(){
+  return String(Math.floor(1000 + Math.random()*9000));
+}
+
+function mostrarOTPModal(tel, codigo){
+  let m = document.getElementById('otp-modal');
+  if(m) m.remove();
+  m = document.createElement('div');
+  m.id = 'otp-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(8,15,30,0.85);backdrop-filter:blur(8px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML = `
+    <div style="background:linear-gradient(135deg,#1a2540,#0d1525);border:1px solid #00d4aa;border-radius:18px;padding:24px;width:min(380px,92vw);color:#fff;box-shadow:0 20px 50px rgba(0,0,0,0.5)">
+      <div style="text-align:center">
+        <div style="font-size:42px;margin-bottom:8px">🔐</div>
+        <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:6px">Código de verificación</div>
+        <div style="font-size:13px;color:#aaa;margin-bottom:16px;line-height:1.5">Enviamos un código de 4 dígitos al<br><b style="color:#fff">${tel.slice(0,4)}-${tel.slice(4)}</b></div>
+        <div style="background:rgba(245,166,35,0.1);border:1px dashed #f5a623;border-radius:10px;padding:10px;margin-bottom:16px;font-size:11px;color:#f5a623">
+          ⚠️ MODO DEMO — Tu código es: <b style="font-family:monospace;font-size:18px;letter-spacing:4px">${codigo}</b><br><span style="font-size:10px;opacity:0.7">(En producción se enviará por SMS real)</span>
+        </div>
+        <input type="text" id="otp-input" inputmode="numeric" maxlength="4" placeholder="• • • •" style="width:100%;text-align:center;font-size:28px;letter-spacing:14px;font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,0.05);border:2px solid #00d4aa;border-radius:14px;padding:14px;color:#00d4aa;font-weight:700;margin-bottom:14px" autocomplete="off">
+        <div id="otp-error" style="font-size:12px;color:#ff6b6b;margin-bottom:10px;min-height:16px"></div>
+        <button onclick="verificarOTP()" style="width:100%;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:12px;padding:13px;font-size:15px;cursor:pointer">✓ Verificar código</button>
+        <button onclick="cerrarOTPModal()" style="width:100%;background:transparent;border:none;color:#888;padding:10px;font-size:12px;cursor:pointer;margin-top:6px">Cancelar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  setTimeout(()=>{
+    const inp = document.getElementById('otp-input');
+    if(inp){
+      inp.focus();
+      inp.addEventListener('keydown',(e)=>{ if(e.key==='Enter') verificarOTP(); });
+    }
+  }, 100);
+}
+function cerrarOTPModal(){
+  const m = document.getElementById('otp-modal');
+  if(m) m.remove();
+  otpExpect = null;
+}
+function verificarOTP(){
+  const input = document.getElementById('otp-input');
+  if(!input) return;
+  const codigo = input.value.trim();
+  const errEl = document.getElementById('otp-error');
+  if(codigo.length !== 4){
+    errEl.textContent = 'Ingresá los 4 dígitos';
+    return;
+  }
+  if(codigo === otpExpect){
+    // ✓ Éxito — limpiar intentos y completar login
+    setIntentos(otpTel, {count:0, bloqueadoHasta:0});
+    cerrarOTPModal();
+    completarLogin(otpRol, otpTel, otpNom);
+  } else {
+    // ✗ Error — descontar intento
+    const i = getIntentos(otpTel);
+    i.count = (i.count||0) + 1;
+    if(i.count >= 3){
+      i.bloqueadoHasta = Date.now() + 15*60000;
+      setIntentos(otpTel, i);
+      cerrarOTPModal();
+      toast('🔒 Demasiados intentos. Bloqueado 15 minutos.');
       return;
     }
+    setIntentos(otpTel, i);
+    errEl.textContent = `Código incorrecto. Te quedan ${3-i.count} intento${3-i.count===1?'':'s'}.`;
+    input.value = '';
+    input.focus();
   }
-  if(role==='admin'){user={name:'Admin AVS',role:'admin',phone};saveSession();applyUser();go('admin');cargarAdmin();return;}
-  if(role==='conductor'&&db){toast('Verificando...');db.from('usuarios').select('nombre,apellidos,tipo,estado_verificacion').eq('telefono',phone).single().then(({data,error})=>{if(!data){showLoginMsg('🚗','No encontramos tu registro','Para operar como conductor en AVS primero debés completar el registro y esperar aprobación.','Registrarme',()=>go('registro'));return;}if(data.estado_verificacion==='pendiente'){showLoginMsg('⏳','Solicitud en revisión','Tu documentación está siendo revisada. Te contactaremos en 24-48 horas al número '+phone+'.','Volver',()=>go('login'));return;}if(data.estado_verificacion==='rechazado'){showLoginMsg('❌','Solicitud rechazada','Tu solicitud no fue aprobada. Contactá al equipo AVS o registrate nuevamente.','Registrarme de nuevo',()=>go('registro'));return;}user={name:data.nombre+' '+(data.apellidos||''),role:'conductor',phone};saveSession();applyUser();go('conductor');});return;}
-  user={name,role,phone};saveSession();applyUser();
-  if(db){db.from('usuarios').select('telefono').eq('telefono',phone).single().then(({data})=>{if(data){db.from('usuarios').update({nombre:name.split(' ')[0],apellidos:name.split(' ').slice(1).join(' ')||'-',tipo:role}).eq('telefono',phone);}else{db.from('usuarios').insert({telefono:phone,nombre:name.split(' ')[0],apellidos:name.split(' ').slice(1).join(' ')||'-',tipo:role});}});}
+}
+
+// === LOGIN PRINCIPAL CON SEGURIDAD ===
+async function doLogin(role){
+  const phoneRaw = document.getElementById('lphone').value.trim();
+  const nameRaw = document.getElementById('lname').value.trim();
+
+  // === ACCESO DEMO OCULTO (botón secreto, no por teléfono) ===
+  // El acceso demo ahora se hace por touch largo en el logo (ver activarDemoOculto)
+
+  // CAPA 1: Validar formato del teléfono
+  const valTel = validarTelefonoCR(phoneRaw);
+  if(!valTel.ok){ toast('📵 ' + valTel.msg); return; }
+  const phone = valTel.telefono;
+
+  // Verificar bloqueo por intentos previos
+  const bloq = estaBloqueado(phone);
+  if(bloq.bloqueado){
+    showLoginMsg('🔒','Cuenta bloqueada temporalmente',`Por seguridad, este número fue bloqueado por intentos fallidos. Esperá ${bloq.minRestantes} minuto${bloq.minRestantes===1?'':'s'} para reintentar.`,'Volver',()=>resetLoginSheet());
+    return;
+  }
+
+  // CAPA 3: Diferenciación por rol
+  if(role === 'admin'){
+    // Admin: por ahora teléfono específico — más adelante email+password
+    if(phone !== '88880000' && phone !== '88001234'){
+      toast('🔒 Acceso administrativo restringido');
+      return;
+    }
+    iniciarOTP(role, phone, 'Admin AVS');
+    return;
+  }
+
+  if(role === 'conductor'){
+    if(!db){ toast('Sin conexión a Internet'); return; }
+    toast('Verificando registro...');
+    const { data, error } = await db.from('usuarios').select('nombre,apellidos,tipo,estado_verificacion').eq('telefono',phone).single();
+    if(!data){
+      showLoginMsg('🚗','No encontramos tu registro','Para operar como conductor en AVS primero debés completar el registro con tu documentación y esperar aprobación.','Registrarme como conductor',()=>go('registro'));
+      return;
+    }
+    if(data.estado_verificacion === 'pendiente'){
+      showLoginMsg('⏳','Solicitud en revisión','Tu documentación está siendo revisada. Te contactaremos en 24-48 horas al número '+phone+'.','Volver',()=>resetLoginSheet());
+      return;
+    }
+    if(data.estado_verificacion === 'rechazado'){
+      showLoginMsg('❌','Solicitud rechazada','Tu solicitud no fue aprobada. Contactá al equipo AVS o registrate nuevamente con la documentación correcta.','Registrarme de nuevo',()=>go('registro'));
+      return;
+    }
+    // Conductor verificado → OTP
+    const nombreCompleto = data.nombre + ' ' + (data.apellidos||'');
+    iniciarOTP(role, phone, nombreCompleto);
+    return;
+  }
+
+  // Usuario (rol por defecto)
+  // CAPA 1: Validar nombre
+  const valNom = validarNombreCompleto(nameRaw);
+  if(!valNom.ok){ toast('👤 ' + valNom.msg); return; }
+  const nombre = valNom.nombre;
+
+  // Si el teléfono ya existe → entra normal con OTP
+  // Si no existe → se crea cuenta en Supabase y va a OTP
+  iniciarOTP(role, phone, nombre);
+}
+
+function iniciarOTP(role, phone, nombre){
+  otpExpect = generarOTP();
+  otpTel = phone;
+  otpRol = role;
+  otpNom = nombre;
+  // En producción acá iría: enviarSMS(phone, otpExpect)
+  mostrarOTPModal(phone, otpExpect);
+}
+
+async function completarLogin(role, phone, nombre){
+  if(role === 'admin'){
+    user = {name:'Admin AVS', role:'admin', phone};
+    saveSession(); applyUser(); go('admin'); cargarAdmin();
+    return;
+  }
+  if(role === 'conductor'){
+    user = {name:nombre, role:'conductor', phone};
+    saveSession(); applyUser(); go('conductor');
+    return;
+  }
+  // Usuario
+  user = {name:nombre, role:'usuario', phone};
+  saveSession(); applyUser();
+  if(db){
+    try {
+      const partes = nombre.split(' ');
+      const { data } = await db.from('usuarios').select('telefono').eq('telefono',phone).single();
+      if(data){
+        await db.from('usuarios').update({nombre:partes[0], apellidos:partes.slice(1).join(' ')||'-', tipo:'usuario'}).eq('telefono',phone);
+      } else {
+        await db.from('usuarios').insert({telefono:phone, nombre:partes[0], apellidos:partes.slice(1).join(' ')||'-', tipo:'usuario'});
+      }
+    } catch(e){}
+  }
   go('pasajero');
 }
+
+// === ACCESO DEMO OCULTO (touch largo de 3 segundos en el logo AVS) ===
+let demoTouchTimer = null;
+function activarDemoOculto(){
+  if(demoTouchTimer) clearTimeout(demoTouchTimer);
+  demoTouchTimer = setTimeout(()=>{
+    if(navigator.vibrate) navigator.vibrate([100,50,100]);
+    toast('🎬 Modo Demo activado');
+    if(typeof iniciarModoDemo === 'function') iniciarModoDemo();
+  }, 3000);
+}
+function cancelarDemoOculto(){
+  if(demoTouchTimer){ clearTimeout(demoTouchTimer); demoTouchTimer = null; }
+}
+// Vincular al logo cuando carga la página
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    const logos = document.querySelectorAll('.alogo, .llogo');
+    logos.forEach(l => {
+      l.style.userSelect = 'none';
+      l.style.cursor = 'pointer';
+      l.addEventListener('mousedown', activarDemoOculto);
+      l.addEventListener('mouseup', cancelarDemoOculto);
+      l.addEventListener('mouseleave', cancelarDemoOculto);
+      l.addEventListener('touchstart', activarDemoOculto, {passive:true});
+      l.addEventListener('touchend', cancelarDemoOculto);
+      l.addEventListener('touchcancel', cancelarDemoOculto);
+    });
+  }, 500);
+});
+
 function showLoginMsg(ico,titulo,desc,btnTxt,btnAction){document.querySelector('#login .lsheet').innerHTML=`<div style="text-align:center;padding:10px 0 20px"><div style="font-size:52px;margin-bottom:12px">${ico}</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">${titulo}</div><div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:20px">${desc}</div><button class="btnp" onclick="(${btnAction.toString()})()">${btnTxt}</button><button class="btno" onclick="resetLoginSheet()" style="margin-top:8px">← Volver al inicio</button></div>`;}
 
 function mostrarRegistroRequerido(servicio) {
