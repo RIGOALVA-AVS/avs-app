@@ -2169,7 +2169,51 @@ function initMap(){
   autocomplete.addListener('place_changed',()=>{const p=autocomplete.getPlace();if(!p.geometry)return;destLoc=p.geometry.location;calcRoute();});
   if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{userLoc={lat:pos.coords.latitude,lng:pos.coords.longitude};gmap.setCenter(userLoc);new google.maps.Marker({position:userLoc,map:gmap,icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:'#00d4aa',fillOpacity:1,strokeColor:'#fff',strokeWeight:2}});new google.maps.Geocoder().geocode({location:userLoc},(r,s)=>{if(s==='OK'&&r[0]){const a=r[0].formatted_address.split(',')[0];document.getElementById('otxt').textContent=a;document.getElementById('mbadge').textContent='📍 '+a;}});},()=>{});}
 }
-function calcRoute(){if(!destLoc)return;dirSvc.route({origin:userLoc,destination:destLoc,travelMode:google.maps.TravelMode.DRIVING},(r,s)=>{if(s==='OK'){dirRend.setDirections(r);const leg=r.routes[0].legs[0];const km=parseFloat((leg.distance.value/1000).toFixed(1));const min=Math.ceil(leg.duration.value/60);const AVS_KM_ECO=462,AVS_KM_STD=514,AVS_KM_PREM=571,BASE_MIN=1200;const base=Math.max(BASE_MIN,Math.round(km*AVS_KM_ECO)),std=Math.max(BASE_MIN,Math.round(km*AVS_KM_STD)),prem=Math.max(BASE_MIN,Math.round(km*AVS_KM_PREM));const calcChip=(t)=>({tarifa:t,comisionAVS:Math.round(t*0.10),totalConductor:t-Math.round(t*0.10),totalPasajero:t});const cb=calcChip(base),cs=calcChip(std),cp=calcChip(prem);document.getElementById('tdist').textContent=km+' km';document.getElementById('tdur').textContent=min+' min';document.getElementById('tfare').textContent='₡'+cs.totalPasajero.toLocaleString('es-CR');document.getElementById('tinfo').classList.add('show');document.getElementById('fchips').innerHTML=[{...cb,label:'Económico'},{...cs,label:'Estándar'},{...cp,label:'Premium'}].map((c,i)=>`<div class="fchip ${i===1?'sel':''}" onclick="selFareChip(this,${c.tarifa},${c.comisionAVS},${c.totalConductor})"><div class="famt">₡${c.totalPasajero.toLocaleString('es-CR')}</div><div class="ftyp">${c.label}</div></div>`).join('');selFare=std;selCom=cs.comisionAVS;selComConductor=cs.totalConductor;document.getElementById('fareSection').style.display='block';}});}
+// === ALGORITMO DE TARIFAS AVS (basado en lógica de Uber) ===
+// Tarifa = Base + (min × tarifa_min) + (km × tarifa_km) + Booking fee
+// Calibrado contra Uber CR: UberX = ₡15.000 para 27km/35min
+function calcularTarifaUberX(km, min){
+  const BASE = 600, POR_MIN = 60, POR_KM = 430, BOOKING = 300, MIN_FARE = 1200;
+  const total = BASE + (min * POR_MIN) + (km * POR_KM) + BOOKING;
+  return Math.max(MIN_FARE, Math.round(total));
+}
+function calcularTarifaAVS(km, min){
+  const uberX = calcularTarifaUberX(km, min);
+  const uberComfort = Math.round(uberX * 1.10);
+  return {
+    economico: Math.round(uberX * 0.97),
+    estandar: Math.round(uberComfort * 0.95),
+    premium: uberComfort,
+    referencia_uberX: uberX,
+    referencia_uberComfort: uberComfort
+  };
+}
+function calcRoute(){
+  if(!destLoc) return;
+  dirSvc.route({origin:userLoc, destination:destLoc, travelMode:google.maps.TravelMode.DRIVING},(r,s)=>{
+    if(s !== 'OK') return;
+    dirRend.setDirections(r);
+    const leg = r.routes[0].legs[0];
+    const km = parseFloat((leg.distance.value/1000).toFixed(1));
+    const min = Math.ceil(leg.duration.value/60);
+    const tarifas = calcularTarifaAVS(km, min);
+    const calcChip = (t) => ({ tarifa:t, comisionAVS:Math.round(t*0.10), totalConductor:t-Math.round(t*0.10), totalPasajero:t });
+    const cb = calcChip(tarifas.economico), cs = calcChip(tarifas.estandar), cp = calcChip(tarifas.premium);
+    document.getElementById('tdist').textContent = km + ' km';
+    document.getElementById('tdur').textContent = min + ' min';
+    document.getElementById('tfare').textContent = '₡' + cs.totalPasajero.toLocaleString('es-CR');
+    document.getElementById('tinfo').classList.add('show');
+    document.getElementById('fchips').innerHTML = [
+      {...cb, label:'Económico', sub:'-3% UberX'},
+      {...cs, label:'Estándar',  sub:'-5% Comfort'},
+      {...cp, label:'Premium',   sub:'nivel mercado'}
+    ].map((c,i) => `<div class="fchip ${i===1?'sel':''}" onclick="selFareChip(this,${c.tarifa},${c.comisionAVS},${c.totalConductor})"><div class="famt">₡${c.totalPasajero.toLocaleString('es-CR')}</div><div class="ftyp">${c.label}</div><div style="font-size:9px;color:var(--g);margin-top:2px">${c.sub}</div></div>`).join('');
+    selFare = tarifas.estandar;
+    selCom = cs.comisionAVS;
+    selComConductor = cs.totalConductor;
+    document.getElementById('fareSection').style.display = 'block';
+  });
+}
 function mstyle(){return[{elementType:'geometry',stylers:[{color:'#0d1f14'}]},{elementType:'labels.text.stroke',stylers:[{color:'#0d1f14'}]},{elementType:'labels.text.fill',stylers:[{color:'#7a8fa6'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#172040'}]},{featureType:'road',elementType:'geometry.stroke',stylers:[{color:'#0a1628'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#0a1628'}]},{featureType:'poi',stylers:[{visibility:'off'}]}];}
 let historialRol='usuario',historialEstado='completado';
 function abrirHistorial(rol){historialRol=rol;historialEstado='completado';document.getElementById('hist-back').setAttribute('onclick',`go('${rol==='conductor'?'conductor':'pasajero'}')`);const tab2=document.getElementById('hbtn-cancelado');if(rol==='conductor'){tab2.textContent='❌ Rechazados';tab2.setAttribute('onclick',"filtrarHistorial('rechazado')");tab2.id='hbtn-rechazado';}else{tab2.textContent='❌ Cancelados';tab2.setAttribute('onclick',"filtrarHistorial('cancelado')");tab2.id='hbtn-cancelado';}document.querySelectorAll('[id^="hbtn-"]').forEach(b=>b.classList.remove('on'));document.getElementById('hbtn-completado').classList.add('on');go('historial');cargarHistorial();}
@@ -3181,7 +3225,7 @@ const DEMO_VIAJE = [
   {
     kicker: 'Paso 2 — Destino',
     title: 'Escribe a dónde va',
-    narration: 'AVS calcula la ruta usando Google Maps y muestra 3 opciones de tarifa fija — sin sorpresas, sin "surge pricing". AVS toma como referencia Uber y le suma 10% — así los conductores ganan más que en otras plataformas y se quedan con AVS.',
+    narration: 'AVS calcula la ruta usando Google Maps y muestra 3 tarifas estratégicas: Económico 3% bajo UberX, Estándar 5% bajo Uber Comfort, Premium al mismo nivel de mercado. Conductores ganan más que en otras plataformas y los pasajeros pagan menos.',
     visual: `
       <div class="demo-card" style="max-width:380px;margin:0 auto">
         <div style="font-size:11px;color:#888;letter-spacing:1px;margin-bottom:6px">¿A DÓNDE VAS?</div>
@@ -3192,15 +3236,16 @@ const DEMO_VIAJE = [
           <span style="color:#f5a623">●</span> Hospital San Rafael, Alajuela
         </div>
         <div style="display:flex;justify-content:space-around;margin-top:14px;padding-top:14px;border-top:1px dashed rgba(0,212,170,0.3)">
-          <div><div style="font-size:11px;color:#888">DISTANCIA</div><div style="font-size:18px;color:#00d4aa;font-weight:700">11.2 km</div></div>
-          <div><div style="font-size:11px;color:#888">TIEMPO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">18 min</div></div>
+          <div><div style="font-size:11px;color:#888">DISTANCIA</div><div style="font-size:18px;color:#00d4aa;font-weight:700">27 km</div></div>
+          <div><div style="font-size:11px;color:#888">TIEMPO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">35 min</div></div>
         </div>
       </div>
       <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap">
-        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">ECONÓMICO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡5.180</div></div>
-        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px;border-color:#00d4aa"><div style="font-size:11px;color:#888">ESTÁNDAR</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡5.755</div></div>
-        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">PREMIUM</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡6.395</div></div>
+        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">ECONÓMICO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡14.172</div><div style="font-size:9px;color:#00d4aa;margin-top:2px">-3% vs UberX</div></div>
+        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px;border-color:#00d4aa"><div style="font-size:11px;color:#888">ESTÁNDAR</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡15.267</div><div style="font-size:9px;color:#00d4aa;margin-top:2px">-5% vs Comfort</div></div>
+        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">PREMIUM</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡16.071</div><div style="font-size:9px;color:#888;margin-top:2px">nivel mercado</div></div>
       </div>
+      <div style="margin-top:14px;font-size:11px;color:#888">📊 Algoritmo Uber: UberX ₡14.610 · Comfort ₡16.071 (sin surge pricing)</div>
     `
   },
   {
@@ -3269,16 +3314,16 @@ const DEMO_VIAJE = [
   },
   {
     kicker: 'Paso 7 — Llegada al destino',
-    title: 'Carlos finaliza el viaje. María paga ₡5.755',
-    narration: 'Del total, Carlos recibe ₡5.180 (90%) y AVS retiene ₡575 de comisión (10%). Cuando hay convenio con la municipalidad, ese 10% se divide 50/50 entre AVS y el cantón — la muni participa de los ingresos del transporte local.',
+    title: 'Carlos finaliza el viaje. María paga ₡15.267',
+    narration: 'Del total, Carlos recibe ₡13.740 (90%) y AVS retiene ₡1.527 de comisión (10%). Cuando hay convenio con la municipalidad, ese 10% se divide 50/50 entre AVS y el cantón — la muni participa de los ingresos del transporte local sin invertir un centavo.',
     visual: `
       <div class="demo-receipt">
         <div style="text-align:center;font-weight:700;color:#00d4aa;margin-bottom:8px">RECIBO VIAJE AVS</div>
-        <div class="row"><span>Tarifa estándar</span><span>₡5.755</span></div>
-        <div class="row"><span>Para el conductor (90%)</span><span style="color:#00d4aa">₡5.180</span></div>
-        <div class="row"><span>Comisión AVS (10%)</span><span style="color:#f5a623">₡575</span></div>
-        <div class="row tot"><span>Total</span><span>₡5.755</span></div>
-        <div style="text-align:center;margin-top:10px;font-size:11px;color:#888">Pagado por SINPE Móvil</div>
+        <div class="row"><span>Tarifa estándar (27 km · 35 min)</span><span>₡15.267</span></div>
+        <div class="row"><span>Para el conductor (90%)</span><span style="color:#00d4aa">₡13.740</span></div>
+        <div class="row"><span>Comisión AVS (10%)</span><span style="color:#f5a623">₡1.527</span></div>
+        <div class="row tot"><span>Total</span><span>₡15.267</span></div>
+        <div style="text-align:center;margin-top:10px;font-size:11px;color:#888">Pagado por SINPE Móvil · 5% más barato que Uber Comfort</div>
       </div>
     `
   },
