@@ -611,6 +611,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="adtbtn on" id="admtab-conductores" onclick="switchAdminTab('conductores')">👥 Conductores</div>
     <div class="adtbtn" id="admtab-recargas" onclick="switchAdminTab('recargas')">💰 Recargas</div>
     <div class="adtbtn" id="admtab-negocios" onclick="switchAdminTab('negocios')">🏪 Negocios</div>
+    <div class="adtbtn" id="admtab-matchuber" onclick="switchAdminTab('matchuber')">💡 Match Uber</div>
   </div>
   <div id="admin-conductores">
     <div class="adtab" style="margin-top:8px">
@@ -627,6 +628,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div class="adtbtn" id="recbtn-rechazado" onclick="filtrarRecargas('rechazado')">❌ Rechazadas</div>
     </div>
     <div id="recargaslist"><div class="nolist">Cargando recargas...</div></div>
+  </div>
+  <div id="admin-matchuber" style="display:none;padding:0 0 20px;overflow-y:auto;flex:1">
+    <div class="adtab" style="margin-top:8px">
+      <div class="adtbtn on" id="mubtn-pendiente_aprobacion" onclick="filtrarMatchUber('pendiente_aprobacion')">⏳ Por aprobar</div>
+      <div class="adtbtn" id="mubtn-buscando_conductor" onclick="filtrarMatchUber('buscando_conductor')">🔍 Buscando</div>
+      <div class="adtbtn" id="mubtn-aceptado" onclick="filtrarMatchUber('aceptado')">✅ Aceptadas</div>
+      <div class="adtbtn" id="mubtn-rechazado_admin" onclick="filtrarMatchUber('rechazado_admin')">❌ Rechazadas</div>
+    </div>
+    <div id="matchuberlist"><div class="nolist">Cargando solicitudes Match Uber...</div></div>
   </div>
 </div>
 
@@ -718,6 +728,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div class="tiitem"><div class="tilbl">Total</div><div class="tival" id="tfare">—</div></div>
     </div>
     <div id="fareSection" style="display:none"><div class="plabel">Seleccioná tu tarifa</div><div class="fchips" id="fchips"></div></div>
+    <!-- Botón Match Uber (discreto, debajo de tarifas) -->
+    <div id="matchUberBtn" style="display:none;text-align:center;margin-top:8px">
+      <button onclick="abrirMatchUber()" style="background:transparent;border:1px dashed rgba(0,212,170,0.3);border-radius:10px;padding:9px 14px;font-size:12px;color:var(--mt);cursor:pointer;width:100%;transition:all 0.2s" onmouseover="this.style.borderColor='var(--g)';this.style.color='var(--g)'" onmouseout="this.style.borderColor='rgba(0,212,170,0.3)';this.style.color='var(--mt)'">
+        💡 ¿Uber te dio mejor precio? Compará →
+      </button>
+    </div>
     <button class="btnp" style="margin-top:8px" onclick="solicitar()">Solicitar Viaje</button>
   </div>
   <button class="panic-btn" onclick="abrirPanico()" title="Botón de pánico">🆘</button>
@@ -2212,6 +2228,7 @@ function calcRoute(){
     selCom = cs.comisionAVS;
     selComConductor = cs.totalConductor;
     document.getElementById('fareSection').style.display = 'block';
+    document.getElementById('matchUberBtn').style.display = 'block';
   });
 }
 function mstyle(){return[{elementType:'geometry',stylers:[{color:'#0d1f14'}]},{elementType:'labels.text.stroke',stylers:[{color:'#0d1f14'}]},{elementType:'labels.text.fill',stylers:[{color:'#7a8fa6'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#172040'}]},{featureType:'road',elementType:'geometry.stroke',stylers:[{color:'#0a1628'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#0a1628'}]},{featureType:'poi',stylers:[{visibility:'off'}]}];}
@@ -2235,10 +2252,78 @@ function switchAdminTab(tab){
   document.getElementById('admtab-'+tab).classList.add('on');
   document.getElementById('admin-conductores').style.display='none';
   document.getElementById('admin-recargas').style.display='none';
-  document.getElementById('admin-negocios').style.display='none';
+  const aN = document.getElementById('admin-negocios'); if(aN) aN.style.display='none';
+  const aM = document.getElementById('admin-matchuber'); if(aM) aM.style.display='none';
   if(tab==='conductores'){document.getElementById('admin-conductores').style.display='block';cargarAdmin();}
   else if(tab==='recargas'){document.getElementById('admin-recargas').style.display='block';filtrarRecargas('pendiente');}
-  else if(tab==='negocios'){document.getElementById('admin-negocios').style.display='block';filtrarNegocios('pendiente');}
+  else if(tab==='negocios' && aN){aN.style.display='block';if(typeof filtrarNegocios==='function')filtrarNegocios('pendiente');}
+  else if(tab==='matchuber' && aM){aM.style.display='block';filtrarMatchUber('pendiente_aprobacion');}
+}
+
+let matchUberFiltro = 'pendiente_aprobacion';
+function filtrarMatchUber(estado){
+  matchUberFiltro = estado;
+  document.querySelectorAll('[id^="mubtn-"]').forEach(b=>b.classList.remove('on'));
+  document.getElementById('mubtn-'+estado).classList.add('on');
+  cargarMatchUberAdmin();
+}
+async function cargarMatchUberAdmin(){
+  if(!db) return;
+  const { data } = await db.from('solicitudes_match_uber').select('*').eq('estado', matchUberFiltro).order('fecha_solicitud',{ascending:false});
+  const lista = document.getElementById('matchuberlist');
+  if(!data || data.length === 0){
+    lista.innerHTML = '<div class="nolist">Sin solicitudes en este estado</div>';
+    return;
+  }
+  lista.innerHTML = data.map(m => {
+    const dif = parseFloat(m.diferencia_pct || 0).toFixed(1);
+    const colorDif = Math.abs(dif) > 20 ? '#ff6b6b' : (dif > 0 ? '#f5a623' : 'var(--g)');
+    const fecha = new Date(m.fecha_solicitud).toLocaleString('es-CR', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const acciones = matchUberFiltro === 'pendiente_aprobacion' ? `
+      <div class="adacts">
+        <button class="adaprob" onclick="aprobarMatchUberAdmin('${m.id}')">✅ Aprobar y buscar conductor</button>
+        <button class="adrech" onclick="rechazarMatchUberAdmin('${m.id}')">❌ Rechazar (silencioso)</button>
+      </div>` : '';
+    return `<div class="adcard" style="margin:8px 20px;border-left:3px solid #f5a623">
+      <div class="adname">${m.usuario_nombre || 'Usuario'} <span style="color:var(--mt);font-weight:400;font-size:12px">· ${fecha}</span></div>
+      <div class="adinfo">📱 ${m.usuario_telefono} · 📏 ${m.km}km · ⏱️ ${m.min}min</div>
+      <div class="adinfo">📍 ${m.origen} → ${m.destino}</div>
+      <div style="margin:10px 0;padding:10px;background:var(--cd);border-radius:10px;font-size:13px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Uber reporta</span><span style="font-weight:700">₡${parseInt(m.precio_uber_reportado||0).toLocaleString('es-CR')}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">AVS calcula</span><span>₡${parseInt(m.tarifa_avs_calculada||0).toLocaleString('es-CR')}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Diferencia</span><span style="color:${colorDif};font-weight:700">${dif}%</span></div>
+        <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--bd);margin-top:4px"><span style="color:var(--g);font-weight:600">Precio propuesto</span><span style="color:var(--g);font-weight:700;font-size:15px">₡${parseInt(m.precio_propuesto||0).toLocaleString('es-CR')}</span></div>
+      </div>
+      <div style="margin:8px 0">
+        <a href="${m.foto_url}" target="_blank" style="display:inline-block;background:rgba(96,165,250,0.1);border:1px solid #60a5fa;border-radius:8px;padding:6px 12px;font-size:12px;color:#60a5fa;text-decoration:none">🖼️ Ver captura de Uber</a>
+      </div>
+      <div class="adbadge ${m.estado}">${m.estado.replace(/_/g,' ').toUpperCase()}</div>
+      ${m.conductor_nombre ? `<div class="adinfo" style="margin-top:6px">🧑‍✈️ Conductor: ${m.conductor_nombre} (${m.conductor_telefono})</div>` : ''}
+      ${acciones}
+    </div>`;
+  }).join('');
+}
+
+async function aprobarMatchUberAdmin(id){
+  if(!db) return;
+  await db.from('solicitudes_match_uber').update({
+    estado: 'buscando_conductor',
+    notas_admin: 'Aprobada manualmente',
+    fecha_resolucion: new Date().toISOString()
+  }).eq('id', id);
+  toast('✅ Aprobada · Notificando conductores');
+  cargarMatchUberAdmin();
+}
+
+async function rechazarMatchUberAdmin(id){
+  if(!db) return;
+  await db.from('solicitudes_match_uber').update({
+    estado: 'rechazado_admin',
+    motivo_rechazo: 'Diferencia con tarifa AVS demasiado alta',
+    fecha_resolucion: new Date().toISOString()
+  }).eq('id', id);
+  toast('❌ Rechazada silenciosamente');
+  cargarMatchUberAdmin();
 }
 let recargasFiltro='pendiente';
 function filtrarRecargas(estado){recargasFiltro=estado;document.querySelectorAll('[id^="recbtn-"]').forEach(b=>b.classList.remove('on'));document.getElementById('recbtn-'+estado).classList.add('on');cargarRecargas();}
@@ -2959,15 +3044,51 @@ async function toggleDisp(el){
 }
 async function cargarSolicitudes(){
   if(!db){document.getElementById('slist').innerHTML='<div class="nolist">Sin conexión a base de datos</div>';return;}
-  const [vRes,pRes] = await Promise.all([
+  const [vRes,pRes,muRes] = await Promise.all([
     db.from('viajes').select('*').eq('estado','solicitado').order('fecha_solicitud',{ascending:false}).limit(10),
-    db.from('pedidos').select('*').eq('estado','listo').eq('tipo_entrega','delivery').order('fecha',{ascending:false}).limit(10)
+    db.from('pedidos').select('*').eq('estado','listo').eq('tipo_entrega','delivery').order('fecha',{ascending:false}).limit(10),
+    db.from('solicitudes_match_uber').select('*').eq('estado','buscando_conductor').order('fecha_solicitud',{ascending:false}).limit(10)
   ]);
   const viajes = vRes.data || [];
   const pedidos = pRes.data || [];
-  const total = viajes.length + pedidos.length;
+  const matchUbers = muRes.data || [];
+  const total = viajes.length + pedidos.length + matchUbers.length;
   if(total===0){document.getElementById('slist').innerHTML='<div class="nolist">Sin solicitudes activas</div>';document.getElementById('snew').textContent='0';return;}
   document.getElementById('snew').textContent=total;
+  // Match Uber primero (oportunidad destacada)
+  const htmlMatchUber = matchUbers.map(mu => {
+    const tarifaUber = parseInt(mu.precio_uber_reportado||0);
+    const precioOfrecido = parseInt(mu.precio_propuesto||0);
+    const tarifaAVSNormal = parseInt(mu.tarifa_avs_calculada||0);
+    const comAVS = Math.round(precioOfrecido * 0.10);
+    const totalCond = precioOfrecido - comAVS;
+    const totalCondNormal = tarifaAVSNormal - Math.round(tarifaAVSNormal*0.10);
+    const diferenciaCond = totalCond - totalCondNormal;
+    const colorDif = diferenciaCond >= 0 ? 'var(--g)' : '#f5a623';
+    const signo = diferenciaCond >= 0 ? '+' : '';
+    return `<div class="scard" id="mu-${mu.id}" style="border-left:3px solid #f5a623;background:linear-gradient(135deg,rgba(245,166,35,0.05),transparent)">
+      <div class="shd">
+        <div class="spas"><span style="background:#f5a623;color:#000;font-size:9px;padding:2px 6px;border-radius:8px;font-weight:700;letter-spacing:1px;margin-right:6px">MATCH UBER</span>${mu.usuario_nombre || 'Pasajero'}</div>
+        <div style="font-family:var(--font-d);font-size:12px;color:var(--mt)">${mu.km}km · ${mu.min}min</div>
+      </div>
+      <div style="font-size:11px;color:var(--mt);margin-bottom:8px">📸 Cliente reporta que Uber le ofrece <b style="color:#fff">₡${tarifaUber.toLocaleString('es-CR')}</b></div>
+      <a href="${mu.foto_url}" target="_blank" style="display:inline-block;font-size:11px;color:#60a5fa;text-decoration:underline;margin-bottom:8px">🖼️ Ver captura de Uber</a>
+      <div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:var(--mt)"><span>Tarifa AVS normal</span><span>₡${tarifaAVSNormal.toLocaleString('es-CR')} → conductor ₡${totalCondNormal.toLocaleString('es-CR')}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#f5a623;font-weight:600">Precio ofrecido</span><span>₡${precioOfrecido.toLocaleString('es-CR')}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Comisión AVS (10%)</span><span style="color:var(--rd)">−₡${comAVS.toLocaleString('es-CR')}</span></div>
+        <div style="border-top:1px solid var(--bd);padding-top:6px;margin-top:2px;display:flex;justify-content:space-between;font-weight:600">
+          <span style="color:var(--g)">Vos recibís</span>
+          <span style="color:var(--g);font-family:var(--font-d);font-size:15px">₡${totalCond.toLocaleString('es-CR')}</span>
+        </div>
+        <div style="margin-top:4px;font-size:11px;text-align:right;color:${colorDif}">${signo}₡${Math.abs(diferenciaCond).toLocaleString('es-CR')} vs tarifa normal</div>
+      </div>
+      <div class="sact">
+        <button class="bacp" onclick="aceptarMatchUber('${mu.id}','${(mu.usuario_nombre||'').replace(/'/g,'')}')">✓ Aceptar precio</button>
+        <button class="brec" onclick="rechazarMatchUber('${mu.id}')">✗ Rechazar</button>
+      </div>
+    </div>`;
+  }).join('');
   const htmlViajes = viajes.map(v=>{
     const tarifa=parseInt(v.tarifa_estimada||0),comAVS=parseInt(v.comision_avs||Math.round(tarifa*0.10)),totalCond=parseInt(v.total_conductor||tarifa-comAVS);
     return `<div class="scard" id="card-${v.id}"><div class="shd"><div class="spas">🚗 Viaje · Pasajero</div><div style="font-family:var(--font-d);font-size:13px;color:var(--mt)">🔑 ${v.codigo_confirmacion||'—'}</div></div><div class="sroute"><div class="spl"><span style="color:var(--g)">●</span>${v.origen_descripcion}</div><div style="width:2px;height:10px;background:var(--mt);margin-left:5px"></div><div class="spl"><span style="color:var(--rd)">●</span>${v.destino_descripcion}</div></div><div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Tarifa del viaje</span><span>₡${tarifa.toLocaleString('es-CR')}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Comisión AVS</span><span style="color:var(--rd)">−₡${comAVS.toLocaleString('es-CR')}</span></div><div style="border-top:1px solid var(--bd);padding-top:6px;margin-top:2px;display:flex;justify-content:space-between;font-weight:600"><span style="color:var(--g)">Conductor</span><span style="color:var(--g);font-family:var(--font-d);font-size:15px">₡${totalCond.toLocaleString('es-CR')}</span></div></div><div class="sact"><button class="bacp" onclick="aceptar('${v.id}',${v.origen_lat},${v.origen_lng},'${v.origen_descripcion}',${v.destino_lat},${v.destino_lng},'${v.destino_descripcion}')">Aceptar viaje</button><button class="brec" onclick="rechazar('${v.id}')">Rechazar</button></div></div>`;
@@ -2979,7 +3100,29 @@ async function cargarSolicitudes(){
     const resumen = items.slice(0,3).map(i=>`${i.cantidad}× ${i.nombre}`).join(', ') + (items.length>3?'...':'');
     return `<div class="scard" id="ped-${p.id}" style="border-left:3px solid #f5a623"><div class="shd"><div class="spas">🛵 Delivery · ${p.negocio_nombre||'Negocio'}</div><div style="font-family:var(--font-d);font-size:13px;color:var(--mt)">📋 #${p.id.slice(0,6)}</div></div><div style="font-size:12px;color:var(--mt);margin-bottom:8px;line-height:1.4">${resumen}</div><div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Tarifa delivery</span><span>₡${tarifa.toLocaleString('es-CR')}</span></div><div style="border-top:1px solid var(--bd);padding-top:6px;margin-top:2px;display:flex;justify-content:space-between;font-weight:600"><span style="color:var(--g)">Conductor recibe</span><span style="color:var(--g);font-family:var(--font-d);font-size:15px">₡${totalCond.toLocaleString('es-CR')}</span></div></div><div class="sact"><button class="bacp" onclick="aceptarDelivery('${p.id}','${(p.negocio_nombre||'').replace(/'/g,'')}')">Aceptar delivery</button><button class="brec" onclick="rechazarDelivery('${p.id}')">Rechazar</button></div></div>`;
   }).join('');
-  document.getElementById('slist').innerHTML = htmlViajes + htmlPedidos;
+  document.getElementById('slist').innerHTML = htmlMatchUber + htmlViajes + htmlPedidos;
+}
+
+async function aceptarMatchUber(solicitudId, nombreUsuario){
+  if(!db) return;
+  const { error } = await db.from('solicitudes_match_uber').update({
+    estado: 'aceptado',
+    conductor_telefono: user.phone,
+    conductor_nombre: user.name,
+    fecha_resolucion: new Date().toISOString()
+  }).eq('id', solicitudId).eq('estado', 'buscando_conductor');
+  if(error){ toast('Error al aceptar'); return; }
+  const card = document.getElementById('mu-' + solicitudId);
+  if(card) card.remove();
+  document.getElementById('snew').textContent = document.querySelectorAll('#slist .scard').length;
+  toast('🎉 Match Uber aceptado · ' + nombreUsuario);
+  mostrarSOS(true);
+}
+
+function rechazarMatchUber(solicitudId){
+  const card = document.getElementById('mu-' + solicitudId);
+  if(card){ card.style.opacity='0'; card.style.transition='opacity 0.3s'; setTimeout(()=>card.remove(),300); }
+  toast('Solicitud rechazada');
 }
 async function aceptarDelivery(pedidoId, negocioNombre){
   if(!db)return;
@@ -4033,8 +4176,320 @@ async function eliminarInfoMuni(id){
   await db.from('info_municipal').delete().eq('id', id);
   muniTab('info');
 }
+
+// ============== MATCH UBER ==============
+let matchUberFotoFile = null;
+
+function abrirMatchUber(){
+  matchUberFotoFile = null;
+  document.getElementById('matchUberMonto').value = '';
+  document.getElementById('matchUberPreview').style.display = 'none';
+  document.getElementById('matchUberCalculo').style.display = 'none';
+  document.getElementById('matchUberInfo').style.display = 'none';
+  document.getElementById('matchUberLabel').style.display = 'block';
+  document.getElementById('matchUberFile').value = '';
+  document.getElementById('matchUberSubmit').textContent = 'Subir captura primero';
+  document.getElementById('matchUberSubmit').disabled = true;
+  document.getElementById('matchUberSubmit').style.background = '#333';
+  document.getElementById('matchUberSubmit').style.color = '#666';
+  document.getElementById('matchUberSubmit').style.cursor = 'not-allowed';
+  document.getElementById('matchUberModal').style.display = 'flex';
+  // Listener del monto
+  const inp = document.getElementById('matchUberMonto');
+  inp.oninput = actualizarMatchUberCalculo;
+}
+
+function cerrarMatchUber(){
+  document.getElementById('matchUberModal').style.display = 'none';
+}
+
+function previewMatchUber(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 5 * 1024 * 1024){
+    toast('La imagen no puede superar 5MB');
+    input.value = '';
+    return;
+  }
+  matchUberFotoFile = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('matchUberPreviewImg').src = e.target.result;
+    document.getElementById('matchUberPreview').style.display = 'block';
+    document.getElementById('matchUberLabel').style.display = 'none';
+    actualizarMatchUberCalculo();
+  };
+  reader.readAsDataURL(file);
+}
+
+function actualizarMatchUberCalculo(){
+  const monto = parseInt(document.getElementById('matchUberMonto').value) || 0;
+  const submit = document.getElementById('matchUberSubmit');
+  const calcDiv = document.getElementById('matchUberCalculo');
+  const infoDiv = document.getElementById('matchUberInfo');
+
+  if(!matchUberFotoFile){
+    submit.textContent = 'Subir captura primero';
+    submit.disabled = true;
+    submit.style.background = '#333';
+    submit.style.color = '#666';
+    submit.style.cursor = 'not-allowed';
+    calcDiv.style.display = 'none';
+    infoDiv.style.display = 'none';
+    return;
+  }
+
+  if(monto < 1000){
+    submit.textContent = 'Ingresá el precio de Uber';
+    submit.disabled = true;
+    submit.style.background = '#333';
+    submit.style.color = '#666';
+    submit.style.cursor = 'not-allowed';
+    calcDiv.style.display = 'none';
+    infoDiv.style.display = 'none';
+    return;
+  }
+
+  // Calcular precio AVS = Uber - 3%
+  const precioAVS = Math.round(monto * 0.97);
+  const ahorro = monto - precioAVS;
+  document.getElementById('matchUberPrecioFinal').textContent = '₡' + precioAVS.toLocaleString('es-CR');
+  document.getElementById('matchUberAhorro').textContent = '₡' + ahorro.toLocaleString('es-CR');
+  calcDiv.style.display = 'block';
+
+  // Calcular diferencia con tarifa estándar AVS calculada
+  const tarifaAVS = (typeof selFare === 'number' && selFare > 0) ? selFare : 0;
+  if(tarifaAVS > 0){
+    const diferenciaPct = ((monto - tarifaAVS) / tarifaAVS) * 100;
+    if(diferenciaPct > 20){
+      infoDiv.style.display = 'block';
+      infoDiv.style.background = 'rgba(245,166,35,0.1)';
+      infoDiv.style.border = '1px solid rgba(245,166,35,0.4)';
+      infoDiv.style.color = '#f5a623';
+      infoDiv.textContent = '⏳ La diferencia es alta (' + Math.round(diferenciaPct) + '%). Tu solicitud requiere aprobación del admin (10-30 min).';
+    } else if(diferenciaPct < -10){
+      infoDiv.style.display = 'block';
+      infoDiv.style.background = 'rgba(0,212,170,0.1)';
+      infoDiv.style.border = '1px solid rgba(0,212,170,0.4)';
+      infoDiv.style.color = 'var(--g)';
+      infoDiv.textContent = '💚 AVS ya es más barato que Uber. ¿Estás seguro?';
+    } else {
+      infoDiv.style.display = 'block';
+      infoDiv.style.background = 'rgba(0,212,170,0.08)';
+      infoDiv.style.border = '1px solid rgba(0,212,170,0.3)';
+      infoDiv.style.color = '#aaa';
+      infoDiv.textContent = '✓ Aprobación automática. Buscaremos un conductor que acepte tu precio.';
+    }
+  }
+
+  submit.textContent = '✓ Enviar solicitud (' + (precioAVS).toLocaleString('es-CR') + ')';
+  submit.disabled = false;
+  submit.style.background = 'linear-gradient(135deg,#00d4aa,#00b894)';
+  submit.style.color = '#000';
+  submit.style.cursor = 'pointer';
+}
+
+async function enviarMatchUber(){
+  if(!matchUberFotoFile){ toast('Falta la captura'); return; }
+  const montoUber = parseInt(document.getElementById('matchUberMonto').value) || 0;
+  if(montoUber < 1000){ toast('Ingresá el precio de Uber'); return; }
+  if(!destLoc){ toast('Necesito el destino primero'); return; }
+  if(!db){ toast('Sin conexión'); return; }
+
+  const submit = document.getElementById('matchUberSubmit');
+  submit.disabled = true;
+  submit.textContent = 'Subiendo...';
+
+  try {
+    // 1. Subir foto a Supabase Storage
+    const ext = matchUberFotoFile.name.split('.').pop() || 'jpg';
+    const fileName = 'match-' + Date.now() + '-' + Math.random().toString(36).substring(2,8) + '.' + ext;
+    const { data: upData, error: upErr } = await db.storage.from('capturas-uber').upload(fileName, matchUberFotoFile);
+    if(upErr){ throw upErr; }
+    const { data: urlData } = db.storage.from('capturas-uber').getPublicUrl(fileName);
+    const fotoUrl = urlData.publicUrl;
+
+    // 2. Calcular datos del viaje
+    const precioAVS = Math.round(montoUber * 0.97);
+    const tarifaAVS = (typeof selFare === 'number' && selFare > 0) ? selFare : 0;
+    const diferenciaPct = tarifaAVS > 0 ? ((montoUber - tarifaAVS) / tarifaAVS) * 100 : 0;
+    const km = parseFloat(document.getElementById('tdist').textContent) || 0;
+    const min = parseInt(document.getElementById('tdur').textContent) || 0;
+    const origenDesc = (typeof userLoc !== 'undefined' && userLoc) ? `${userLoc.lat.toFixed(4)},${userLoc.lng.toFixed(4)}` : 'origen';
+    const destDesc = destLoc ? `${destLoc.lat().toFixed(4)},${destLoc.lng().toFixed(4)}` : 'destino';
+
+    // Auto-aprobación si diferencia < 20%
+    const estadoInicial = (Math.abs(diferenciaPct) <= 20) ? 'buscando_conductor' : 'pendiente_aprobacion';
+
+    // 3. Insertar solicitud
+    const { data: solicitud, error: insErr } = await db.from('solicitudes_match_uber').insert({
+      usuario_telefono: user.phone,
+      usuario_nombre: user.name,
+      origen: origenDesc,
+      destino: destDesc,
+      origen_lat: userLoc ? userLoc.lat : null,
+      origen_lng: userLoc ? userLoc.lng : null,
+      destino_lat: destLoc ? destLoc.lat() : null,
+      destino_lng: destLoc ? destLoc.lng() : null,
+      km: km,
+      min: min,
+      tarifa_avs_calculada: tarifaAVS,
+      precio_uber_reportado: montoUber,
+      precio_propuesto: precioAVS,
+      diferencia_pct: diferenciaPct,
+      foto_url: fotoUrl,
+      estado: estadoInicial
+    }).select().single();
+
+    if(insErr){ throw insErr; }
+
+    cerrarMatchUber();
+
+    if(estadoInicial === 'buscando_conductor'){
+      toast('✅ Buscando conductor a ₡' + precioAVS.toLocaleString('es-CR'));
+      mostrarBuscandoMatchUber(solicitud.id, precioAVS, montoUber);
+    } else {
+      toast('⏳ Tu solicitud está en revisión (10-30 min)');
+      mostrarPendienteMatchUber(solicitud.id);
+    }
+  } catch(e){
+    console.error('[MatchUber] Error:', e);
+    toast('❌ Error al enviar: ' + (e.message || 'reintentá'));
+    submit.disabled = false;
+    submit.textContent = '✓ Enviar solicitud';
+  }
+}
+
+function mostrarBuscandoMatchUber(solicitudId, precioAVS, precioUber){
+  // Modal de espera con timer 5 min
+  let m = document.getElementById('mu-wait-modal');
+  if(m) m.remove();
+  m = document.createElement('div');
+  m.id = 'mu-wait-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(8,15,30,0.92);backdrop-filter:blur(8px);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML = `
+    <div style="background:linear-gradient(135deg,#1a2540,#0d1525);border:1px solid #f5a623;border-radius:18px;padding:24px;width:min(380px,92vw);color:#fff;text-align:center">
+      <div style="font-size:42px;margin-bottom:8px">🔍</div>
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:6px">Buscando conductor</div>
+      <div style="font-size:13px;color:#aaa;margin-bottom:18px;line-height:1.5">Estamos consultando a conductores cercanos si aceptan tu precio.</div>
+      <div style="background:rgba(0,212,170,0.08);border:1px solid var(--g);border-radius:12px;padding:14px;margin-bottom:14px">
+        <div style="font-size:11px;color:#888;margin-bottom:4px">PRECIO OFRECIDO</div>
+        <div style="font-size:28px;font-weight:700;color:var(--g)">₡${precioAVS.toLocaleString('es-CR')}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:4px">3% más barato que Uber (₡${precioUber.toLocaleString('es-CR')})</div>
+      </div>
+      <div style="font-size:12px;color:#888;margin-bottom:14px">⏱️ Tiempo límite: <span id="mu-timer">5:00</span></div>
+      <button onclick="cancelarMatchUberEspera('${solicitudId}')" style="width:100%;background:transparent;border:1px solid rgba(255,77,77,0.4);border-radius:12px;padding:12px;color:#ff6b6b;cursor:pointer;font-size:13px">Cancelar solicitud</button>
+    </div>`;
+  document.body.appendChild(m);
+
+  // Timer 5 minutos
+  let segundosRestantes = 300;
+  const timerEl = document.getElementById('mu-timer');
+  const interval = setInterval(async () => {
+    segundosRestantes--;
+    const mins = Math.floor(segundosRestantes/60);
+    const secs = segundosRestantes % 60;
+    if(timerEl) timerEl.textContent = `${mins}:${secs<10?'0':''}${secs}`;
+    // Polling al estado cada 5 seg
+    if(segundosRestantes % 5 === 0 && db){
+      try {
+        const { data } = await db.from('solicitudes_match_uber').select('estado, conductor_nombre').eq('id', solicitudId).single();
+        if(data && data.estado === 'aceptado'){
+          clearInterval(interval);
+          const elMu = document.getElementById('mu-wait-modal');
+          if(elMu) elMu.remove();
+          toast('🎉 ' + (data.conductor_nombre || 'Conductor') + ' aceptó tu precio!');
+        }
+      } catch(e){}
+    }
+    if(segundosRestantes <= 0){
+      clearInterval(interval);
+      // Marcar como sin conductor
+      try { await db.from('solicitudes_match_uber').update({ estado:'sin_conductor', fecha_resolucion:new Date().toISOString() }).eq('id', solicitudId); } catch(e){}
+      const elMu = document.getElementById('mu-wait-modal');
+      if(elMu) elMu.remove();
+      toast('Sin conductores a ese precio. Probá la tarifa estándar.');
+    }
+  }, 1000);
+  // Guardar interval por si cancela
+  window._muInterval = interval;
+}
+
+async function cancelarMatchUberEspera(solicitudId){
+  if(window._muInterval) clearInterval(window._muInterval);
+  try { await db.from('solicitudes_match_uber').update({ estado:'cancelado_usuario', fecha_resolucion:new Date().toISOString() }).eq('id', solicitudId); } catch(e){}
+  const elMu = document.getElementById('mu-wait-modal');
+  if(elMu) elMu.remove();
+  toast('Solicitud cancelada');
+}
+
+function mostrarPendienteMatchUber(solicitudId){
+  let m = document.getElementById('mu-pending-modal');
+  if(m) m.remove();
+  m = document.createElement('div');
+  m.id = 'mu-pending-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(8,15,30,0.92);backdrop-filter:blur(8px);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML = `
+    <div style="background:linear-gradient(135deg,#1a2540,#0d1525);border:1px solid #f5a623;border-radius:18px;padding:24px;width:min(380px,92vw);color:#fff;text-align:center">
+      <div style="font-size:42px;margin-bottom:8px">⏳</div>
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:6px">Solicitud en revisión</div>
+      <div style="font-size:13px;color:#aaa;margin-bottom:18px;line-height:1.6">La diferencia con la tarifa AVS es alta. Un administrador la está revisando.<br><br>Te avisaremos cuando esté aprobada (10-30 min).</div>
+      <button onclick="document.getElementById('mu-pending-modal').remove()" style="width:100%;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:12px;padding:12px;cursor:pointer">Entendido</button>
+    </div>`;
+  document.body.appendChild(m);
+}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9LzLaIH_6QLfuHaBqUqMuabnTUBf8OzA&libraries=places,geometry&callback=initMap" async defer></script>
+<!-- ============== MODAL MATCH UBER ============== -->
+<div id="matchUberModal" style="display:none;position:fixed;inset:0;background:rgba(8,15,30,0.85);backdrop-filter:blur(8px);z-index:99998;align-items:center;justify-content:center;padding:20px">
+  <div style="background:linear-gradient(135deg,#1a2540,#0d1525);border:1px solid #00d4aa;border-radius:18px;width:min(420px,94vw);max-height:92vh;overflow-y:auto;color:#fff;box-shadow:0 20px 50px rgba(0,0,0,0.5)">
+    <div style="padding:22px 22px 0;text-align:center;position:relative">
+      <button onclick="cerrarMatchUber()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.1);border:none;color:#fff;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer">✕</button>
+      <div style="font-size:42px;margin-bottom:6px">💡</div>
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:4px">Comparar con Uber</div>
+      <div style="font-size:12px;color:#aaa;line-height:1.5">Subí la captura de Uber y ofrecele a un conductor AVS el mismo precio (3% más barato).</div>
+    </div>
+    <div style="padding:18px 22px">
+      <div style="font-size:11px;color:#888;letter-spacing:1px;margin-bottom:6px">PASO 1 — CAPTURA DE UBER</div>
+      <label for="matchUberFile" style="display:block;background:rgba(0,212,170,0.05);border:2px dashed rgba(0,212,170,0.3);border-radius:14px;padding:24px;text-align:center;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--g)';this.style.background='rgba(0,212,170,0.1)'" onmouseout="this.style.borderColor='rgba(0,212,170,0.3)';this.style.background='rgba(0,212,170,0.05)'">
+        <div id="matchUberPreview" style="display:none;margin-bottom:10px"><img id="matchUberPreviewImg" style="max-width:100%;max-height:160px;border-radius:8px"></div>
+        <div id="matchUberLabel">
+          <div style="font-size:28px;margin-bottom:6px">📸</div>
+          <div style="font-size:13px;font-weight:600;color:var(--g)">Tocá para tomar foto o subir captura</div>
+          <div style="font-size:11px;color:#888;margin-top:4px">JPG, PNG · Máximo 5MB</div>
+        </div>
+      </label>
+      <input type="file" id="matchUberFile" accept="image/*" capture="environment" style="display:none" onchange="previewMatchUber(this)">
+
+      <div style="font-size:11px;color:#888;letter-spacing:1px;margin-top:18px;margin-bottom:6px">PASO 2 — PRECIO QUE UBER TE OFRECE</div>
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px">
+        <span style="color:#888;font-size:18px;font-weight:700">₡</span>
+        <input type="number" id="matchUberMonto" placeholder="15.000" style="flex:1;background:transparent;border:none;color:#fff;font-size:18px;font-weight:700;outline:none" inputmode="numeric">
+      </div>
+
+      <div id="matchUberCalculo" style="display:none;margin-top:16px;background:rgba(0,212,170,0.08);border:1px solid var(--g);border-radius:12px;padding:14px">
+        <div style="font-size:11px;color:#888;letter-spacing:1px;margin-bottom:6px">PRECIO QUE AVS TE OFRECE</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:24px;font-weight:700;color:var(--g)" id="matchUberPrecioFinal">₡—</div>
+            <div style="font-size:11px;color:#aaa">3% más barato que Uber</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:#888">AHORRO</div>
+            <div style="font-size:14px;font-weight:700;color:#f5a623" id="matchUberAhorro">₡—</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="matchUberInfo" style="display:none;margin-top:12px;padding:10px 12px;border-radius:10px;font-size:11px;line-height:1.5"></div>
+
+      <button id="matchUberSubmit" onclick="enviarMatchUber()" disabled style="width:100%;margin-top:16px;background:#333;border:none;color:#666;font-weight:700;border-radius:12px;padding:14px;font-size:15px;cursor:not-allowed;transition:all 0.2s">
+        Subir captura primero
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
