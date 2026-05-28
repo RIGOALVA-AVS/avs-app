@@ -1328,60 +1328,102 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .resena-tag.on{background:rgba(0,229,184,0.15);border-color:var(--g);color:var(--g)}
 </style>
 
-<!-- ============== MODO DEMO (Acceso secreto: teléfono 00000) ============== -->
-<div class="screen" id="demo-selector">
-  <div style="background:linear-gradient(180deg,#0a1525 0%,#0d1f14 100%);height:100%;overflow-y:auto;padding:40px 22px 32px">
+<!-- ============== MODO DEMO CINEMATOGRÁFICO (Acceso: teléfono 00000) ============== -->
+<style>
+  #demo-stage{position:fixed;inset:0;z-index:99000;background:linear-gradient(135deg,#0a1525 0%,#0d1f14 100%);display:none;flex-direction:column;color:#fff;overflow:hidden}
+  #demo-stage.on{display:flex}
+  #demo-stage .demo-topbar{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid rgba(0,212,170,0.2);background:rgba(0,0,0,0.3);backdrop-filter:blur(8px)}
+  #demo-stage .demo-badge{background:#f5a623;color:#000;font-weight:700;font-size:10px;padding:4px 10px;border-radius:10px;letter-spacing:1.5px}
+  #demo-stage .demo-step-counter{font-family:'JetBrains Mono',monospace;font-size:12px;color:#aaa;letter-spacing:1px}
+  #demo-stage .demo-exit{margin-left:auto;background:rgba(255,255,255,0.1);border:none;color:#fff;border-radius:14px;padding:6px 14px;font-size:12px;cursor:pointer}
+  #demo-stage .demo-exit:hover{background:rgba(255,80,80,0.25)}
+  #demo-stage .demo-progress{height:4px;background:rgba(255,255,255,0.08)}
+  #demo-stage .demo-progress-fill{height:100%;background:linear-gradient(90deg,#f5a623,#00d4aa);width:0%;transition:width 0.6s ease}
+  #demo-stage .demo-body{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px 20px;overflow-y:auto;text-align:center}
+  #demo-stage .demo-kicker{font-family:'JetBrains Mono',monospace;font-size:11px;color:#00d4aa;letter-spacing:3px;margin-bottom:14px;text-transform:uppercase;font-weight:700}
+  #demo-stage .demo-title{font-family:var(--font-d);font-size:clamp(22px,5vw,40px);font-weight:700;line-height:1.15;margin-bottom:18px;color:#fff;max-width:780px}
+  #demo-stage .demo-narration{font-size:clamp(14px,2vw,17px);color:#bcd;max-width:680px;line-height:1.55;margin-bottom:28px}
+  #demo-stage .demo-visual{margin:0 auto 28px;max-width:580px;width:100%}
+  #demo-stage .demo-bottombar{display:flex;align-items:center;gap:12px;padding:18px 22px;border-top:1px solid rgba(0,212,170,0.2);background:rgba(0,0,0,0.3);backdrop-filter:blur(8px)}
+  #demo-stage .demo-back{background:transparent;border:1px solid rgba(255,255,255,0.2);color:#aaa;border-radius:12px;padding:10px 16px;font-size:13px;cursor:pointer}
+  #demo-stage .demo-back:disabled{opacity:0.3;cursor:not-allowed}
+  #demo-stage .demo-next{margin-left:auto;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:14px;padding:12px 28px;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:8px}
+  #demo-stage .demo-next:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,212,170,0.4)}
+  #demo-stage .demo-next .arrow{transition:transform 0.2s}
+  #demo-stage .demo-next:hover .arrow{transform:translateX(3px)}
+  #demo-stage .demo-phone-mock{width:240px;height:440px;background:linear-gradient(180deg,#1a2540,#0d1525);border-radius:32px;border:3px solid #2a3550;margin:0 auto;padding:18px;display:flex;flex-direction:column;box-shadow:0 30px 60px rgba(0,0,0,0.5);position:relative;overflow:hidden}
+  #demo-stage .demo-phone-mock::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:50px;height:5px;background:#000;border-radius:3px}
+  #demo-stage .demo-card{background:rgba(255,255,255,0.05);border:1px solid rgba(0,212,170,0.15);border-radius:14px;padding:14px;margin:6px 0;text-align:left}
+  #demo-stage .demo-code-box{font-family:'JetBrains Mono',monospace;font-size:34px;font-weight:700;color:#00d4aa;letter-spacing:6px;background:rgba(0,212,170,0.08);border:2px solid #00d4aa;border-radius:14px;padding:18px;display:inline-block;margin:10px 0;animation:pulseGlow 2s ease-in-out infinite}
+  @keyframes pulseGlow{0%,100%{box-shadow:0 0 20px rgba(0,212,170,0.3)}50%{box-shadow:0 0 40px rgba(0,212,170,0.6)}}
+  #demo-stage .demo-stars{font-size:36px;letter-spacing:8px;color:#f5a623;margin:14px 0}
+  #demo-stage .demo-map-sim{width:100%;max-width:580px;height:220px;background:linear-gradient(135deg,#0d1525,#1a2540);border-radius:18px;border:1px solid rgba(0,212,170,0.3);position:relative;overflow:hidden;margin:0 auto}
+  #demo-stage .demo-map-sim::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle at 20% 30%,rgba(0,212,170,0.08) 0%,transparent 40%),radial-gradient(circle at 80% 70%,rgba(245,166,35,0.08) 0%,transparent 40%);}
+  #demo-stage .map-pin{position:absolute;font-size:28px;animation:bounce 1.5s ease-in-out infinite}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  #demo-stage .map-vehicle{position:absolute;font-size:28px;transition:all 1.5s cubic-bezier(0.65,0,0.35,1);filter:drop-shadow(0 0 8px rgba(0,212,170,0.6))}
+  #demo-stage .map-route{position:absolute;height:3px;background:linear-gradient(90deg,#00d4aa,#f5a623);border-radius:2px;transform-origin:left center;opacity:0.7}
+  #demo-stage .demo-status-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(0,212,170,0.15);border:1px solid #00d4aa;border-radius:20px;padding:8px 16px;font-size:13px;color:#00d4aa;margin:6px;font-weight:600}
+  #demo-stage .demo-status-pill.done{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.15);color:#888}
+  #demo-stage .demo-status-pill.active{animation:activePulse 1.5s ease-in-out infinite;background:#00d4aa;color:#000}
+  @keyframes activePulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,170,0.5)}50%{box-shadow:0 0 0 12px rgba(0,212,170,0)}}
+  #demo-stage .demo-tag-chip{display:inline-block;background:rgba(0,212,170,0.12);border:1px solid #00d4aa;color:#00d4aa;border-radius:14px;padding:5px 12px;font-size:12px;margin:3px;font-weight:500}
+  #demo-stage .demo-receipt{background:#0f1d12;border:1px dashed rgba(0,212,170,0.4);border-radius:12px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#bce;text-align:left;max-width:340px;margin:10px auto;line-height:1.7}
+  #demo-stage .demo-receipt .row{display:flex;justify-content:space-between}
+  #demo-stage .demo-receipt .tot{border-top:1px dashed rgba(0,212,170,0.4);margin-top:8px;padding-top:8px;font-weight:700;color:#00d4aa}
+</style>
+
+<!-- Selector inicial del demo -->
+<div class="screen" id="demo-menu">
+  <div style="background:linear-gradient(180deg,#0a1525,#0d1f14);height:100%;overflow-y:auto;padding:40px 22px 32px;color:#fff">
     <div style="text-align:center;margin-bottom:32px">
-      <div style="display:inline-block;background:rgba(245,166,35,0.15);border:1px solid #f5a623;border-radius:24px;padding:5px 14px;font-size:11px;color:#f5a623;font-weight:700;letter-spacing:1.5px;margin-bottom:14px">🎬 MODO DEMO</div>
-      <div style="font-family:var(--font-d);font-size:26px;font-weight:700;color:var(--tx);margin-bottom:6px">Simulación en tiempo real</div>
-      <div style="font-size:13px;color:var(--mt);line-height:1.5">Mostrá AVS en acción sin necesidad de dos dispositivos. Datos virtuales — no se guardan en la base.</div>
+      <div style="display:inline-block;background:rgba(245,166,35,0.15);border:1px solid #f5a623;border-radius:24px;padding:5px 14px;font-size:11px;color:#f5a623;font-weight:700;letter-spacing:1.5px;margin-bottom:14px">🎬 DEMO INTERACTIVO</div>
+      <div style="font-family:var(--font-d);font-size:26px;font-weight:700;margin-bottom:6px">AVS en acción</div>
+      <div style="font-size:13px;color:#aaa;line-height:1.5">Mostrá el flujo completo del producto sin necesidad de dispositivos adicionales. Avanzá con el botón Siguiente.</div>
     </div>
-    <button onclick="iniciarDemoViaje()" style="width:100%;background:linear-gradient(135deg,rgba(0,229,184,0.15),rgba(0,229,184,0.05));border:1px solid var(--g);border-radius:18px;padding:20px;margin-bottom:14px;text-align:left;cursor:pointer;color:var(--tx)">
+    <button onclick="startDemo('viaje')" style="width:100%;background:linear-gradient(135deg,rgba(0,229,184,0.18),rgba(0,229,184,0.05));border:1px solid #00d4aa;border-radius:18px;padding:20px;margin-bottom:14px;text-align:left;cursor:pointer;color:#fff">
       <div style="display:flex;align-items:center;gap:14px">
-        <div style="font-size:38px">🚗</div>
+        <div style="font-size:42px">🚗</div>
         <div style="flex:1">
-          <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:3px">Demo de Viaje</div>
-          <div style="font-size:12px;color:var(--mt);line-height:1.4">Solicitar viaje · Conductor acepta · Código de seguridad · GPS en vivo · Calificación final</div>
-          <div style="font-size:11px;color:var(--g);margin-top:6px">⏱️ Duración: ~2 minutos</div>
+          <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:3px">Demo de Viaje</div>
+          <div style="font-size:12px;color:#aaa;line-height:1.4">Solicitud → Conductor asignado → Código de seguridad → Viaje GPS → Calificación</div>
+          <div style="font-size:11px;color:#00d4aa;margin-top:6px">8 pasos · Controlado por el presentador</div>
         </div>
-        <div style="font-size:22px;color:var(--g)">→</div>
+        <div style="font-size:22px;color:#00d4aa">→</div>
       </div>
     </button>
-    <button onclick="iniciarDemoPedido()" style="width:100%;background:linear-gradient(135deg,rgba(245,166,35,0.12),rgba(245,166,35,0.04));border:1px solid #f5a623;border-radius:18px;padding:20px;margin-bottom:14px;text-align:left;cursor:pointer;color:var(--tx)">
+    <button onclick="startDemo('pedido')" style="width:100%;background:linear-gradient(135deg,rgba(245,166,35,0.15),rgba(245,166,35,0.04));border:1px solid #f5a623;border-radius:18px;padding:20px;margin-bottom:14px;text-align:left;cursor:pointer;color:#fff">
       <div style="display:flex;align-items:center;gap:14px">
-        <div style="font-size:38px">🍕</div>
+        <div style="font-size:42px">🍕</div>
         <div style="flex:1">
-          <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:3px">Demo de Pedido + Delivery</div>
-          <div style="font-size:12px;color:var(--mt);line-height:1.4">Pizzería La Finca · Carrito · Confirmar SINPE · 5 estados de tracking · Reseña</div>
-          <div style="font-size:11px;color:#f5a623;margin-top:6px">⏱️ Duración: ~2 minutos</div>
+          <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:3px">Demo de Pedido + Delivery</div>
+          <div style="font-size:12px;color:#aaa;line-height:1.4">Restaurante → Carrito → SINPE → Preparación → Delivery → Entrega → Reseña</div>
+          <div style="font-size:11px;color:#f5a623;margin-top:6px">9 pasos · Controlado por el presentador</div>
         </div>
         <div style="font-size:22px;color:#f5a623">→</div>
       </div>
     </button>
-    <button onclick="iniciarDemoCompleto()" style="width:100%;background:linear-gradient(135deg,rgba(96,165,250,0.12),rgba(96,165,250,0.04));border:1px solid #60a5fa;border-radius:18px;padding:20px;margin-bottom:24px;text-align:left;cursor:pointer;color:var(--tx)">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="font-size:38px">🎯</div>
-        <div style="flex:1">
-          <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:3px">Demo Completo</div>
-          <div style="font-size:12px;color:var(--mt);line-height:1.4">Viaje + Pedido + Recorrido por Municipalidad</div>
-          <div style="font-size:11px;color:#60a5fa;margin-top:6px">⏱️ Duración: ~5 minutos</div>
-        </div>
-        <div style="font-size:22px;color:#60a5fa">→</div>
-      </div>
-    </button>
-    <button onclick="go('login')" style="width:100%;background:transparent;border:1px solid var(--bd);border-radius:14px;padding:12px;color:var(--mt);cursor:pointer;font-size:13px">← Salir del modo demo</button>
+    <button onclick="go('login')" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:14px;padding:12px;color:#888;cursor:pointer;font-size:13px;margin-top:18px">← Salir del modo demo</button>
   </div>
 </div>
 
-<!-- HUD del demo (banner superior con narración) -->
-<div id="demo-hud" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(180deg,rgba(10,21,37,0.95),rgba(10,21,37,0.85));backdrop-filter:blur(12px);border-bottom:1px solid #f5a623;padding:10px 16px;color:#fff;box-shadow:0 4px 20px rgba(0,0,0,0.4)">
-  <div style="display:flex;align-items:center;gap:10px;max-width:780px;margin:0 auto">
-    <div style="background:#f5a623;color:#000;font-weight:700;font-size:10px;padding:3px 8px;border-radius:10px;letter-spacing:1px">DEMO</div>
-    <div id="demo-hud-text" style="flex:1;font-size:13px;line-height:1.4;font-weight:500">Iniciando simulación...</div>
-    <button onclick="detenerDemo()" style="background:rgba(255,255,255,0.15);border:none;border-radius:14px;padding:5px 12px;color:#fff;font-size:11px;cursor:pointer">✕ Salir</button>
+<!-- Escenario cinematográfico del demo -->
+<div id="demo-stage">
+  <div class="demo-topbar">
+    <div class="demo-badge">DEMO</div>
+    <div class="demo-step-counter" id="demo-step-counter">Paso 1 / 8</div>
+    <button class="demo-exit" onclick="exitDemo()">✕ Salir</button>
   </div>
-  <div style="height:3px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:8px;overflow:hidden">
-    <div id="demo-hud-progress" style="height:100%;background:linear-gradient(90deg,#f5a623,#00d4aa);width:0%;transition:width 0.5s"></div>
+  <div class="demo-progress"><div class="demo-progress-fill" id="demo-progress-fill"></div></div>
+  <div class="demo-body">
+    <div class="demo-kicker" id="demo-kicker">Inicio</div>
+    <div class="demo-title" id="demo-title">Cargando...</div>
+    <div class="demo-narration" id="demo-narration"></div>
+    <div class="demo-visual" id="demo-visual"></div>
+  </div>
+  <div class="demo-bottombar">
+    <button class="demo-back" id="demo-back" onclick="demoPrev()">← Atrás</button>
+    <button class="demo-next" id="demo-next" onclick="demoNext()">Siguiente <span class="arrow">→</span></button>
   </div>
 </div>
 
@@ -2821,253 +2863,398 @@ window.addEventListener('load',()=>{
   };
   setVH();
   window.addEventListener('resize', setVH);
-// ============== MOTOR DE SIMULACIÓN DEMO ==============
-let demoState = { active: false, timers: [], totalDuration: 0, startTime: 0, marker: null, route: null };
-const ATENAS_CENTRO = { lat: 9.9785, lng: -84.3786 };
+// ============== DEMO CINEMATOGRÁFICO AUTÓNOMO ==============
+let demoFlow = null, demoIdx = 0;
 
 function iniciarModoDemo(){
   user = { name: 'Demo AVS', role: 'usuario', phone: '00000' };
-  go('demo-selector');
-  toast('🎬 Modo Demo activado');
+  go('demo-menu');
 }
 
-function detenerDemo(){
-  demoState.timers.forEach(t => clearTimeout(t));
-  demoState.timers = [];
-  demoState.active = false;
-  if(demoState.marker) demoState.marker.setMap(null);
-  if(demoState.route) demoState.route.setMap(null);
-  document.getElementById('demo-hud').style.display = 'none';
-  document.getElementById('demo-hud-progress').style.width = '0%';
-  go('demo-selector');
-  toast('Demo finalizada');
+function startDemo(tipo){
+  demoFlow = (tipo === 'viaje') ? DEMO_VIAJE : DEMO_PEDIDO;
+  demoIdx = 0;
+  document.getElementById('demo-stage').classList.add('on');
+  renderDemoStep();
 }
 
-function demoHUD(text, progressPct){
-  const hud = document.getElementById('demo-hud');
-  hud.style.display = 'block';
-  document.getElementById('demo-hud-text').textContent = text;
-  document.getElementById('demo-hud-progress').style.width = progressPct + '%';
+function exitDemo(){
+  document.getElementById('demo-stage').classList.remove('on');
+  demoFlow = null;
+  demoIdx = 0;
+  go('demo-menu');
 }
 
-function demoStep(delaySec, fn){
-  return new Promise(resolve => {
-    const t = setTimeout(() => { fn(); resolve(); }, delaySec * 1000);
-    demoState.timers.push(t);
-  });
+function demoNext(){
+  if(!demoFlow) return;
+  if(demoIdx >= demoFlow.length - 1){ exitDemo(); return; }
+  demoIdx++;
+  renderDemoStep();
 }
 
-// ============== DEMO 1: VIAJE ==============
-async function iniciarDemoViaje(){
-  demoState.active = true;
-  demoState.timers = [];
-
-  // Paso 1: Mostrar mapa del pasajero
-  demoHUD('Paso 1/8 — María necesita un viaje. Abre AVS y ve los conductores disponibles cerca.', 5);
-  user = { name: 'María González', role: 'usuario', phone: '00000' };
-  go('pasajero');
-  await demoStep(2, ()=>{});
-
-  // Asegurar que el mapa tenga conductores demo
-  if(typeof iniciarSeguimientoConductoresActivos === 'function') iniciarSeguimientoConductoresActivos();
-
-  // Paso 2: Escribe destino
-  await demoStep(8, ()=>{
-    demoHUD('Paso 2/8 — Ingresa su destino. AVS calcula la ruta y muestra 3 tipos de vehículo.', 18);
-    const destInput = document.getElementById('addrDestino') || document.querySelector('input[placeholder*="destino" i]');
-    if(destInput){
-      destInput.value = 'Mercedes, Atenas';
-      destInput.dispatchEvent(new Event('input',{bubbles:true}));
-    }
-  });
-
-  // Paso 3: Mostrar tarifas (simulado)
-  await demoStep(8, ()=>{
-    demoHUD('Paso 3/8 — Tarifas transparentes: Económico ₡2.079 · Estándar ₡2.313 · Premium ₡2.570', 30);
-  });
-
-  // Paso 4: Solicita viaje, código aparece
-  const codigoAVS = 'AVS-' + Math.random().toString(36).substring(2,6).toUpperCase();
-  await demoStep(10, ()=>{
-    demoHUD('Paso 4/8 — María solicita el viaje. AVS genera código de seguridad: ' + codigoAVS, 42);
-    mostrarDemoModal('🔐 Código de verificación', `<div style="font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;color:#00d4aa;letter-spacing:4px;margin:20px 0">${codigoAVS}</div><div style="font-size:13px;color:#aaa">El conductor te pedirá este código al llegar para confirmar tu identidad.</div>`);
-  });
-
-  // Paso 5: Conductor acepta y se mueve
-  await demoStep(10, ()=>{
-    demoHUD('Paso 5/8 — Carlos Méndez (moto 🛵 placa BPJ001) acepta el viaje. Tiempo estimado: 4 min.', 56);
-    cerrarDemoModal();
-    simularConductorMoviendose();
-  });
-
-  // Paso 6: Llega y verifica código
-  await demoStep(15, ()=>{
-    demoHUD('Paso 6/8 — Carlos llega. María le muestra el código ' + codigoAVS + '. Identidad verificada ✓', 70);
-    mostrarDemoModal('✅ Identidad verificada', `<div style="font-size:36px;color:#00d4aa;margin:14px 0">✓</div><div style="font-size:14px;color:#fff">El conductor confirmó tu código</div><div style="font-size:12px;color:#aaa;margin-top:8px">Pueden iniciar el viaje con total seguridad</div>`);
-  });
-
-  // Paso 7: Viaje en progreso
-  await demoStep(10, ()=>{
-    demoHUD('Paso 7/8 — Viaje en curso. GPS en tiempo real. Botón SOS disponible siempre.', 84);
-    cerrarDemoModal();
-  });
-
-  // Paso 8: Finalización + calificación
-  await demoStep(12, ()=>{
-    demoHUD('Paso 8/8 — Llegada al destino. María califica al conductor con 5 estrellas. ¡Listo!', 100);
-    mostrarDemoModal('⭐ Viaje completado', `<div style="margin:14px 0">${'⭐'.repeat(5)}</div><div style="font-size:18px;font-weight:700;color:#00d4aa">Total pagado: ₡2.313</div><div style="font-size:12px;color:#aaa;margin-top:8px">Conductor: ₡2.082 (90%) · AVS: ₡231 (10%)</div>`);
-  });
-
-  await demoStep(6, ()=>{
-    cerrarDemoModal();
-    demoHUD('🎯 Demo completado. ¿Querés ver otra simulación?', 100);
-  });
-
-  await demoStep(3, ()=>{
-    if(demoState.marker){demoState.marker.setMap(null);demoState.marker=null;}
-    if(demoState.route){demoState.route.setMap(null);demoState.route=null;}
-    go('demo-selector');
-    document.getElementById('demo-hud').style.display = 'none';
-  });
+function demoPrev(){
+  if(demoIdx === 0) return;
+  demoIdx--;
+  renderDemoStep();
 }
 
-function simularConductorMoviendose(){
-  if(!gmap || !window.google) return;
-  // Conductor parte desde 1 km al norte, se acerca al centro
-  const inicio = { lat: 9.9870, lng: -84.3786 };
-  const fin = { lat: 9.9790, lng: -84.3786 };
-  demoState.marker = new google.maps.Marker({
-    position: inicio,
-    map: gmap,
-    label: { text: '🛵', fontSize: '26px' },
-    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 20, fillColor: '#f5a623', fillOpacity: 0.95, strokeColor: '#fff', strokeWeight: 2 },
-    title: 'Carlos Méndez · BPJ001'
-  });
-  // Línea de ruta animada
-  demoState.route = new google.maps.Polyline({
-    path: [inicio, fin],
-    map: gmap,
-    strokeColor: '#00d4aa',
-    strokeOpacity: 0.7,
-    strokeWeight: 4,
-    icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3 }, offset: '50%' }]
-  });
-  // Centrar mapa
-  const bounds = new google.maps.LatLngBounds();
-  bounds.extend(inicio); bounds.extend(fin);
-  gmap.fitBounds(bounds, 80);
-  // Animar
-  const totalSteps = 50;
-  let step = 0;
-  const animTimer = setInterval(() => {
-    step++;
-    if(step > totalSteps){clearInterval(animTimer);return;}
-    const f = step / totalSteps;
-    const lat = inicio.lat + (fin.lat - inicio.lat) * f;
-    const lng = inicio.lng + (fin.lng - inicio.lng) * f;
-    if(demoState.marker) demoState.marker.setPosition({lat, lng});
-  }, 300);
-  demoState.timers.push({clearTimeout:()=>clearInterval(animTimer)});
+function renderDemoStep(){
+  if(!demoFlow) return;
+  const s = demoFlow[demoIdx];
+  document.getElementById('demo-step-counter').textContent = `Paso ${demoIdx+1} / ${demoFlow.length}`;
+  document.getElementById('demo-progress-fill').style.width = ((demoIdx+1)/demoFlow.length*100) + '%';
+  document.getElementById('demo-kicker').textContent = s.kicker;
+  document.getElementById('demo-title').textContent = s.title;
+  document.getElementById('demo-narration').textContent = s.narration || '';
+  document.getElementById('demo-visual').innerHTML = s.visual || '';
+  document.getElementById('demo-back').disabled = (demoIdx === 0);
+  const nextBtn = document.getElementById('demo-next');
+  nextBtn.innerHTML = (demoIdx === demoFlow.length - 1) ? '🎬 Finalizar' : 'Siguiente <span class="arrow">→</span>';
+  // Auto-trigger animations if any
+  if(s.onShow) try{ s.onShow(); }catch(e){}
 }
 
-// ============== DEMO 2: PEDIDO RESTAURANTE ==============
-async function iniciarDemoPedido(){
-  demoState.active = true;
-  demoState.timers = [];
-
-  demoHUD('Paso 1/8 — María entra a Servicios → 🍽️ Restaurantes', 5);
-  user = { name: 'María González', role: 'usuario', phone: '00000' };
-  go('servicios');
-  await demoStep(3, ()=>{});
-
-  await demoStep(8, ()=>{
-    demoHUD('Paso 2/8 — Elige Pizzería La Finca. Ve el menú con fotos y precios.', 15);
-    if(typeof verNegocios === 'function') verNegocios('restaurantes');
-  });
-
-  await demoStep(10, ()=>{
-    demoHUD('Paso 3/8 — Agrega Pizza Margherita ₡6.500 + Refresco natural ₡1.200 al carrito.', 28);
-    mostrarDemoModal('🛒 Carrito', `<div style="text-align:left;padding:10px 0"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>1× Pizza Margherita</span><span style="color:#00d4aa">₡6.500</span></div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px"><span>1× Refresco natural</span><span style="color:#00d4aa">₡1.200</span></div><div style="border-top:1px solid #333;padding-top:10px;display:flex;justify-content:space-between;font-weight:700"><span>Subtotal</span><span style="color:#00d4aa">₡7.700</span></div></div>`);
-  });
-
-  await demoStep(10, ()=>{
-    demoHUD('Paso 4/8 — Elige Delivery AVS. Tarifa moto a 0.8km = ₡1.500. Total ₡9.952', 42);
-    mostrarDemoModal('🚗 Delivery AVS', `<div style="font-size:14px;margin:10px 0">📍 0.8 km · ~12 min</div><div style="font-size:16px;font-weight:700;color:#00d4aa;margin:10px 0">Tarifa delivery: ₡1.500</div><div style="font-size:13px;color:#aaa">Subtotal ₡7.700<br>+ Delivery ₡1.500<br>+ Comisión AVS 8%: ₡736</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:10px">TOTAL: ₡9.936</div>`);
-  });
-
-  await demoStep(10, ()=>{
-    demoHUD('Paso 5/8 — Recibe la prefactura por WhatsApp y paga SINPE directo al negocio.', 56);
-    mostrarDemoModal('📲 Prefactura WhatsApp', `<div style="background:#0a3d2a;border-radius:10px;padding:12px;text-align:left;font-size:12px;line-height:1.5;margin:10px 0"><b style="color:#25d366">Pizzería La Finca</b><br><br>Tu pedido AVS-PED7842<br>1× Pizza Margherita ₡6.500<br>1× Refresco natural ₡1.200<br>Delivery: ₡1.500<br><b>Total: ₡9.936</b><br><br><b>SINPE al 8800-1234</b><br>Concepto: AVS-PED7842</div>`);
-  });
-
-  await demoStep(10, ()=>{
-    demoHUD('Paso 6/8 — Pizzería confirma SINPE. Estado pasa a "Preparando" 👨‍🍳', 70);
-    cerrarDemoModal();
-    mostrarDemoTracking('preparacion');
-  });
-
-  await demoStep(15, ()=>{
-    demoHUD('Paso 7/8 — Pizza lista. Conductor Carlos retira y sale rumbo a María.', 82);
-    mostrarDemoTracking('en_camino');
-  });
-
-  await demoStep(15, ()=>{
-    demoHUD('Paso 8/8 — Pedido entregado. María califica con 5 estrellas y deja reseña.', 96);
-    mostrarDemoTracking('entregado');
-  });
-
-  await demoStep(5, ()=>{
-    mostrarDemoModal('⭐ Reseña publicada', `<div style="margin:14px 0;font-size:24px">${'⭐'.repeat(5)}</div><div style="font-size:13px;color:#fff">"Excelente sabor · Rápido · Recomendado"</div><div style="font-size:12px;color:#aaa;margin-top:10px">Pizzería La Finca: 5.0 ⭐ · 1 reseña</div>`);
-    demoHUD('🎯 Demo completado. AVS conectó usuario, negocio y conductor en un solo flujo.', 100);
-  });
-
-  await demoStep(5, ()=>{
-    cerrarDemoModal();
-    go('demo-selector');
-    document.getElementById('demo-hud').style.display = 'none';
-  });
-}
-
-function mostrarDemoTracking(estado){
-  const estados = [
-    { id:'pendiente', ico:'📋', label:'Pedido recibido' },
-    { id:'preparacion', ico:'👨‍🍳', label:'En preparación' },
-    { id:'listo', ico:'✅', label:'Listo para entrega' },
-    { id:'en_camino', ico:'🚗', label:'En camino' },
-    { id:'entregado', ico:'📦', label:'Entregado' }
-  ];
-  const idx = estados.findIndex(e => e.id === estado);
-  const html = `<div style="text-align:left;padding:14px 6px">${estados.map((e,i)=>{
-    const done = i < idx, active = i === idx, pending = i > idx;
-    return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;opacity:${pending?'0.35':'1'}">
-      <div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;background:${active?'#00d4aa':done?'rgba(0,212,170,0.25)':'#222'};border:2px solid ${active||done?'#00d4aa':'#444'};${active?'box-shadow:0 0 10px rgba(0,212,170,0.5);':''}">${done?'✓':e.ico}</div>
-      <div style="font-size:13px;color:${active?'#00d4aa':'#fff'};font-weight:${active?'700':'400'}">${e.label} ${active?'← Ahora':''}</div>
-    </div>`;
-  }).join('')}</div>`;
-  mostrarDemoModal('📦 Estado del Pedido', html);
-}
-
-function mostrarDemoModal(titulo, html){
-  let m = document.getElementById('demo-modal');
-  if(!m){
-    m = document.createElement('div');
-    m.id = 'demo-modal';
-    m.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#1a2540,#0a1525);border:1px solid #f5a623;border-radius:18px;padding:24px;width:min(360px,86vw);z-index:99998;box-shadow:0 20px 50px rgba(0,0,0,0.5);color:#fff;text-align:center;animation:demoModalIn 0.3s ease';
-    document.body.appendChild(m);
+// ============== FLUJO 1: DEMO DE VIAJE ==============
+const DEMO_VIAJE = [
+  {
+    kicker: 'Paso 1 — Solicitud',
+    title: 'María necesita un viaje en Atenas',
+    narration: 'Abre AVS desde su celular y ve a 10 conductores disponibles cerca, todos verificados. Sin necesidad de WhatsApp, sin esperas inciertas.',
+    visual: `
+      <div class="demo-map-sim">
+        <div class="map-pin" style="left:30%;top:40%;color:#00d4aa">📍</div>
+        <div class="map-vehicle" style="left:55%;top:25%">🛵</div>
+        <div class="map-vehicle" style="left:70%;top:55%">🚗</div>
+        <div class="map-vehicle" style="left:20%;top:65%">🛵</div>
+        <div class="map-vehicle" style="left:45%;top:70%">🚙</div>
+        <div class="map-vehicle" style="left:80%;top:30%">🛵</div>
+      </div>
+      <div style="margin-top:18px;font-size:13px;color:#aaa">📍 Atenas Centro · 5 conductores a menos de 1km</div>
+    `
+  },
+  {
+    kicker: 'Paso 2 — Destino',
+    title: 'Escribe a dónde va',
+    narration: 'AVS calcula la ruta usando Google Maps y muestra 3 opciones de tarifa fija — sin sorpresas, sin "surge pricing".',
+    visual: `
+      <div class="demo-card" style="max-width:380px;margin:0 auto">
+        <div style="font-size:11px;color:#888;letter-spacing:1px;margin-bottom:6px">¿A DÓNDE VAS?</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+          <span style="color:#00d4aa">●</span> Casa, Atenas Centro
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;padding:8px 0">
+          <span style="color:#f5a623">●</span> Hospital San Rafael, Alajuela
+        </div>
+        <div style="display:flex;justify-content:space-around;margin-top:14px;padding-top:14px;border-top:1px dashed rgba(0,212,170,0.3)">
+          <div><div style="font-size:11px;color:#888">DISTANCIA</div><div style="font-size:18px;color:#00d4aa;font-weight:700">11.2 km</div></div>
+          <div><div style="font-size:11px;color:#888">TIEMPO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">18 min</div></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap">
+        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">ECONÓMICO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡5.180</div></div>
+        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px;border-color:#00d4aa"><div style="font-size:11px;color:#888">ESTÁNDAR</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡5.755</div></div>
+        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">PREMIUM</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡6.395</div></div>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 3 — Código de seguridad',
+    title: 'AVS genera un código único de verificación',
+    narration: 'Este código solo lo conocen el pasajero y el conductor que aceptó el viaje. Garantiza que María se suba al auto correcto y nadie suplante identidades.',
+    visual: `
+      <div class="demo-code-box">AVS-K7P3</div>
+      <div style="font-size:13px;color:#aaa;margin-top:14px;max-width:480px">El conductor le pedirá este código a María al llegar. Solo después de verificarlo se inicia el viaje.</div>
+    `
+  },
+  {
+    kicker: 'Paso 4 — Conductor asignado',
+    title: 'Carlos Méndez acepta el viaje',
+    narration: 'María ve en tiempo real quién la recogerá: nombre real, foto, calificación promedio, vehículo y placa. Llega en 4 minutos.',
+    visual: `
+      <div class="demo-card" style="max-width:380px;margin:0 auto;display:flex;gap:14px;align-items:center;padding:18px">
+        <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#00d4aa,#0a8870);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#000">CM</div>
+        <div style="flex:1;text-align:left">
+          <div style="font-size:16px;font-weight:700;margin-bottom:2px">Carlos Méndez</div>
+          <div style="font-size:13px;color:#aaa;margin-bottom:4px">🛵 Honda Wave · BPJ-001</div>
+          <div style="font-size:13px;color:#f5a623">⭐ 4.9 · 187 viajes</div>
+        </div>
+      </div>
+      <div style="margin-top:18px;display:flex;justify-content:center;gap:8px">
+        <span class="demo-status-pill active">🛵 En camino — 4 min</span>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 5 — Llegada y verificación',
+    title: 'Carlos llega. María le muestra el código',
+    narration: 'Carlos ingresa "AVS-K7P3" en su app. El sistema confirma que coincide. La identidad queda verificada de ambos lados.',
+    visual: `
+      <div style="font-size:80px;margin-bottom:12px">✅</div>
+      <div style="font-size:18px;color:#00d4aa;font-weight:700;margin-bottom:8px">Identidad verificada</div>
+      <div style="font-size:14px;color:#aaa;max-width:420px">Pasajero y conductor confirmados. El viaje puede comenzar con total seguridad.</div>
+    `
+  },
+  {
+    kicker: 'Paso 6 — En viaje',
+    title: 'GPS en tiempo real durante todo el trayecto',
+    narration: 'María comparte su recorrido con contactos de confianza. Si hay una emergencia, el botón SOS envía su ubicación exacta por WhatsApp y SMS al instante.',
+    visual: `
+      <div class="demo-map-sim">
+        <div class="map-pin" style="left:18%;top:60%;color:#00d4aa">🏠</div>
+        <div class="map-route" style="left:22%;top:62%;width:60%;transform:rotate(-15deg)"></div>
+        <div class="map-vehicle" style="left:50%;top:48%">🛵</div>
+        <div class="map-pin" style="left:82%;top:25%;color:#f5a623">🏥</div>
+      </div>
+      <div style="display:flex;gap:14px;justify-content:center;margin-top:18px;flex-wrap:wrap">
+        <div style="background:#0f1d12;border:1px solid rgba(0,212,170,0.3);border-radius:12px;padding:10px 16px">
+          <div style="font-size:11px;color:#888">VELOCIDAD</div>
+          <div style="font-size:16px;color:#00d4aa;font-weight:700">52 km/h</div>
+        </div>
+        <div style="background:#0f1d12;border:1px solid rgba(245,166,35,0.3);border-radius:12px;padding:10px 16px">
+          <div style="font-size:11px;color:#888">RESTANTE</div>
+          <div style="font-size:16px;color:#f5a623;font-weight:700">9 min</div>
+        </div>
+        <div style="background:#2d1010;border:1px solid #ff4444;border-radius:12px;padding:10px 16px">
+          <div style="font-size:11px;color:#aaa">EMERGENCIA</div>
+          <div style="font-size:16px;color:#ff6666;font-weight:700">🚨 SOS</div>
+        </div>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 7 — Llegada al destino',
+    title: 'Carlos finaliza el viaje. María paga ₡5.755',
+    narration: 'Del total, Carlos recibe ₡5.180 (90%) y AVS retiene ₡575 de comisión (10%). Cuando hay convenio con la municipalidad, ese 10% se divide 50/50 entre AVS y el cantón.',
+    visual: `
+      <div class="demo-receipt">
+        <div style="text-align:center;font-weight:700;color:#00d4aa;margin-bottom:8px">RECIBO VIAJE AVS</div>
+        <div class="row"><span>Tarifa estándar</span><span>₡5.755</span></div>
+        <div class="row"><span>Para el conductor (90%)</span><span style="color:#00d4aa">₡5.180</span></div>
+        <div class="row"><span>Comisión AVS (10%)</span><span style="color:#f5a623">₡575</span></div>
+        <div class="row tot"><span>Total</span><span>₡5.755</span></div>
+        <div style="text-align:center;margin-top:10px;font-size:11px;color:#888">Pagado por SINPE Móvil</div>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 8 — Calificación',
+    title: 'María califica a Carlos con 5 estrellas',
+    narration: 'Cada viaje termina con una calificación mutua. Conductores con baja calificación son revisados. El sistema construye una comunidad confiable, donde la reputación importa.',
+    visual: `
+      <div class="demo-stars">⭐⭐⭐⭐⭐</div>
+      <div style="font-size:18px;color:#00d4aa;font-weight:700;margin-bottom:14px">🤩 Excelente</div>
+      <div style="margin:10px 0">
+        <span class="demo-tag-chip">Puntual</span>
+        <span class="demo-tag-chip">Vehículo limpio</span>
+        <span class="demo-tag-chip">Buen trato</span>
+        <span class="demo-tag-chip">Conducción segura</span>
+      </div>
+      <div style="margin-top:24px;padding:18px;background:rgba(0,212,170,0.08);border:1px solid #00d4aa;border-radius:14px;max-width:420px;margin-left:auto;margin-right:auto">
+        <div style="font-size:13px;color:#aaa;margin-bottom:6px">CICLO COMPLETO</div>
+        <div style="font-size:14px;color:#fff;line-height:1.5">Solicitud → Asignación → Verificación → Viaje GPS → Pago → Calificación. <b style="color:#00d4aa">8 minutos en total.</b></div>
+      </div>
+    `
   }
-  m.innerHTML = `<div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#f5a623;letter-spacing:2px;margin-bottom:6px">SIMULACIÓN</div><div style="font-size:17px;font-weight:700;margin-bottom:10px">${titulo}</div>${html}`;
-}
-function cerrarDemoModal(){
-  const m = document.getElementById('demo-modal');
-  if(m) m.remove();
-}
+];
 
-// ============== DEMO 3: COMPLETO ==============
-async function iniciarDemoCompleto(){
-  await iniciarDemoViaje();
-  await demoStep(2, ()=>{});
-  await iniciarDemoPedido();
-}
+// ============== FLUJO 2: DEMO DE PEDIDO + DELIVERY ==============
+const DEMO_PEDIDO = [
+  {
+    kicker: 'Paso 1 — Marketplace',
+    title: 'María quiere almorzar sin salir de casa',
+    narration: 'Entra a AVS → Servicios → 🍽️ Restaurantes. Ve los negocios locales de Atenas, con sus reseñas, calificación y fotos del menú. Sin Rappi, sin Uber Eats — todo local.',
+    visual: `
+      <div class="demo-card" style="max-width:380px;margin:0 auto">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:60px;height:60px;border-radius:14px;background:linear-gradient(135deg,#f5a623,#d4881a);display:flex;align-items:center;justify-content:center;font-size:32px">🍕</div>
+          <div style="flex:1;text-align:left">
+            <div style="font-size:16px;font-weight:700">Pizzería La Finca</div>
+            <div style="font-size:12px;color:#aaa">📍 200m de tu ubicación</div>
+            <div style="font-size:12px;color:#00d4aa;margin-top:3px">⭐ 4.8 · 47 reseñas</div>
+          </div>
+          <div style="background:rgba(0,212,170,0.15);border:1px solid #00d4aa;border-radius:8px;padding:3px 10px;font-size:11px;color:#00d4aa">Abierto</div>
+        </div>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 2 — Carrito',
+    title: 'Arma su pedido del menú con fotos',
+    narration: 'Cada negocio sube su menú con descripciones, precios y fotos. María elige una pizza y un refresco natural. El carrito calcula el subtotal en tiempo real.',
+    visual: `
+      <div class="demo-card" style="max-width:380px;margin:0 auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+          <div style="text-align:left">
+            <div style="font-size:14px;font-weight:600">🍕 Pizza Margherita</div>
+            <div style="font-size:11px;color:#aaa">Tomate, mozzarella, albahaca</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:#888">1 ×</div>
+            <div style="font-size:14px;color:#00d4aa;font-weight:700">₡6.500</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+          <div style="text-align:left">
+            <div style="font-size:14px;font-weight:600">🥤 Refresco natural</div>
+            <div style="font-size:11px;color:#aaa">Maracuyá fresco · 500ml</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:#888">1 ×</div>
+            <div style="font-size:14px;color:#00d4aa;font-weight:700">₡1.200</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:700">
+          <span>Subtotal</span><span style="color:#00d4aa">₡7.700</span>
+        </div>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 3 — Delivery o Recoger',
+    title: 'Elige Delivery AVS · Tarifa por moto: ₡1.500',
+    narration: 'Las tarifas de delivery están escaladas por distancia y tipo de vehículo. Para distancias cortas en moto es muy económico. María paga ₡8.464 + 8% de comisión AVS.',
+    visual: `
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:18px">
+        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;min-width:120px">
+          <div style="font-size:24px">🏪</div>
+          <div style="font-size:13px;font-weight:600;margin:6px 0">Recoger</div>
+          <div style="font-size:11px;color:#aaa">Sin costo extra</div>
+        </div>
+        <div style="background:rgba(0,212,170,0.15);border:2px solid #00d4aa;border-radius:14px;padding:14px;min-width:120px">
+          <div style="font-size:24px">🛵</div>
+          <div style="font-size:13px;font-weight:600;margin:6px 0;color:#00d4aa">Delivery moto</div>
+          <div style="font-size:11px;color:#aaa">₡1.500 · 0.8 km</div>
+        </div>
+      </div>
+      <div class="demo-receipt">
+        <div class="row"><span>Subtotal</span><span>₡7.700</span></div>
+        <div class="row"><span>Delivery (moto, 0.8 km)</span><span>₡1.500</span></div>
+        <div class="row"><span>Comisión AVS (8%)</span><span>₡736</span></div>
+        <div class="row tot"><span>TOTAL</span><span>₡9.936</span></div>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 4 — Pago SINPE',
+    title: 'Pago directo al negocio por SINPE Móvil',
+    narration: 'AVS no cobra al cliente — el cliente paga directo al negocio usando SINPE Móvil de Costa Rica. La comisión del 8% se descuenta automáticamente al cierre del día.',
+    visual: `
+      <div style="background:#0a3d2a;border:1px solid #25d366;border-radius:14px;padding:16px;max-width:340px;margin:0 auto;text-align:left">
+        <div style="color:#25d366;font-weight:700;margin-bottom:10px">📲 SINPE Móvil</div>
+        <div style="font-size:13px;color:#fff;line-height:1.7">
+          <div><b>Destinatario:</b> Pizzería La Finca</div>
+          <div><b>Número:</b> 8800-1234</div>
+          <div><b>Monto:</b> ₡9.936</div>
+          <div><b>Concepto:</b> AVS-PED7842</div>
+        </div>
+        <div style="margin-top:14px;padding:8px;background:#000;border-radius:8px;text-align:center;font-family:monospace;color:#25d366;font-size:12px">✓ Pago confirmado</div>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 5 — Preparación',
+    title: 'Pizzería La Finca recibe el pedido en su panel',
+    narration: 'El negocio confirma el pago y cambia el estado a "En preparación". María ve la actualización en tiempo real desde su app, sin tener que llamar ni preguntar.',
+    visual: `
+      <div style="max-width:420px;margin:0 auto">
+        <span class="demo-status-pill done">📋 Pedido recibido</span>
+        <span class="demo-status-pill active">👨‍🍳 En preparación</span>
+        <span class="demo-status-pill">✅ Listo</span>
+        <span class="demo-status-pill">🛵 En camino</span>
+        <span class="demo-status-pill">📦 Entregado</span>
+      </div>
+      <div style="margin-top:20px;font-size:13px;color:#aaa">⏱️ Tiempo estimado de preparación: 15 minutos</div>
+    `
+  },
+  {
+    kicker: 'Paso 6 — En camino',
+    title: 'Pedro (moto AVS) retira el pedido y sale',
+    narration: 'Un conductor cercano acepta llevar el pedido. María ve su moto moverse en el mapa en tiempo real. Mismo sistema de seguridad que un viaje normal.',
+    visual: `
+      <div class="demo-map-sim">
+        <div class="map-pin" style="left:15%;top:60%;color:#f5a623">🍕</div>
+        <div class="map-route" style="left:18%;top:62%;width:60%;transform:rotate(-12deg)"></div>
+        <div class="map-vehicle" style="left:45%;top:55%">🛵</div>
+        <div class="map-pin" style="left:80%;top:32%;color:#00d4aa">🏠</div>
+      </div>
+      <div style="margin-top:18px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap">
+        <div style="background:#0f1d12;border:1px solid rgba(0,212,170,0.3);border-radius:12px;padding:10px 16px">
+          <div style="font-size:11px;color:#888">CONDUCTOR</div>
+          <div style="font-size:14px;color:#00d4aa;font-weight:700">Pedro · ⭐4.8</div>
+        </div>
+        <div style="background:#0f1d12;border:1px solid rgba(245,166,35,0.3);border-radius:12px;padding:10px 16px">
+          <div style="font-size:11px;color:#888">LLEGADA</div>
+          <div style="font-size:14px;color:#f5a623;font-weight:700">5 min</div>
+        </div>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 7 — Entrega',
+    title: 'Pedro toca el timbre. ¡Pedido entregado!',
+    narration: 'Pedro marca como "entregado" en su app. María recibe una notificación de confirmación. El círculo del pedido se cerró exitosamente.',
+    visual: `
+      <div style="font-size:80px;margin-bottom:14px">📦</div>
+      <div style="font-size:20px;color:#00d4aa;font-weight:700;margin-bottom:10px">¡Disfrutá tu pedido!</div>
+      <div style="max-width:420px;margin:14px auto 0">
+        <span class="demo-status-pill done">📋 Pedido recibido</span>
+        <span class="demo-status-pill done">👨‍🍳 En preparación</span>
+        <span class="demo-status-pill done">✅ Listo</span>
+        <span class="demo-status-pill done">🛵 En camino</span>
+        <span class="demo-status-pill active">📦 Entregado</span>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 8 — Reseña automática',
+    title: 'María reseña a Pizzería La Finca',
+    narration: 'Apenas el pedido se marca como entregado, AVS le muestra la pantalla de reseña: 5 estrellas, tags rápidos y comentario opcional. Los demás clientes verán esta reseña antes de pedir.',
+    visual: `
+      <div class="demo-stars">⭐⭐⭐⭐⭐</div>
+      <div style="font-size:18px;color:#00d4aa;font-weight:700;margin-bottom:14px">🤩 Excelente</div>
+      <div style="margin:10px 0">
+        <span class="demo-tag-chip">Excelente sabor</span>
+        <span class="demo-tag-chip">Rápido</span>
+        <span class="demo-tag-chip">Bien empacado</span>
+        <span class="demo-tag-chip">Recomendado</span>
+      </div>
+      <div style="margin-top:16px;font-style:italic;color:#bcd;max-width:420px;font-size:14px">"La pizza llegó calentita, el delivery muy amable. Definitivamente vuelvo a pedir."</div>
+    `
+  },
+  {
+    kicker: 'Paso 9 — Cierre del ciclo',
+    title: 'Tres ganadores: María, Pizzería La Finca, Pedro',
+    narration: 'En un solo flujo: el cliente recibió calidad, el negocio local vendió sin tener app propia, el conductor ganó dinero extra. AVS conectó toda la cadena cobrando solo 8% de comisión.',
+    visual: `
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+        <div class="demo-card" style="text-align:center;padding:18px;min-width:130px">
+          <div style="font-size:32px;margin-bottom:6px">👩</div>
+          <div style="font-size:13px;font-weight:700">María</div>
+          <div style="font-size:11px;color:#aaa;margin-top:3px">Recibió su pedido</div>
+        </div>
+        <div class="demo-card" style="text-align:center;padding:18px;min-width:130px">
+          <div style="font-size:32px;margin-bottom:6px">🍕</div>
+          <div style="font-size:13px;font-weight:700">Pizzería</div>
+          <div style="font-size:11px;color:#00d4aa;margin-top:3px">+₡8.464 venta</div>
+        </div>
+        <div class="demo-card" style="text-align:center;padding:18px;min-width:130px">
+          <div style="font-size:32px;margin-bottom:6px">🛵</div>
+          <div style="font-size:13px;font-weight:700">Pedro</div>
+          <div style="font-size:11px;color:#00d4aa;margin-top:3px">+₡1.500 delivery</div>
+        </div>
+        <div class="demo-card" style="text-align:center;padding:18px;min-width:130px;border-color:#f5a623">
+          <div style="font-size:32px;margin-bottom:6px">⚡</div>
+          <div style="font-size:13px;font-weight:700;color:#f5a623">AVS</div>
+          <div style="font-size:11px;color:#f5a623;margin-top:3px">+₡736 comisión</div>
+        </div>
+      </div>
+      <div style="margin-top:24px;padding:18px;background:rgba(245,166,35,0.08);border:1px solid #f5a623;border-radius:14px;max-width:520px;margin-left:auto;margin-right:auto">
+        <div style="font-size:13px;color:#aaa;margin-bottom:6px">EL MODELO AVS</div>
+        <div style="font-size:14px;color:#fff;line-height:1.5">Una plataforma. Tres beneficiados. Un solo cantón. <b style="color:#f5a623">Escalable a 82 cantones de Costa Rica.</b></div>
+      </div>
+    `
+  }
+];
 
 if('serviceWorker'in navigator){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(reg=>reg.unregister());});}});
 
