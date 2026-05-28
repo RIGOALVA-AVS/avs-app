@@ -1282,6 +1282,52 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
 </div>
 
+<!-- Pantalla de reseña al negocio -->
+<div class="screen" id="resena-negocio">
+  <div style="background:var(--bg);height:100%;overflow-y:auto;padding:32px 20px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <button onclick="omitirResena()" style="margin-left:auto;background:transparent;border:1px solid var(--bd);border-radius:20px;color:var(--mt);padding:6px 12px;font-size:12px;cursor:pointer">Omitir ✕</button>
+    </div>
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:48px;margin-bottom:8px">⭐</div>
+      <div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--tx)">¿Cómo te fue?</div>
+      <div style="font-size:13px;color:var(--mt);margin-top:4px" id="resena-negocio-nombre">Calificá tu experiencia</div>
+    </div>
+    <!-- Estrellas grandes -->
+    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:24px" id="resena-stars">
+      <span class="resena-star" data-star="1" onclick="setResenaStar(1)" style="font-size:42px;cursor:pointer;opacity:0.3;transition:all 0.2s">⭐</span>
+      <span class="resena-star" data-star="2" onclick="setResenaStar(2)" style="font-size:42px;cursor:pointer;opacity:0.3;transition:all 0.2s">⭐</span>
+      <span class="resena-star" data-star="3" onclick="setResenaStar(3)" style="font-size:42px;cursor:pointer;opacity:0.3;transition:all 0.2s">⭐</span>
+      <span class="resena-star" data-star="4" onclick="setResenaStar(4)" style="font-size:42px;cursor:pointer;opacity:0.3;transition:all 0.2s">⭐</span>
+      <span class="resena-star" data-star="5" onclick="setResenaStar(5)" style="font-size:42px;cursor:pointer;opacity:0.3;transition:all 0.2s">⭐</span>
+    </div>
+    <div style="text-align:center;font-size:13px;color:var(--g);margin-bottom:24px;min-height:18px" id="resena-label"></div>
+    <!-- Tags rápidos -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">¿Qué destacarías?</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px" id="resena-tags-wrap">
+        <span class="resena-tag" data-tag="Excelente sabor" onclick="toggleResenaTag(this)">Excelente sabor</span>
+        <span class="resena-tag" data-tag="Buena presentación" onclick="toggleResenaTag(this)">Buena presentación</span>
+        <span class="resena-tag" data-tag="Rápido" onclick="toggleResenaTag(this)">Rápido</span>
+        <span class="resena-tag" data-tag="Buen precio" onclick="toggleResenaTag(this)">Buen precio</span>
+        <span class="resena-tag" data-tag="Porción generosa" onclick="toggleResenaTag(this)">Porción generosa</span>
+        <span class="resena-tag" data-tag="Bien empacado" onclick="toggleResenaTag(this)">Bien empacado</span>
+        <span class="resena-tag" data-tag="Recomendado" onclick="toggleResenaTag(this)">Recomendado</span>
+      </div>
+    </div>
+    <!-- Comentario -->
+    <div class="ilabel" style="margin-top:14px">Comentario (opcional)</div>
+    <textarea class="ifield" id="resena-comentario" rows="3" style="resize:vertical;min-height:70px;font-family:inherit" placeholder="Contale a otros cómo fue tu experiencia..."></textarea>
+    <button class="btnp" onclick="enviarResena()" style="margin-top:18px">📝 Publicar reseña</button>
+  </div>
+</div>
+
+<style>
+.resena-star.on{opacity:1 !important;transform:scale(1.15)}
+.resena-tag{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:6px 12px;font-size:12px;color:var(--mt);cursor:pointer;transition:all 0.2s;user-select:none}
+.resena-tag.on{background:rgba(0,229,184,0.15);border-color:var(--g);color:var(--g)}
+</style>
+
 <!-- ============== MÓDULO MUNICIPALIDAD ============== -->
 <!-- Portal público de la municipalidad (sin login) -->
 <div class="screen" id="portal-municipal">
@@ -1729,6 +1775,19 @@ async function abrirTracking(pedidoId) {
 
   renderTimeline(p.estado || 'pendiente');
 
+  // Si el pedido ya está entregado y no se ha reseñado, abrir reseña
+  if (p.estado === 'entregado') {
+    const yaOmitido = localStorage.getItem('resena-omitida-' + pedidoId);
+    if (!yaOmitido) {
+      try {
+        const { data: ya } = await db.from('resenas_negocios').select('id').eq('pedido_id', pedidoId).limit(1);
+        if (!ya || ya.length === 0) {
+          setTimeout(() => abrirResenaNegocio(pedidoId, p.negocio_id, p.negocio_nombre || 'el negocio'), 1500);
+        }
+      } catch(e){}
+    }
+  }
+
   // Subscribe to realtime updates
   if (trackingSub) { trackingSub.unsubscribe(); trackingSub = null; }
   trackingSub = db.channel('tracking-' + pedidoId)
@@ -1742,6 +1801,15 @@ async function abrirTracking(pedidoId) {
       if (estadoInfo) {
         toast(estadoInfo.ico + ' ' + estadoInfo.label);
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      }
+      // Si llega a entregado, abrir reseña automáticamente
+      if (nuevoEstado === 'entregado') {
+        const yaOmitido = localStorage.getItem('resena-omitida-' + pedidoId);
+        if (!yaOmitido && typeof abrirResenaNegocio === 'function') {
+          setTimeout(() => {
+            abrirResenaNegocio(pedidoId, payload.new.negocio_id, payload.new.negocio_nombre || 'el negocio');
+          }, 2000);
+        }
       }
     })
     .subscribe();
@@ -2221,23 +2289,66 @@ async function verNegocios(cat) {
     </div>`;return;
   }
   _negociosCache = data;
-  content.innerHTML=data.map(n=>`
+  content.innerHTML=data.map(n=>{
+    const rating = parseFloat(n.calificacion_promedio || 0);
+    const totalResenas = parseInt(n.total_resenas || 0);
+    const ratingDisplay = totalResenas > 0
+      ? `<div style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--g);margin-top:4px">
+           <span>⭐ ${rating.toFixed(1)}</span>
+           <span style="color:var(--mt)">· ${totalResenas} ${totalResenas===1?'reseña':'reseñas'}</span>
+         </div>`
+      : `<div style="font-size:11px;color:var(--mt);margin-top:4px">Sin reseñas aún</div>`;
+    return `
     <div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;margin-bottom:14px;overflow:hidden">
       <div style="padding:16px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-          <div>
+          <div style="flex:1">
             <div style="font-family:var(--font-d);font-size:16px;font-weight:600">${n.nombre}</div>
             <div style="font-size:12px;color:var(--mt);margin-top:2px">📍 ${n.direccion||'Atenas'}</div>
+            ${ratingDisplay}
           </div>
           <div style="background:rgba(0,229,184,0.1);border:1px solid var(--bd);border-radius:8px;padding:3px 10px;font-size:11px;color:var(--g)">✅ Abierto</div>
         </div>
         <div style="font-size:13px;color:var(--tx2);margin-bottom:12px;line-height:1.5">${n.descripcion||''}</div>
         <div style="display:flex;gap:8px">
-          <button onclick="abrirCarrito('${n.id}','${n.nombre}')" style="flex:2;background:var(--grad-btn);border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;color:#080f1e;cursor:pointer">🛒 Ver menú</button>
+          <button onclick="abrirCarrito('${n.id}','${n.nombre.replace(/'/g,"\\'")}')" style="flex:2;background:var(--grad-btn);border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;color:#080f1e;cursor:pointer">🛒 Ver menú</button>
+          ${totalResenas > 0 ? `<button onclick="verResenas('${n.id}','${n.nombre.replace(/'/g,"\\'")}')" style="flex:1;background:transparent;border:1px solid var(--bd);border-radius:10px;padding:11px;font-size:13px;color:var(--g);cursor:pointer">⭐ Reseñas</button>` : ''}
           <button onclick="window.open('https://wa.me/506${n.telefono.replace(/[^0-9]/g,'')}?text='+encodeURIComponent('Hola ${n.nombre}, te contacto desde AVS 👋'),'_blank')" style="flex:1;background:transparent;border:1px solid rgba(37,211,102,0.4);border-radius:10px;padding:11px;font-size:14px;color:#25D366;cursor:pointer">💬</button>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+
+async function verResenas(negocioId, negocioNombre){
+  if(!db) return;
+  const { data } = await db.from('resenas_negocios').select('*').eq('negocio_id', negocioId).order('fecha', {ascending:false}).limit(50);
+  const content = document.getElementById('lista-negocios-content');
+  document.getElementById('lista-titulo').textContent = '⭐ Reseñas de ' + negocioNombre;
+  if(!data || data.length === 0){
+    content.innerHTML = `<div style="text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:12px">⭐</div><div style="color:var(--mt)">Aún no hay reseñas</div><button onclick="verNegocios('${(_negociosCache.find(n=>n.id===negocioId)||{}).categoria||'restaurantes'}')" style="margin-top:20px;background:transparent;border:1px solid var(--bd);border-radius:10px;padding:10px 18px;color:var(--g);cursor:pointer">← Volver a negocios</button></div>`;
+    return;
+  }
+  const avg = (data.reduce((s,r)=>s+r.estrellas,0)/data.length).toFixed(1);
+  const header = `<div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:20px;margin-bottom:16px;text-align:center">
+    <div style="font-family:var(--font-d);font-size:36px;font-weight:700;color:var(--g)">${avg}</div>
+    <div style="font-size:14px;color:var(--mt);margin:4px 0">${'⭐'.repeat(Math.round(parseFloat(avg)))}</div>
+    <div style="font-size:12px;color:var(--mt)">${data.length} reseñas en total</div>
+  </div>`;
+  const reviews = data.map(r => {
+    const fecha = new Date(r.fecha).toLocaleDateString('es-CR', {day:'numeric', month:'short', year:'numeric'});
+    return `<div style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:13px;font-weight:600">${r.usuario_nombre || 'Anónimo'}</div>
+        <div style="font-size:11px;color:var(--mt)">${fecha}</div>
+      </div>
+      <div style="color:var(--g);font-size:14px;margin-bottom:6px">${'⭐'.repeat(r.estrellas)}</div>
+      ${r.tags ? `<div style="font-size:11px;color:var(--g);margin-bottom:6px">${r.tags.split(',').map(t=>`<span style="background:rgba(0,229,184,0.1);border-radius:10px;padding:2px 8px;margin-right:4px;display:inline-block;margin-bottom:3px">${t.trim()}</span>`).join('')}</div>` : ''}
+      ${r.comentario ? `<div style="font-size:13px;color:var(--tx2);line-height:1.5;margin-top:4px">${r.comentario}</div>` : ''}
+    </div>`;
+  }).join('');
+  const back = `<button onclick="verNegocios('${(_negociosCache.find(n=>n.id===negocioId)||{}).categoria||'restaurantes'}')" style="background:transparent;border:1px solid var(--bd);border-radius:10px;padding:10px 18px;color:var(--g);cursor:pointer;margin-bottom:16px">← Volver</button>`;
+  content.innerHTML = back + header + reviews;
 }
 
 function filtrarNegocios(estado){
@@ -2635,6 +2746,93 @@ window.addEventListener('load',()=>{
   setVH();
   window.addEventListener('resize', setVH);
 if('serviceWorker'in navigator){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(reg=>reg.unregister());});}});
+
+// ============== RESEÑAS DE NEGOCIOS ==============
+let resenaActual = { negocio_id: null, negocio_nombre: '', pedido_id: null, estrellas: 0, tags: [] };
+
+function abrirResenaNegocio(pedidoId, negocioId, negocioNombre){
+  resenaActual = { negocio_id: negocioId, negocio_nombre: negocioNombre, pedido_id: pedidoId, estrellas: 0, tags: [] };
+  document.getElementById('resena-negocio-nombre').textContent = 'Calificá tu experiencia en ' + negocioNombre;
+  document.getElementById('resena-comentario').value = '';
+  document.getElementById('resena-label').textContent = '';
+  document.querySelectorAll('.resena-star').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.resena-tag').forEach(t => t.classList.remove('on'));
+  go('resena-negocio');
+}
+
+function setResenaStar(n){
+  resenaActual.estrellas = n;
+  const labels = ['', '😟 Mala', '😐 Regular', '🙂 Buena', '😊 Muy buena', '🤩 Excelente'];
+  document.getElementById('resena-label').textContent = labels[n] || '';
+  document.querySelectorAll('.resena-star').forEach(s => {
+    s.classList.toggle('on', parseInt(s.dataset.star) <= n);
+  });
+}
+
+function toggleResenaTag(el){
+  el.classList.toggle('on');
+  const tag = el.dataset.tag;
+  if(resenaActual.tags.includes(tag)){
+    resenaActual.tags = resenaActual.tags.filter(t => t !== tag);
+  } else {
+    resenaActual.tags.push(tag);
+  }
+}
+
+async function enviarResena(){
+  if(resenaActual.estrellas === 0){
+    toast('Elegí cuántas estrellas');
+    return;
+  }
+  if(!db){toast('Sin conexión'); go('servicios'); return;}
+  const comentario = document.getElementById('resena-comentario').value.trim();
+  try {
+    await db.from('resenas_negocios').insert({
+      negocio_id: resenaActual.negocio_id,
+      pedido_id: resenaActual.pedido_id,
+      usuario_telefono: user.phone,
+      usuario_nombre: user.name,
+      estrellas: resenaActual.estrellas,
+      comentario,
+      tags: resenaActual.tags.join(', ')
+    });
+    // Actualizar promedio del negocio
+    const { data: resenas } = await db.from('resenas_negocios').select('estrellas').eq('negocio_id', resenaActual.negocio_id);
+    if(resenas && resenas.length > 0){
+      const sum = resenas.reduce((a,r) => a + r.estrellas, 0);
+      const avg = sum / resenas.length;
+      await db.from('negocios').update({
+        calificacion_promedio: avg,
+        total_resenas: resenas.length
+      }).eq('id', resenaActual.negocio_id);
+    }
+    toast('⭐ ¡Gracias por tu reseña!');
+  } catch(e){ console.warn(e); }
+  go('servicios');
+}
+
+function omitirResena(){
+  if(resenaActual.pedido_id){
+    // Marcar el pedido como ya reseñado para no preguntar otra vez
+    try { localStorage.setItem('resena-omitida-' + resenaActual.pedido_id, '1'); } catch(e){}
+  }
+  go('servicios');
+}
+
+// Hook: cuando un pedido pasa a "entregado" en el tracking, abrir reseña
+async function checarPedidoParaResena(pedidoId){
+  if(!pedidoId || !db) return;
+  try {
+    const yaOmitido = localStorage.getItem('resena-omitida-' + pedidoId);
+    if(yaOmitido) return;
+    const { data: yaResena } = await db.from('resenas_negocios').select('id').eq('pedido_id', pedidoId).limit(1);
+    if(yaResena && yaResena.length > 0) return;
+    const { data: ped } = await db.from('pedidos').select('id, negocio_id, negocio_nombre, estado').eq('id', pedidoId).single();
+    if(ped && ped.estado === 'entregado'){
+      setTimeout(() => abrirResenaNegocio(ped.id, ped.negocio_id, ped.negocio_nombre || 'el negocio'), 1500);
+    }
+  } catch(e){}
+}
 
 // ============== MÓDULO MUNICIPALIDAD ==============
 let muniActual = null;
