@@ -809,7 +809,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <div class="scrd">
     <div class="srow">
       <div><div class="slbl">Saldo AVS disponible</div><div class="samt">₡6.500</div></div>
-      <div style="font-size:12px;color:var(--mt);text-align:right"><div>Comisión AVS</div><div style="color:var(--tx);font-weight:500">8%</div></div>
+      <div style="font-size:12px;color:var(--mt);text-align:right"><div>Comisión AVS</div><div style="color:var(--tx);font-weight:500">10%</div></div>
     </div>
     <div class="sbg"><div class="sfill"></div></div>
     <div class="rchips">
@@ -957,7 +957,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <!-- CTA para negocios -->
     <div style="background:rgba(0,229,184,0.07);border:1px solid var(--bd2);border-radius:16px;padding:16px;text-align:center">
       <div style="font-size:15px;font-weight:600;margin-bottom:6px">¿Tenés un negocio?</div>
-      <div style="font-size:12px;color:var(--mt);margin-bottom:12px;line-height:1.5">Unite a la red AVS y llegá a más clientes en Atenas. Comisión del 8% solo cuando vendés.</div>
+      <div style="font-size:12px;color:var(--mt);margin-bottom:12px;line-height:1.5">Unite a la red AVS y llegá a más clientes en Atenas. Comisión del 10% solo cuando vendés.</div>
       <button class="btnp" style="margin-top:0" onclick="go('registro-negocio')">🏪 Registrá tu negocio</button>
     </div>
   </div>
@@ -1002,7 +1002,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div style="font-size:11px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Descripción breve</div>
     <textarea class="ifield" placeholder="¿Qué ofrecés? Horarios, especialidades..." id="neg-desc" rows="3" style="resize:none;margin-bottom:10px"></textarea>
     <div style="background:rgba(0,229,184,0.07);border:1px solid var(--bd2);border-radius:12px;padding:12px;font-size:12px;color:var(--mt);margin-bottom:16px;line-height:1.6">
-      💡 AVS cobra <strong style="color:var(--g)">8% de comisión</strong> por transacciones. El saldo se recarga vía SINPE igual que los conductores.
+      💡 AVS cobra <strong style="color:var(--g)">10% de comisión</strong> por transacciones. El saldo se recarga vía SINPE igual que los conductores.
     </div>
     <button class="btnp" onclick="enviarRegistroNegocio()">Enviar solicitud</button>
   </div>
@@ -1135,7 +1135,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
         <div>
           <span style="font-size:14px;color:var(--mt)">Total</span>
-          <div style="font-size:10px;color:var(--mt)" id="comision-label">Incluye 8% comisión AVS</div>
+          <div style="font-size:10px;color:var(--mt)" id="comision-label">Incluye 10% comisión AVS</div>
         </div>
         <span style="font-family:var(--font-d);font-size:22px;font-weight:800;color:var(--g)" id="carrito-total">₡0</span>
       </div>
@@ -1757,7 +1757,7 @@ function calcularDelivery() {
 function actualizarTotalCarrito() {
   const subtotal = carritoItems.reduce((s, i) => s + (i.precio * i.cantidad), 0);
   const totalConDelivery = subtotal + tarifaDelivery;
-  const comision = Math.round(totalConDelivery * 0.08);
+  const comision = Math.round(totalConDelivery * 0.10);
   const total = totalConDelivery + comision;
   const subEl = document.getElementById('carrito-subtotal');
   const totEl = document.getElementById('carrito-total');
@@ -1766,9 +1766,9 @@ function actualizarTotalCarrito() {
   if (totEl) totEl.textContent = '₡' + total.toLocaleString('es-CR');
   if (lblEl) {
     if (tipoEntrega === 'delivery') {
-      lblEl.textContent = 'Subtotal + delivery ₡' + tarifaDelivery.toLocaleString('es-CR') + ' + 8% AVS';
+      lblEl.textContent = 'Subtotal + delivery ₡' + tarifaDelivery.toLocaleString('es-CR') + ' + 10% AVS';
     } else {
-      lblEl.textContent = 'Incluye 8% comision AVS';
+      lblEl.textContent = 'Incluye 10% comisión AVS';
     }
   }
 }
@@ -2169,7 +2169,7 @@ function initMap(){
   autocomplete.addListener('place_changed',()=>{const p=autocomplete.getPlace();if(!p.geometry)return;destLoc=p.geometry.location;calcRoute();});
   if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{userLoc={lat:pos.coords.latitude,lng:pos.coords.longitude};gmap.setCenter(userLoc);new google.maps.Marker({position:userLoc,map:gmap,icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:'#00d4aa',fillOpacity:1,strokeColor:'#fff',strokeWeight:2}});new google.maps.Geocoder().geocode({location:userLoc},(r,s)=>{if(s==='OK'&&r[0]){const a=r[0].formatted_address.split(',')[0];document.getElementById('otxt').textContent=a;document.getElementById('mbadge').textContent='📍 '+a;}});},()=>{});}
 }
-function calcRoute(){if(!destLoc)return;dirSvc.route({origin:userLoc,destination:destLoc,travelMode:google.maps.TravelMode.DRIVING},(r,s)=>{if(s==='OK'){dirRend.setDirections(r);const leg=r.routes[0].legs[0];const km=parseFloat((leg.distance.value/1000).toFixed(1));const min=Math.ceil(leg.duration.value/60);const AVS_KM_ECO=462,AVS_KM_STD=514,AVS_KM_PREM=571,BASE_MIN=1200;const base=Math.max(BASE_MIN,Math.round(km*AVS_KM_ECO)),std=Math.max(BASE_MIN,Math.round(km*AVS_KM_STD)),prem=Math.max(BASE_MIN,Math.round(km*AVS_KM_PREM));const calcChip=(t)=>({tarifa:t,comisionAVS:Math.round(t*0.08),totalConductor:t-Math.round(t*0.08),totalPasajero:t});const cb=calcChip(base),cs=calcChip(std),cp=calcChip(prem);document.getElementById('tdist').textContent=km+' km';document.getElementById('tdur').textContent=min+' min';document.getElementById('tfare').textContent='₡'+cs.totalPasajero.toLocaleString('es-CR');document.getElementById('tinfo').classList.add('show');document.getElementById('fchips').innerHTML=[{...cb,label:'Económico'},{...cs,label:'Estándar'},{...cp,label:'Premium'}].map((c,i)=>`<div class="fchip ${i===1?'sel':''}" onclick="selFareChip(this,${c.tarifa},${c.comisionAVS},${c.totalConductor})"><div class="famt">₡${c.totalPasajero.toLocaleString('es-CR')}</div><div class="ftyp">${c.label}</div></div>`).join('');selFare=std;selCom=cs.comisionAVS;selComConductor=cs.totalConductor;document.getElementById('fareSection').style.display='block';}});}
+function calcRoute(){if(!destLoc)return;dirSvc.route({origin:userLoc,destination:destLoc,travelMode:google.maps.TravelMode.DRIVING},(r,s)=>{if(s==='OK'){dirRend.setDirections(r);const leg=r.routes[0].legs[0];const km=parseFloat((leg.distance.value/1000).toFixed(1));const min=Math.ceil(leg.duration.value/60);const AVS_KM_ECO=462,AVS_KM_STD=514,AVS_KM_PREM=571,BASE_MIN=1200;const base=Math.max(BASE_MIN,Math.round(km*AVS_KM_ECO)),std=Math.max(BASE_MIN,Math.round(km*AVS_KM_STD)),prem=Math.max(BASE_MIN,Math.round(km*AVS_KM_PREM));const calcChip=(t)=>({tarifa:t,comisionAVS:Math.round(t*0.10),totalConductor:t-Math.round(t*0.10),totalPasajero:t});const cb=calcChip(base),cs=calcChip(std),cp=calcChip(prem);document.getElementById('tdist').textContent=km+' km';document.getElementById('tdur').textContent=min+' min';document.getElementById('tfare').textContent='₡'+cs.totalPasajero.toLocaleString('es-CR');document.getElementById('tinfo').classList.add('show');document.getElementById('fchips').innerHTML=[{...cb,label:'Económico'},{...cs,label:'Estándar'},{...cp,label:'Premium'}].map((c,i)=>`<div class="fchip ${i===1?'sel':''}" onclick="selFareChip(this,${c.tarifa},${c.comisionAVS},${c.totalConductor})"><div class="famt">₡${c.totalPasajero.toLocaleString('es-CR')}</div><div class="ftyp">${c.label}</div></div>`).join('');selFare=std;selCom=cs.comisionAVS;selComConductor=cs.totalConductor;document.getElementById('fareSection').style.display='block';}});}
 function mstyle(){return[{elementType:'geometry',stylers:[{color:'#0d1f14'}]},{elementType:'labels.text.stroke',stylers:[{color:'#0d1f14'}]},{elementType:'labels.text.fill',stylers:[{color:'#7a8fa6'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#172040'}]},{featureType:'road',elementType:'geometry.stroke',stylers:[{color:'#0a1628'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#0a1628'}]},{featureType:'poi',stylers:[{visibility:'off'}]}];}
 let historialRol='usuario',historialEstado='completado';
 function abrirHistorial(rol){historialRol=rol;historialEstado='completado';document.getElementById('hist-back').setAttribute('onclick',`go('${rol==='conductor'?'conductor':'pasajero'}')`);const tab2=document.getElementById('hbtn-cancelado');if(rol==='conductor'){tab2.textContent='❌ Rechazados';tab2.setAttribute('onclick',"filtrarHistorial('rechazado')");tab2.id='hbtn-rechazado';}else{tab2.textContent='❌ Cancelados';tab2.setAttribute('onclick',"filtrarHistorial('cancelado')");tab2.id='hbtn-cancelado';}document.querySelectorAll('[id^="hbtn-"]').forEach(b=>b.classList.remove('on'));document.getElementById('hbtn-completado').classList.add('on');go('historial');cargarHistorial();}
@@ -2280,9 +2280,9 @@ async function confirmarPedido() {
   if (carritoItems.length === 0) { toast('Agrega items al pedido'); return; }
   const subtotal = carritoItems.reduce((s, i) => s + (i.precio * i.cantidad), 0);
   const totalConDelivery = subtotal + tarifaDelivery;
-  const comision = Math.round(totalConDelivery * 0.08);
+  const comision = Math.round(totalConDelivery * 0.10);
   const total = totalConDelivery + comision;
-  const totalNegocio = subtotal - Math.round(subtotal * 0.08);
+  const totalNegocio = subtotal - Math.round(subtotal * 0.10);
   const entregaTexto = tipoEntrega === 'delivery' ? 'Delivery AVS' : 'Recoger en local';
   if (!confirm('Confirmar pedido por \u20a1' + total.toLocaleString('es-CR') + '? ' + entregaTexto)) return;
   const notas = document.getElementById('carrito-notas') ? document.getElementById('carrito-notas').value.trim() : '';
@@ -3181,7 +3181,7 @@ const DEMO_VIAJE = [
   {
     kicker: 'Paso 2 — Destino',
     title: 'Escribe a dónde va',
-    narration: 'AVS calcula la ruta usando Google Maps y muestra 3 opciones de tarifa fija — sin sorpresas, sin "surge pricing". Tarifas justas para Atenas: 10% por encima de Uber para garantizar conductores comprometidos.',
+    narration: 'AVS calcula la ruta usando Google Maps y muestra 3 opciones de tarifa fija — sin sorpresas, sin "surge pricing". AVS toma como referencia Uber y le suma 10% — así los conductores ganan más que en otras plataformas y se quedan con AVS.',
     visual: `
       <div class="demo-card" style="max-width:380px;margin:0 auto">
         <div style="font-size:11px;color:#888;letter-spacing:1px;margin-bottom:6px">¿A DÓNDE VAS?</div>
@@ -3189,17 +3189,17 @@ const DEMO_VIAJE = [
           <span style="color:#00d4aa">●</span> Casa, Atenas Centro
         </div>
         <div style="display:flex;align-items:center;gap:10px;font-size:14px;padding:8px 0">
-          <span style="color:#f5a623">●</span> Mercedes, Atenas
+          <span style="color:#f5a623">●</span> Hospital San Rafael, Alajuela
         </div>
         <div style="display:flex;justify-content:space-around;margin-top:14px;padding-top:14px;border-top:1px dashed rgba(0,212,170,0.3)">
-          <div><div style="font-size:11px;color:#888">DISTANCIA</div><div style="font-size:18px;color:#00d4aa;font-weight:700">4.4 km</div></div>
-          <div><div style="font-size:11px;color:#888">TIEMPO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">10 min</div></div>
+          <div><div style="font-size:11px;color:#888">DISTANCIA</div><div style="font-size:18px;color:#00d4aa;font-weight:700">11.2 km</div></div>
+          <div><div style="font-size:11px;color:#888">TIEMPO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">18 min</div></div>
         </div>
       </div>
       <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap">
-        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">ECONÓMICO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡2.033</div></div>
-        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px;border-color:#00d4aa"><div style="font-size:11px;color:#888">ESTÁNDAR</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡2.262</div></div>
-        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">PREMIUM</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡2.512</div></div>
+        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">ECONÓMICO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡5.180</div></div>
+        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px;border-color:#00d4aa"><div style="font-size:11px;color:#888">ESTÁNDAR</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡5.755</div></div>
+        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">PREMIUM</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡6.395</div></div>
       </div>
     `
   },
@@ -3269,15 +3269,15 @@ const DEMO_VIAJE = [
   },
   {
     kicker: 'Paso 7 — Llegada al destino',
-    title: 'Carlos finaliza el viaje. María paga ₡2.262',
-    narration: 'Del total, Carlos recibe ₡2.036 (90%) y AVS retiene ₡226 de comisión (10%). Cuando hay convenio con la municipalidad, ese 10% se divide 50/50 entre AVS y el cantón — la muni participa de los ingresos del transporte local.',
+    title: 'Carlos finaliza el viaje. María paga ₡5.755',
+    narration: 'Del total, Carlos recibe ₡5.180 (90%) y AVS retiene ₡575 de comisión (10%). Cuando hay convenio con la municipalidad, ese 10% se divide 50/50 entre AVS y el cantón — la muni participa de los ingresos del transporte local.',
     visual: `
       <div class="demo-receipt">
         <div style="text-align:center;font-weight:700;color:#00d4aa;margin-bottom:8px">RECIBO VIAJE AVS</div>
-        <div class="row"><span>Tarifa estándar</span><span>₡2.262</span></div>
-        <div class="row"><span>Para el conductor (90%)</span><span style="color:#00d4aa">₡2.036</span></div>
-        <div class="row"><span>Comisión AVS (10%)</span><span style="color:#f5a623">₡226</span></div>
-        <div class="row tot"><span>Total</span><span>₡2.262</span></div>
+        <div class="row"><span>Tarifa estándar</span><span>₡5.755</span></div>
+        <div class="row"><span>Para el conductor (90%)</span><span style="color:#00d4aa">₡5.180</span></div>
+        <div class="row"><span>Comisión AVS (10%)</span><span style="color:#f5a623">₡575</span></div>
+        <div class="row tot"><span>Total</span><span>₡5.755</span></div>
         <div style="text-align:center;margin-top:10px;font-size:11px;color:#888">Pagado por SINPE Móvil</div>
       </div>
     `
@@ -3358,7 +3358,7 @@ const DEMO_PEDIDO = [
   {
     kicker: 'Paso 3 — Delivery o Recoger',
     title: 'Elige Delivery AVS · Tarifa por moto: ₡1.500',
-    narration: 'Las tarifas de delivery están escaladas por distancia y tipo de vehículo. Para distancias cortas en moto es muy económico. María paga ₡8.464 + 8% de comisión AVS.',
+    narration: 'Las tarifas de delivery están escaladas por distancia y tipo de vehículo. Para distancias cortas en moto es muy económico. María paga ₡9.200 + 10% de comisión AVS.',
     visual: `
       <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:18px">
         <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;min-width:120px">
@@ -3375,22 +3375,22 @@ const DEMO_PEDIDO = [
       <div class="demo-receipt">
         <div class="row"><span>Subtotal</span><span>₡7.700</span></div>
         <div class="row"><span>Delivery (moto, 0.8 km)</span><span>₡1.500</span></div>
-        <div class="row"><span>Comisión AVS (8%)</span><span>₡736</span></div>
-        <div class="row tot"><span>TOTAL</span><span>₡9.936</span></div>
+        <div class="row"><span>Comisión AVS (10%)</span><span>₡920</span></div>
+        <div class="row tot"><span>TOTAL</span><span>₡10.120</span></div>
       </div>
     `
   },
   {
     kicker: 'Paso 4 — Pago SINPE',
     title: 'Pago directo al negocio por SINPE Móvil',
-    narration: 'AVS no cobra al cliente — el cliente paga directo al negocio usando SINPE Móvil de Costa Rica. La comisión del 8% se descuenta automáticamente al cierre del día.',
+    narration: 'AVS no cobra al cliente — el cliente paga directo al negocio usando SINPE Móvil de Costa Rica. La comisión del 10% se descuenta automáticamente al cierre del día.',
     visual: `
       <div style="background:#0a3d2a;border:1px solid #25d366;border-radius:14px;padding:16px;max-width:340px;margin:0 auto;text-align:left">
         <div style="color:#25d366;font-weight:700;margin-bottom:10px">📲 SINPE Móvil</div>
         <div style="font-size:13px;color:#fff;line-height:1.7">
           <div><b>Destinatario:</b> Pizzería La Finca</div>
           <div><b>Número:</b> 8800-1234</div>
-          <div><b>Monto:</b> ₡9.936</div>
+          <div><b>Monto:</b> ₡10.120</div>
           <div><b>Concepto:</b> AVS-PED7842</div>
         </div>
         <div style="margin-top:14px;padding:8px;background:#000;border-radius:8px;text-align:center;font-family:monospace;color:#25d366;font-size:12px">✓ Pago confirmado</div>
@@ -3470,7 +3470,7 @@ const DEMO_PEDIDO = [
   {
     kicker: 'Paso 9 — Cierre del ciclo',
     title: 'Tres ganadores: María, Pizzería La Finca, Pedro',
-    narration: 'En un solo flujo: el cliente recibió calidad, el negocio local vendió sin tener app propia, el conductor ganó dinero extra. AVS conectó toda la cadena cobrando solo 8% de comisión.',
+    narration: 'En un solo flujo: el cliente recibió calidad, el negocio local vendió sin tener app propia, el conductor ganó dinero extra. AVS conectó toda la cadena cobrando solo 10% de comisión.',
     visual: `
       <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
         <div class="demo-card" style="text-align:center;padding:18px;min-width:130px">
@@ -3481,7 +3481,7 @@ const DEMO_PEDIDO = [
         <div class="demo-card" style="text-align:center;padding:18px;min-width:130px">
           <div style="font-size:32px;margin-bottom:6px">🍕</div>
           <div style="font-size:13px;font-weight:700">Pizzería</div>
-          <div style="font-size:11px;color:#00d4aa;margin-top:3px">+₡8.464 venta</div>
+          <div style="font-size:11px;color:#00d4aa;margin-top:3px">+₡6.930 venta</div>
         </div>
         <div class="demo-card" style="text-align:center;padding:18px;min-width:130px">
           <div style="font-size:32px;margin-bottom:6px">🛵</div>
@@ -3491,7 +3491,7 @@ const DEMO_PEDIDO = [
         <div class="demo-card" style="text-align:center;padding:18px;min-width:130px;border-color:#f5a623">
           <div style="font-size:32px;margin-bottom:6px">⚡</div>
           <div style="font-size:13px;font-weight:700;color:#f5a623">AVS</div>
-          <div style="font-size:11px;color:#f5a623;margin-top:3px">+₡736 comisión</div>
+          <div style="font-size:11px;color:#f5a623;margin-top:3px">+₡920 comisión</div>
         </div>
       </div>
       <div style="margin-top:24px;padding:18px;background:rgba(245,166,35,0.08);border:1px solid #f5a623;border-radius:14px;max-width:520px;margin-left:auto;margin-right:auto">
