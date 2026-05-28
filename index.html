@@ -1328,6 +1328,63 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .resena-tag.on{background:rgba(0,229,184,0.15);border-color:var(--g);color:var(--g)}
 </style>
 
+<!-- ============== MODO DEMO (Acceso secreto: teléfono 00000) ============== -->
+<div class="screen" id="demo-selector">
+  <div style="background:linear-gradient(180deg,#0a1525 0%,#0d1f14 100%);height:100%;overflow-y:auto;padding:40px 22px 32px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="display:inline-block;background:rgba(245,166,35,0.15);border:1px solid #f5a623;border-radius:24px;padding:5px 14px;font-size:11px;color:#f5a623;font-weight:700;letter-spacing:1.5px;margin-bottom:14px">🎬 MODO DEMO</div>
+      <div style="font-family:var(--font-d);font-size:26px;font-weight:700;color:var(--tx);margin-bottom:6px">Simulación en tiempo real</div>
+      <div style="font-size:13px;color:var(--mt);line-height:1.5">Mostrá AVS en acción sin necesidad de dos dispositivos. Datos virtuales — no se guardan en la base.</div>
+    </div>
+    <button onclick="iniciarDemoViaje()" style="width:100%;background:linear-gradient(135deg,rgba(0,229,184,0.15),rgba(0,229,184,0.05));border:1px solid var(--g);border-radius:18px;padding:20px;margin-bottom:14px;text-align:left;cursor:pointer;color:var(--tx)">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="font-size:38px">🚗</div>
+        <div style="flex:1">
+          <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:3px">Demo de Viaje</div>
+          <div style="font-size:12px;color:var(--mt);line-height:1.4">Solicitar viaje · Conductor acepta · Código de seguridad · GPS en vivo · Calificación final</div>
+          <div style="font-size:11px;color:var(--g);margin-top:6px">⏱️ Duración: ~2 minutos</div>
+        </div>
+        <div style="font-size:22px;color:var(--g)">→</div>
+      </div>
+    </button>
+    <button onclick="iniciarDemoPedido()" style="width:100%;background:linear-gradient(135deg,rgba(245,166,35,0.12),rgba(245,166,35,0.04));border:1px solid #f5a623;border-radius:18px;padding:20px;margin-bottom:14px;text-align:left;cursor:pointer;color:var(--tx)">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="font-size:38px">🍕</div>
+        <div style="flex:1">
+          <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:3px">Demo de Pedido + Delivery</div>
+          <div style="font-size:12px;color:var(--mt);line-height:1.4">Pizzería La Finca · Carrito · Confirmar SINPE · 5 estados de tracking · Reseña</div>
+          <div style="font-size:11px;color:#f5a623;margin-top:6px">⏱️ Duración: ~2 minutos</div>
+        </div>
+        <div style="font-size:22px;color:#f5a623">→</div>
+      </div>
+    </button>
+    <button onclick="iniciarDemoCompleto()" style="width:100%;background:linear-gradient(135deg,rgba(96,165,250,0.12),rgba(96,165,250,0.04));border:1px solid #60a5fa;border-radius:18px;padding:20px;margin-bottom:24px;text-align:left;cursor:pointer;color:var(--tx)">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="font-size:38px">🎯</div>
+        <div style="flex:1">
+          <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:3px">Demo Completo</div>
+          <div style="font-size:12px;color:var(--mt);line-height:1.4">Viaje + Pedido + Recorrido por Municipalidad</div>
+          <div style="font-size:11px;color:#60a5fa;margin-top:6px">⏱️ Duración: ~5 minutos</div>
+        </div>
+        <div style="font-size:22px;color:#60a5fa">→</div>
+      </div>
+    </button>
+    <button onclick="go('login')" style="width:100%;background:transparent;border:1px solid var(--bd);border-radius:14px;padding:12px;color:var(--mt);cursor:pointer;font-size:13px">← Salir del modo demo</button>
+  </div>
+</div>
+
+<!-- HUD del demo (banner superior con narración) -->
+<div id="demo-hud" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(180deg,rgba(10,21,37,0.95),rgba(10,21,37,0.85));backdrop-filter:blur(12px);border-bottom:1px solid #f5a623;padding:10px 16px;color:#fff;box-shadow:0 4px 20px rgba(0,0,0,0.4)">
+  <div style="display:flex;align-items:center;gap:10px;max-width:780px;margin:0 auto">
+    <div style="background:#f5a623;color:#000;font-weight:700;font-size:10px;padding:3px 8px;border-radius:10px;letter-spacing:1px">DEMO</div>
+    <div id="demo-hud-text" style="flex:1;font-size:13px;line-height:1.4;font-weight:500">Iniciando simulación...</div>
+    <button onclick="detenerDemo()" style="background:rgba(255,255,255,0.15);border:none;border-radius:14px;padding:5px 12px;color:#fff;font-size:11px;cursor:pointer">✕ Salir</button>
+  </div>
+  <div style="height:3px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:8px;overflow:hidden">
+    <div id="demo-hud-progress" style="height:100%;background:linear-gradient(90deg,#f5a623,#00d4aa);width:0%;transition:width 0.5s"></div>
+  </div>
+</div>
+
 <!-- ============== MÓDULO MUNICIPALIDAD ============== -->
 <!-- Portal público de la municipalidad (sin login) -->
 <div class="screen" id="portal-municipal">
@@ -2442,6 +2499,13 @@ function doLogin(role){
   const phone=document.getElementById('lphone').value.trim();
   const name=document.getElementById('lname').value.trim()||'Usuario';
   if(!phone){toast('Ingresá tu número');return;}
+  // === ACCESO SECRETO MODO DEMO ===
+  if(phone==='00000'){
+    if(typeof iniciarModoDemo === 'function'){
+      iniciarModoDemo();
+      return;
+    }
+  }
   if(role==='admin'){user={name:'Admin AVS',role:'admin',phone};saveSession();applyUser();go('admin');cargarAdmin();return;}
   if(role==='conductor'&&db){toast('Verificando...');db.from('usuarios').select('nombre,apellidos,tipo,estado_verificacion').eq('telefono',phone).single().then(({data,error})=>{if(!data){showLoginMsg('🚗','No encontramos tu registro','Para operar como conductor en AVS primero debés completar el registro y esperar aprobación.','Registrarme',()=>go('registro'));return;}if(data.estado_verificacion==='pendiente'){showLoginMsg('⏳','Solicitud en revisión','Tu documentación está siendo revisada. Te contactaremos en 24-48 horas al número '+phone+'.','Volver',()=>go('login'));return;}if(data.estado_verificacion==='rechazado'){showLoginMsg('❌','Solicitud rechazada','Tu solicitud no fue aprobada. Contactá al equipo AVS o registrate nuevamente.','Registrarme de nuevo',()=>go('registro'));return;}user={name:data.nombre+' '+(data.apellidos||''),role:'conductor',phone};saveSession();applyUser();go('conductor');});return;}
   user={name,role,phone};saveSession();applyUser();
@@ -2757,6 +2821,254 @@ window.addEventListener('load',()=>{
   };
   setVH();
   window.addEventListener('resize', setVH);
+// ============== MOTOR DE SIMULACIÓN DEMO ==============
+let demoState = { active: false, timers: [], totalDuration: 0, startTime: 0, marker: null, route: null };
+const ATENAS_CENTRO = { lat: 9.9785, lng: -84.3786 };
+
+function iniciarModoDemo(){
+  user = { name: 'Demo AVS', role: 'usuario', phone: '00000' };
+  go('demo-selector');
+  toast('🎬 Modo Demo activado');
+}
+
+function detenerDemo(){
+  demoState.timers.forEach(t => clearTimeout(t));
+  demoState.timers = [];
+  demoState.active = false;
+  if(demoState.marker) demoState.marker.setMap(null);
+  if(demoState.route) demoState.route.setMap(null);
+  document.getElementById('demo-hud').style.display = 'none';
+  document.getElementById('demo-hud-progress').style.width = '0%';
+  go('demo-selector');
+  toast('Demo finalizada');
+}
+
+function demoHUD(text, progressPct){
+  const hud = document.getElementById('demo-hud');
+  hud.style.display = 'block';
+  document.getElementById('demo-hud-text').textContent = text;
+  document.getElementById('demo-hud-progress').style.width = progressPct + '%';
+}
+
+function demoStep(delaySec, fn){
+  return new Promise(resolve => {
+    const t = setTimeout(() => { fn(); resolve(); }, delaySec * 1000);
+    demoState.timers.push(t);
+  });
+}
+
+// ============== DEMO 1: VIAJE ==============
+async function iniciarDemoViaje(){
+  demoState.active = true;
+  demoState.timers = [];
+
+  // Paso 1: Mostrar mapa del pasajero
+  demoHUD('Paso 1/8 — María necesita un viaje. Abre AVS y ve los conductores disponibles cerca.', 5);
+  user = { name: 'María González', role: 'usuario', phone: '00000' };
+  go('pasajero');
+  await demoStep(2, ()=>{});
+
+  // Asegurar que el mapa tenga conductores demo
+  if(typeof iniciarSeguimientoConductoresActivos === 'function') iniciarSeguimientoConductoresActivos();
+
+  // Paso 2: Escribe destino
+  await demoStep(8, ()=>{
+    demoHUD('Paso 2/8 — Ingresa su destino. AVS calcula la ruta y muestra 3 tipos de vehículo.', 18);
+    const destInput = document.getElementById('addrDestino') || document.querySelector('input[placeholder*="destino" i]');
+    if(destInput){
+      destInput.value = 'Mercedes, Atenas';
+      destInput.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+  });
+
+  // Paso 3: Mostrar tarifas (simulado)
+  await demoStep(8, ()=>{
+    demoHUD('Paso 3/8 — Tarifas transparentes: Económico ₡2.079 · Estándar ₡2.313 · Premium ₡2.570', 30);
+  });
+
+  // Paso 4: Solicita viaje, código aparece
+  const codigoAVS = 'AVS-' + Math.random().toString(36).substring(2,6).toUpperCase();
+  await demoStep(10, ()=>{
+    demoHUD('Paso 4/8 — María solicita el viaje. AVS genera código de seguridad: ' + codigoAVS, 42);
+    mostrarDemoModal('🔐 Código de verificación', `<div style="font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;color:#00d4aa;letter-spacing:4px;margin:20px 0">${codigoAVS}</div><div style="font-size:13px;color:#aaa">El conductor te pedirá este código al llegar para confirmar tu identidad.</div>`);
+  });
+
+  // Paso 5: Conductor acepta y se mueve
+  await demoStep(10, ()=>{
+    demoHUD('Paso 5/8 — Carlos Méndez (moto 🛵 placa BPJ001) acepta el viaje. Tiempo estimado: 4 min.', 56);
+    cerrarDemoModal();
+    simularConductorMoviendose();
+  });
+
+  // Paso 6: Llega y verifica código
+  await demoStep(15, ()=>{
+    demoHUD('Paso 6/8 — Carlos llega. María le muestra el código ' + codigoAVS + '. Identidad verificada ✓', 70);
+    mostrarDemoModal('✅ Identidad verificada', `<div style="font-size:36px;color:#00d4aa;margin:14px 0">✓</div><div style="font-size:14px;color:#fff">El conductor confirmó tu código</div><div style="font-size:12px;color:#aaa;margin-top:8px">Pueden iniciar el viaje con total seguridad</div>`);
+  });
+
+  // Paso 7: Viaje en progreso
+  await demoStep(10, ()=>{
+    demoHUD('Paso 7/8 — Viaje en curso. GPS en tiempo real. Botón SOS disponible siempre.', 84);
+    cerrarDemoModal();
+  });
+
+  // Paso 8: Finalización + calificación
+  await demoStep(12, ()=>{
+    demoHUD('Paso 8/8 — Llegada al destino. María califica al conductor con 5 estrellas. ¡Listo!', 100);
+    mostrarDemoModal('⭐ Viaje completado', `<div style="margin:14px 0">${'⭐'.repeat(5)}</div><div style="font-size:18px;font-weight:700;color:#00d4aa">Total pagado: ₡2.313</div><div style="font-size:12px;color:#aaa;margin-top:8px">Conductor: ₡2.082 (90%) · AVS: ₡231 (10%)</div>`);
+  });
+
+  await demoStep(6, ()=>{
+    cerrarDemoModal();
+    demoHUD('🎯 Demo completado. ¿Querés ver otra simulación?', 100);
+  });
+
+  await demoStep(3, ()=>{
+    if(demoState.marker){demoState.marker.setMap(null);demoState.marker=null;}
+    if(demoState.route){demoState.route.setMap(null);demoState.route=null;}
+    go('demo-selector');
+    document.getElementById('demo-hud').style.display = 'none';
+  });
+}
+
+function simularConductorMoviendose(){
+  if(!gmap || !window.google) return;
+  // Conductor parte desde 1 km al norte, se acerca al centro
+  const inicio = { lat: 9.9870, lng: -84.3786 };
+  const fin = { lat: 9.9790, lng: -84.3786 };
+  demoState.marker = new google.maps.Marker({
+    position: inicio,
+    map: gmap,
+    label: { text: '🛵', fontSize: '26px' },
+    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 20, fillColor: '#f5a623', fillOpacity: 0.95, strokeColor: '#fff', strokeWeight: 2 },
+    title: 'Carlos Méndez · BPJ001'
+  });
+  // Línea de ruta animada
+  demoState.route = new google.maps.Polyline({
+    path: [inicio, fin],
+    map: gmap,
+    strokeColor: '#00d4aa',
+    strokeOpacity: 0.7,
+    strokeWeight: 4,
+    icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3 }, offset: '50%' }]
+  });
+  // Centrar mapa
+  const bounds = new google.maps.LatLngBounds();
+  bounds.extend(inicio); bounds.extend(fin);
+  gmap.fitBounds(bounds, 80);
+  // Animar
+  const totalSteps = 50;
+  let step = 0;
+  const animTimer = setInterval(() => {
+    step++;
+    if(step > totalSteps){clearInterval(animTimer);return;}
+    const f = step / totalSteps;
+    const lat = inicio.lat + (fin.lat - inicio.lat) * f;
+    const lng = inicio.lng + (fin.lng - inicio.lng) * f;
+    if(demoState.marker) demoState.marker.setPosition({lat, lng});
+  }, 300);
+  demoState.timers.push({clearTimeout:()=>clearInterval(animTimer)});
+}
+
+// ============== DEMO 2: PEDIDO RESTAURANTE ==============
+async function iniciarDemoPedido(){
+  demoState.active = true;
+  demoState.timers = [];
+
+  demoHUD('Paso 1/8 — María entra a Servicios → 🍽️ Restaurantes', 5);
+  user = { name: 'María González', role: 'usuario', phone: '00000' };
+  go('servicios');
+  await demoStep(3, ()=>{});
+
+  await demoStep(8, ()=>{
+    demoHUD('Paso 2/8 — Elige Pizzería La Finca. Ve el menú con fotos y precios.', 15);
+    if(typeof verNegocios === 'function') verNegocios('restaurantes');
+  });
+
+  await demoStep(10, ()=>{
+    demoHUD('Paso 3/8 — Agrega Pizza Margherita ₡6.500 + Refresco natural ₡1.200 al carrito.', 28);
+    mostrarDemoModal('🛒 Carrito', `<div style="text-align:left;padding:10px 0"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>1× Pizza Margherita</span><span style="color:#00d4aa">₡6.500</span></div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px"><span>1× Refresco natural</span><span style="color:#00d4aa">₡1.200</span></div><div style="border-top:1px solid #333;padding-top:10px;display:flex;justify-content:space-between;font-weight:700"><span>Subtotal</span><span style="color:#00d4aa">₡7.700</span></div></div>`);
+  });
+
+  await demoStep(10, ()=>{
+    demoHUD('Paso 4/8 — Elige Delivery AVS. Tarifa moto a 0.8km = ₡1.500. Total ₡9.952', 42);
+    mostrarDemoModal('🚗 Delivery AVS', `<div style="font-size:14px;margin:10px 0">📍 0.8 km · ~12 min</div><div style="font-size:16px;font-weight:700;color:#00d4aa;margin:10px 0">Tarifa delivery: ₡1.500</div><div style="font-size:13px;color:#aaa">Subtotal ₡7.700<br>+ Delivery ₡1.500<br>+ Comisión AVS 8%: ₡736</div><div style="font-size:18px;font-weight:700;color:#fff;margin-top:10px">TOTAL: ₡9.936</div>`);
+  });
+
+  await demoStep(10, ()=>{
+    demoHUD('Paso 5/8 — Recibe la prefactura por WhatsApp y paga SINPE directo al negocio.', 56);
+    mostrarDemoModal('📲 Prefactura WhatsApp', `<div style="background:#0a3d2a;border-radius:10px;padding:12px;text-align:left;font-size:12px;line-height:1.5;margin:10px 0"><b style="color:#25d366">Pizzería La Finca</b><br><br>Tu pedido AVS-PED7842<br>1× Pizza Margherita ₡6.500<br>1× Refresco natural ₡1.200<br>Delivery: ₡1.500<br><b>Total: ₡9.936</b><br><br><b>SINPE al 8800-1234</b><br>Concepto: AVS-PED7842</div>`);
+  });
+
+  await demoStep(10, ()=>{
+    demoHUD('Paso 6/8 — Pizzería confirma SINPE. Estado pasa a "Preparando" 👨‍🍳', 70);
+    cerrarDemoModal();
+    mostrarDemoTracking('preparacion');
+  });
+
+  await demoStep(15, ()=>{
+    demoHUD('Paso 7/8 — Pizza lista. Conductor Carlos retira y sale rumbo a María.', 82);
+    mostrarDemoTracking('en_camino');
+  });
+
+  await demoStep(15, ()=>{
+    demoHUD('Paso 8/8 — Pedido entregado. María califica con 5 estrellas y deja reseña.', 96);
+    mostrarDemoTracking('entregado');
+  });
+
+  await demoStep(5, ()=>{
+    mostrarDemoModal('⭐ Reseña publicada', `<div style="margin:14px 0;font-size:24px">${'⭐'.repeat(5)}</div><div style="font-size:13px;color:#fff">"Excelente sabor · Rápido · Recomendado"</div><div style="font-size:12px;color:#aaa;margin-top:10px">Pizzería La Finca: 5.0 ⭐ · 1 reseña</div>`);
+    demoHUD('🎯 Demo completado. AVS conectó usuario, negocio y conductor en un solo flujo.', 100);
+  });
+
+  await demoStep(5, ()=>{
+    cerrarDemoModal();
+    go('demo-selector');
+    document.getElementById('demo-hud').style.display = 'none';
+  });
+}
+
+function mostrarDemoTracking(estado){
+  const estados = [
+    { id:'pendiente', ico:'📋', label:'Pedido recibido' },
+    { id:'preparacion', ico:'👨‍🍳', label:'En preparación' },
+    { id:'listo', ico:'✅', label:'Listo para entrega' },
+    { id:'en_camino', ico:'🚗', label:'En camino' },
+    { id:'entregado', ico:'📦', label:'Entregado' }
+  ];
+  const idx = estados.findIndex(e => e.id === estado);
+  const html = `<div style="text-align:left;padding:14px 6px">${estados.map((e,i)=>{
+    const done = i < idx, active = i === idx, pending = i > idx;
+    return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;opacity:${pending?'0.35':'1'}">
+      <div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;background:${active?'#00d4aa':done?'rgba(0,212,170,0.25)':'#222'};border:2px solid ${active||done?'#00d4aa':'#444'};${active?'box-shadow:0 0 10px rgba(0,212,170,0.5);':''}">${done?'✓':e.ico}</div>
+      <div style="font-size:13px;color:${active?'#00d4aa':'#fff'};font-weight:${active?'700':'400'}">${e.label} ${active?'← Ahora':''}</div>
+    </div>`;
+  }).join('')}</div>`;
+  mostrarDemoModal('📦 Estado del Pedido', html);
+}
+
+function mostrarDemoModal(titulo, html){
+  let m = document.getElementById('demo-modal');
+  if(!m){
+    m = document.createElement('div');
+    m.id = 'demo-modal';
+    m.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#1a2540,#0a1525);border:1px solid #f5a623;border-radius:18px;padding:24px;width:min(360px,86vw);z-index:99998;box-shadow:0 20px 50px rgba(0,0,0,0.5);color:#fff;text-align:center;animation:demoModalIn 0.3s ease';
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `<div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#f5a623;letter-spacing:2px;margin-bottom:6px">SIMULACIÓN</div><div style="font-size:17px;font-weight:700;margin-bottom:10px">${titulo}</div>${html}`;
+}
+function cerrarDemoModal(){
+  const m = document.getElementById('demo-modal');
+  if(m) m.remove();
+}
+
+// ============== DEMO 3: COMPLETO ==============
+async function iniciarDemoCompleto(){
+  await iniciarDemoViaje();
+  await demoStep(2, ()=>{});
+  await iniciarDemoPedido();
+}
+
 if('serviceWorker'in navigator){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(reg=>reg.unregister());});}});
 
 // ============== RESEÑAS DE NEGOCIOS ==============
