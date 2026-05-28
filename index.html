@@ -2776,14 +2776,16 @@ function vincularDemoOculto(){
   });
 }
 window.addEventListener('load',()=>{ setTimeout(vincularDemoOculto, 500); });
-// También cada vez que se navega
-const _origGo_demo = window.go;
-if(typeof _origGo_demo === 'function'){
-  window.go = function(id){
-    _origGo_demo.apply(this, arguments);
-    if(id === 'login') setTimeout(vincularDemoOculto, 100);
-  };
-}
+// Revincular cada vez que regresamos al login (sin override de go)
+document.addEventListener('click', function(e){
+  // Si después de un click la pantalla del login se hizo visible, revincular
+  setTimeout(()=>{
+    const loginScreen = document.getElementById('login');
+    if(loginScreen && loginScreen.classList.contains('active')){
+      vincularDemoOculto();
+    }
+  }, 200);
+}, true);
 
 function showLoginMsg(ico,titulo,desc,btnTxt,btnAction){document.querySelector('#login .lsheet').innerHTML=`<div style="text-align:center;padding:10px 0 20px"><div style="font-size:52px;margin-bottom:12px">${ico}</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">${titulo}</div><div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:20px">${desc}</div><button class="btnp" onclick="(${btnAction.toString()})()">${btnTxt}</button><button class="btno" onclick="resetLoginSheet()" style="margin-top:8px">← Volver al inicio</button></div>`;}
 
@@ -3094,6 +3096,8 @@ window.addEventListener('load',()=>{
   };
   setVH();
   window.addEventListener('resize', setVH);
+});
+
 // ============== DEMO CINEMATOGRÁFICO AUTÓNOMO ==============
 let demoFlow = null, demoIdx = 0;
 
@@ -3487,7 +3491,7 @@ const DEMO_PEDIDO = [
   }
 ];
 
-if('serviceWorker'in navigator){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(reg=>reg.unregister());});}});
+if('serviceWorker'in navigator){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(reg=>reg.unregister());});}
 
 // ============== RESEÑAS DE NEGOCIOS ==============
 let resenaActual = { negocio_id: null, negocio_nombre: '', pedido_id: null, estrellas: 0, tags: [] };
