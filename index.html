@@ -2755,12 +2755,28 @@ let demoTapCount = 0;
 let demoTapTimer = null;
 function tapDemoOculto(){
   demoTapCount++;
+  console.log('[DEMO] Tap #' + demoTapCount);
   if(demoTapTimer) clearTimeout(demoTapTimer);
   if(demoTapCount >= 3){
     demoTapCount = 0;
     if(navigator.vibrate) navigator.vibrate([100,50,100]);
     toast('🎬 Modo Demo activado');
-    if(typeof iniciarModoDemo === 'function') iniciarModoDemo();
+    console.log('[DEMO] Activating demo mode...');
+    // Activación directa sin depender de funciones que puedan no estar cargadas
+    try {
+      const menuEl = document.getElementById('demo-menu');
+      if(!menuEl){
+        console.error('[DEMO] #demo-menu NOT FOUND in DOM');
+        toast('❌ Pantalla demo no encontrada');
+        return;
+      }
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      menuEl.classList.add('active');
+      console.log('[DEMO] demo-menu activated successfully');
+    } catch(e){
+      console.error('[DEMO] Error:', e);
+      toast('❌ Error: ' + e.message);
+    }
     return;
   }
   demoTapTimer = setTimeout(()=>{ demoTapCount = 0; }, 800);
@@ -2773,19 +2789,13 @@ function vincularDemoOculto(){
     t.style.userSelect = 'none';
     t.style.cursor = 'pointer';
     t.addEventListener('click', tapDemoOculto);
+    console.log('[DEMO] Bound to title:', t.textContent);
   });
 }
 window.addEventListener('load',()=>{ setTimeout(vincularDemoOculto, 500); });
-// Revincular cada vez que regresamos al login (sin override de go)
-document.addEventListener('click', function(e){
-  // Si después de un click la pantalla del login se hizo visible, revincular
-  setTimeout(()=>{
-    const loginScreen = document.getElementById('login');
-    if(loginScreen && loginScreen.classList.contains('active')){
-      vincularDemoOculto();
-    }
-  }, 200);
-}, true);
+// También al cargar el script (por si ya estaba cargado el DOM)
+setTimeout(vincularDemoOculto, 100);
+document.addEventListener('DOMContentLoaded', vincularDemoOculto);
 
 function showLoginMsg(ico,titulo,desc,btnTxt,btnAction){document.querySelector('#login .lsheet').innerHTML=`<div style="text-align:center;padding:10px 0 20px"><div style="font-size:52px;margin-bottom:12px">${ico}</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">${titulo}</div><div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:20px">${desc}</div><button class="btnp" onclick="(${btnAction.toString()})()">${btnTxt}</button><button class="btno" onclick="resetLoginSheet()" style="margin-top:8px">← Volver al inicio</button></div>`;}
 
