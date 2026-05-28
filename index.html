@@ -372,14 +372,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .pc-header { display: none; }
 
 /* Google Places Autocomplete — máxima legibilidad sobre fondo oscuro */
-.pac-container{background:#1a2540!important;border:1px solid #2a3550!important;border-radius:12px!important;box-shadow:0 8px 24px rgba(0,0,0,0.4)!important;margin-top:4px!important;font-family:inherit!important;}
-.pac-item{color:#fff!important;padding:12px 14px!important;border-top:1px solid rgba(255,255,255,0.06)!important;cursor:pointer!important;font-size:14px!important;}
+.pac-container{background:#1a2540!important;border:1px solid #2a3550!important;border-radius:12px!important;box-shadow:0 8px 24px rgba(0,0,0,0.5)!important;margin-top:4px!important;font-family:inherit!important;z-index:9999!important;min-width:280px!important;max-width:min(420px,calc(100vw - 32px))!important;overflow:hidden!important;}
+.pac-item{color:#fff!important;padding:12px 14px!important;border-top:1px solid rgba(255,255,255,0.06)!important;cursor:pointer!important;font-size:14px!important;line-height:1.4!important;white-space:normal!important;word-break:break-word!important;}
 .pac-item:first-child{border-top:none!important;}
 .pac-item:hover, .pac-item-selected{background:rgba(0,212,170,0.15)!important;}
-.pac-item-query{color:#fff!important;font-size:14px!important;font-weight:600!important;}
+.pac-item-query{color:#fff!important;font-size:14px!important;font-weight:600!important;white-space:normal!important;}
 .pac-matched{color:#00d4aa!important;font-weight:700!important;}
 .pac-icon, .pac-icon-marker{filter:invert(0.85) hue-rotate(135deg)!important;opacity:0.7!important;}
-.pac-item span:not(.pac-matched):not(.pac-item-query){color:#bcd!important;}
+.pac-item span:not(.pac-matched):not(.pac-item-query){color:#bcd!important;white-space:normal!important;}
+.pac-logo:after{background-color:#1a2540!important;}
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:10px 20px;font-size:13px;opacity:0;transition:all 0.3s;z-index:999;white-space:nowrap;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 #registro{background:var(--bg);overflow-y:auto;padding:48px 24px 40px;}
@@ -3180,7 +3181,7 @@ const DEMO_VIAJE = [
   {
     kicker: 'Paso 2 — Destino',
     title: 'Escribe a dónde va',
-    narration: 'AVS calcula la ruta usando Google Maps y muestra 3 opciones de tarifa fija — sin sorpresas, sin "surge pricing".',
+    narration: 'AVS calcula la ruta usando Google Maps y muestra 3 opciones de tarifa fija — sin sorpresas, sin "surge pricing". Tarifas justas para Atenas: 10% por encima de Uber para garantizar conductores comprometidos.',
     visual: `
       <div class="demo-card" style="max-width:380px;margin:0 auto">
         <div style="font-size:11px;color:#888;letter-spacing:1px;margin-bottom:6px">¿A DÓNDE VAS?</div>
@@ -3188,17 +3189,17 @@ const DEMO_VIAJE = [
           <span style="color:#00d4aa">●</span> Casa, Atenas Centro
         </div>
         <div style="display:flex;align-items:center;gap:10px;font-size:14px;padding:8px 0">
-          <span style="color:#f5a623">●</span> Hospital San Rafael, Alajuela
+          <span style="color:#f5a623">●</span> Mercedes, Atenas
         </div>
         <div style="display:flex;justify-content:space-around;margin-top:14px;padding-top:14px;border-top:1px dashed rgba(0,212,170,0.3)">
-          <div><div style="font-size:11px;color:#888">DISTANCIA</div><div style="font-size:18px;color:#00d4aa;font-weight:700">11.2 km</div></div>
-          <div><div style="font-size:11px;color:#888">TIEMPO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">18 min</div></div>
+          <div><div style="font-size:11px;color:#888">DISTANCIA</div><div style="font-size:18px;color:#00d4aa;font-weight:700">4.4 km</div></div>
+          <div><div style="font-size:11px;color:#888">TIEMPO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">10 min</div></div>
         </div>
       </div>
       <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap">
-        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">ECONÓMICO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡5.180</div></div>
-        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px;border-color:#00d4aa"><div style="font-size:11px;color:#888">ESTÁNDAR</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡5.755</div></div>
-        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">PREMIUM</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡6.395</div></div>
+        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">ECONÓMICO</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡2.033</div></div>
+        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px;border-color:#00d4aa"><div style="font-size:11px;color:#888">ESTÁNDAR</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡2.262</div></div>
+        <div class="demo-card" style="text-align:center;padding:12px 18px;min-width:100px"><div style="font-size:11px;color:#888">PREMIUM</div><div style="font-size:18px;color:#00d4aa;font-weight:700">₡2.512</div></div>
       </div>
     `
   },
@@ -3268,15 +3269,15 @@ const DEMO_VIAJE = [
   },
   {
     kicker: 'Paso 7 — Llegada al destino',
-    title: 'Carlos finaliza el viaje. María paga ₡5.755',
-    narration: 'Del total, Carlos recibe ₡5.180 (90%) y AVS retiene ₡575 de comisión (10%). Cuando hay convenio con la municipalidad, ese 10% se divide 50/50 entre AVS y el cantón.',
+    title: 'Carlos finaliza el viaje. María paga ₡2.262',
+    narration: 'Del total, Carlos recibe ₡2.036 (90%) y AVS retiene ₡226 de comisión (10%). Cuando hay convenio con la municipalidad, ese 10% se divide 50/50 entre AVS y el cantón — la muni participa de los ingresos del transporte local.',
     visual: `
       <div class="demo-receipt">
         <div style="text-align:center;font-weight:700;color:#00d4aa;margin-bottom:8px">RECIBO VIAJE AVS</div>
-        <div class="row"><span>Tarifa estándar</span><span>₡5.755</span></div>
-        <div class="row"><span>Para el conductor (90%)</span><span style="color:#00d4aa">₡5.180</span></div>
-        <div class="row"><span>Comisión AVS (10%)</span><span style="color:#f5a623">₡575</span></div>
-        <div class="row tot"><span>Total</span><span>₡5.755</span></div>
+        <div class="row"><span>Tarifa estándar</span><span>₡2.262</span></div>
+        <div class="row"><span>Para el conductor (90%)</span><span style="color:#00d4aa">₡2.036</span></div>
+        <div class="row"><span>Comisión AVS (10%)</span><span style="color:#f5a623">₡226</span></div>
+        <div class="row tot"><span>Total</span><span>₡2.262</span></div>
         <div style="text-align:center;margin-top:10px;font-size:11px;color:#888">Pagado por SINPE Móvil</div>
       </div>
     `
