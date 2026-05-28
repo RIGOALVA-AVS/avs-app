@@ -371,10 +371,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 /* PC header visible solo en desktop */
 .pc-header { display: none; }
 
-.pac-container{background:var(--sf)!important;border:1px solid var(--bd)!important;border-radius:12px!important;box-shadow:none!important;}
-.pac-item{color:var(--tx)!important;padding:10px 14px!important;border-top:1px solid var(--bd)!important;}
-.pac-item:hover{background:var(--cd)!important;}
-.pac-matched{color:var(--g)!important;}
+/* Google Places Autocomplete — máxima legibilidad sobre fondo oscuro */
+.pac-container{background:#1a2540!important;border:1px solid #2a3550!important;border-radius:12px!important;box-shadow:0 8px 24px rgba(0,0,0,0.4)!important;margin-top:4px!important;font-family:inherit!important;}
+.pac-item{color:#fff!important;padding:12px 14px!important;border-top:1px solid rgba(255,255,255,0.06)!important;cursor:pointer!important;font-size:14px!important;}
+.pac-item:first-child{border-top:none!important;}
+.pac-item:hover, .pac-item-selected{background:rgba(0,212,170,0.15)!important;}
+.pac-item-query{color:#fff!important;font-size:14px!important;font-weight:600!important;}
+.pac-matched{color:#00d4aa!important;font-weight:700!important;}
+.pac-icon, .pac-icon-marker{filter:invert(0.85) hue-rotate(135deg)!important;opacity:0.7!important;}
+.pac-item span:not(.pac-matched):not(.pac-item-query){color:#bcd!important;}
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:10px 20px;font-size:13px;opacity:0;transition:all 0.3s;z-index:999;white-space:nowrap;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 #registro{background:var(--bg);overflow-y:auto;padding:48px 24px 40px;}
@@ -2745,35 +2750,40 @@ async function completarLogin(role, phone, nombre){
   go('pasajero');
 }
 
-// === ACCESO DEMO OCULTO (touch largo de 3 segundos en el logo AVS) ===
-let demoTouchTimer = null;
-function activarDemoOculto(){
-  if(demoTouchTimer) clearTimeout(demoTouchTimer);
-  demoTouchTimer = setTimeout(()=>{
+// === ACCESO DEMO OCULTO (3 toques rápidos en el título "Bienvenido") ===
+let demoTapCount = 0;
+let demoTapTimer = null;
+function tapDemoOculto(){
+  demoTapCount++;
+  if(demoTapTimer) clearTimeout(demoTapTimer);
+  if(demoTapCount >= 3){
+    demoTapCount = 0;
     if(navigator.vibrate) navigator.vibrate([100,50,100]);
     toast('🎬 Modo Demo activado');
     if(typeof iniciarModoDemo === 'function') iniciarModoDemo();
-  }, 3000);
+    return;
+  }
+  demoTapTimer = setTimeout(()=>{ demoTapCount = 0; }, 800);
 }
-function cancelarDemoOculto(){
-  if(demoTouchTimer){ clearTimeout(demoTouchTimer); demoTouchTimer = null; }
+// Vincular al título cuando carga la página y cada vez que se vuelve al login
+function vincularDemoOculto(){
+  document.querySelectorAll('.ltit').forEach(t => {
+    if(t.dataset.demoBound) return;
+    t.dataset.demoBound = '1';
+    t.style.userSelect = 'none';
+    t.style.cursor = 'pointer';
+    t.addEventListener('click', tapDemoOculto);
+  });
 }
-// Vincular al logo cuando carga la página
-window.addEventListener('load',()=>{
-  setTimeout(()=>{
-    const logos = document.querySelectorAll('.alogo, .llogo');
-    logos.forEach(l => {
-      l.style.userSelect = 'none';
-      l.style.cursor = 'pointer';
-      l.addEventListener('mousedown', activarDemoOculto);
-      l.addEventListener('mouseup', cancelarDemoOculto);
-      l.addEventListener('mouseleave', cancelarDemoOculto);
-      l.addEventListener('touchstart', activarDemoOculto, {passive:true});
-      l.addEventListener('touchend', cancelarDemoOculto);
-      l.addEventListener('touchcancel', cancelarDemoOculto);
-    });
-  }, 500);
-});
+window.addEventListener('load',()=>{ setTimeout(vincularDemoOculto, 500); });
+// También cada vez que se navega
+const _origGo_demo = window.go;
+if(typeof _origGo_demo === 'function'){
+  window.go = function(id){
+    _origGo_demo.apply(this, arguments);
+    if(id === 'login') setTimeout(vincularDemoOculto, 100);
+  };
+}
 
 function showLoginMsg(ico,titulo,desc,btnTxt,btnAction){document.querySelector('#login .lsheet').innerHTML=`<div style="text-align:center;padding:10px 0 20px"><div style="font-size:52px;margin-bottom:12px">${ico}</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">${titulo}</div><div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:20px">${desc}</div><button class="btnp" onclick="(${btnAction.toString()})()">${btnTxt}</button><button class="btno" onclick="resetLoginSheet()" style="margin-top:8px">← Volver al inicio</button></div>`;}
 
