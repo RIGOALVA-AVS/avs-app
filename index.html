@@ -2051,12 +2051,12 @@ function detenerSeguimientoConductoresActivos(){
   conductoresActivosMarkers=[];
 }
 function initMap(){
-  gmap=new google.maps.Map(document.getElementById('gmap'),{center:ATENAS,zoom:15,disableDefaultUI:true,styles:mstyle()});
+  gmap=new google.maps.Map(document.getElementById('gmap'),{center:ATENAS,zoom:15,disableDefaultUI:true,gestureHandling:'greedy',styles:mstyle()});
   dirSvc=new google.maps.DirectionsService();
   dirRend=new google.maps.DirectionsRenderer({map:gmap,suppressMarkers:false,polylineOptions:{strokeColor:'#00d4aa',strokeWeight:4}});
-  rmapInst=new google.maps.Map(document.getElementById('rmap'),{center:ATENAS,zoom:14,disableDefaultUI:true,styles:mstyle()});
+  rmapInst=new google.maps.Map(document.getElementById('rmap'),{center:ATENAS,zoom:14,disableDefaultUI:true,gestureHandling:'greedy',styles:mstyle()});
   dirRendR=new google.maps.DirectionsRenderer({map:rmapInst,suppressMarkers:false,polylineOptions:{strokeColor:'#00d4aa',strokeWeight:4}});
-  dmap=new google.maps.Map(document.getElementById('dmap'),{center:ATENAS,zoom:14,disableDefaultUI:true,styles:mstyle()});
+  dmap=new google.maps.Map(document.getElementById('dmap'),{center:ATENAS,zoom:14,disableDefaultUI:true,gestureHandling:'greedy',styles:mstyle()});
   dirRendD=new google.maps.DirectionsRenderer({map:dmap,suppressMarkers:false,polylineOptions:{strokeColor:'#f5a623',strokeWeight:4}});
   const inp=document.getElementById('dac');
   autocomplete=new google.maps.places.Autocomplete(inp,{componentRestrictions:{country:'cr'},fields:['geometry','name','formatted_address']});
