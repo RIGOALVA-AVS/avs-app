@@ -594,6 +594,35 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 <!-- REGISTRO CONDUCTOR -->
 <!-- ============== PANTALLA DE REGISTRO CON CÉDULA (Usuario) ============== -->
+<!-- ============== PANTALLA DE CÓDIGO PRE-APROBADO (Conductor nuevo) ============== -->
+<div class="screen" id="codigo-conductor">
+  <div style="background:linear-gradient(180deg,#0a1525,#0d1f14);height:100%;overflow-y:auto;padding:32px 20px 40px;color:#fff">
+    <div style="max-width:480px;margin:0 auto">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+        <button onclick="regCancelar()" style="background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#aaa;padding:6px 12px;font-size:12px;cursor:pointer">← Volver</button>
+      </div>
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:48px;margin-bottom:8px">🎫</div>
+        <div style="font-family:var(--font-d);font-size:22px;font-weight:700;margin-bottom:6px">Código de acceso</div>
+        <div style="font-size:13px;color:#aaa;line-height:1.5">Solo conductores con código pre-aprobado por la administración de AVS pueden operar. Si no tenés código, contactá al equipo AVS.</div>
+        <div id="cc-info" style="font-size:11px;color:#00d4aa;margin-top:8px;font-family:monospace"></div>
+      </div>
+
+      <div style="font-size:11px;color:#888;letter-spacing:1.5px;margin-bottom:6px">CÓDIGO DE CONDUCTOR</div>
+      <input type="text" id="cc-input" placeholder="AVS-XXXX-XXXX" maxlength="13" style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(0,212,170,0.3);border-radius:14px;padding:14px;color:#fff;font-size:20px;font-weight:700;outline:none;font-family:monospace;text-align:center;letter-spacing:3px;text-transform:uppercase" autocomplete="off">
+      <div id="cc-hint" style="font-size:11px;color:#888;margin-top:6px">Formato: AVS-XXXX-XXXX (insensible a mayúsculas/minúsculas)</div>
+      <div id="cc-error" style="font-size:12px;color:#ff6b6b;margin-top:8px;min-height:18px;line-height:1.4"></div>
+
+      <div style="background:rgba(245,166,35,0.05);border:1px solid rgba(245,166,35,0.2);border-radius:12px;padding:12px;margin-top:18px;font-size:12px;color:#aaa;line-height:1.5">
+        <div style="color:#f5a623;font-weight:600;margin-bottom:4px">📞 ¿No tenés código?</div>
+        Contactá a Rigoberto Alvarado: <span style="color:#fff">rigoalva@gmail.com · 8891-5166</span>
+      </div>
+
+      <button id="cc-submit" onclick="ccValidar()" style="width:100%;margin-top:18px;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:14px;padding:14px;font-size:15px;cursor:pointer">✓ Validar código</button>
+    </div>
+  </div>
+</div>
+
 <div class="screen" id="registro-cedula">
   <div style="background:linear-gradient(180deg,#0a1525,#0d1f14);height:100%;overflow-y:auto;padding:32px 20px 40px;color:#fff">
     <div style="max-width:480px;margin:0 auto">
@@ -2920,19 +2949,27 @@ function generarOTP(){
 function mostrarOTPModal(tel, codigo){
   let m = document.getElementById('otp-modal');
   if(m) m.remove();
+  // Detectar si es para admin (2FA reforzado)
+  const esAdmin = (typeof otpRol !== 'undefined' && otpRol === 'admin');
+  const tituloModal = esAdmin ? 'Verificación 2FA · Admin' : 'Código de verificación';
+  const iconoModal = esAdmin ? '🛡️' : '🔐';
+  const colorBorde = esAdmin ? '#f5a623' : '#00d4aa';
+  const mensajeIntro = esAdmin
+    ? `Por seguridad, cada acceso administrativo requiere un código nuevo.<br>Código enviado al<br><b style="color:#fff">${tel.slice(0,4)}-${tel.slice(4)}</b>`
+    : `Enviamos un código de 4 dígitos al<br><b style="color:#fff">${tel.slice(0,4)}-${tel.slice(4)}</b>`;
   m = document.createElement('div');
   m.id = 'otp-modal';
   m.style.cssText = 'position:fixed;inset:0;background:rgba(8,15,30,0.85);backdrop-filter:blur(8px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
   m.innerHTML = `
-    <div style="background:linear-gradient(135deg,#1a2540,#0d1525);border:1px solid #00d4aa;border-radius:18px;padding:24px;width:min(380px,92vw);color:#fff;box-shadow:0 20px 50px rgba(0,0,0,0.5)">
+    <div style="background:linear-gradient(135deg,#1a2540,#0d1525);border:1.5px solid ${colorBorde};border-radius:18px;padding:24px;width:min(380px,92vw);color:#fff;box-shadow:0 20px 50px rgba(0,0,0,0.5)">
       <div style="text-align:center">
-        <div style="font-size:42px;margin-bottom:8px">🔐</div>
-        <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:6px">Código de verificación</div>
-        <div style="font-size:13px;color:#aaa;margin-bottom:16px;line-height:1.5">Enviamos un código de 4 dígitos al<br><b style="color:#fff">${tel.slice(0,4)}-${tel.slice(4)}</b></div>
+        <div style="font-size:42px;margin-bottom:8px">${iconoModal}</div>
+        <div style="font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:6px">${tituloModal}</div>
+        <div style="font-size:13px;color:#aaa;margin-bottom:16px;line-height:1.5">${mensajeIntro}</div>
         <div style="background:rgba(245,166,35,0.1);border:1px dashed #f5a623;border-radius:10px;padding:10px;margin-bottom:16px;font-size:11px;color:#f5a623">
-          ⚠️ MODO DEMO — Tu código es: <b style="font-family:monospace;font-size:18px;letter-spacing:4px">${codigo}</b><br><span style="font-size:10px;opacity:0.7">(En producción se enviará por SMS real)</span>
+          ⚠️ MODO DEMO — Tu código es: <b style="font-family:monospace;font-size:18px;letter-spacing:4px">${codigo}</b><br><span style="font-size:10px;opacity:0.7">(Pronto se enviará por WhatsApp/SMS)</span>
         </div>
-        <input type="text" id="otp-input" inputmode="numeric" maxlength="4" placeholder="• • • •" style="width:100%;text-align:center;font-size:28px;letter-spacing:14px;font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,0.05);border:2px solid #00d4aa;border-radius:14px;padding:14px;color:#00d4aa;font-weight:700;margin-bottom:14px" autocomplete="off">
+        <input type="text" id="otp-input" inputmode="numeric" maxlength="4" placeholder="• • • •" style="width:100%;text-align:center;font-size:28px;letter-spacing:14px;font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,0.05);border:2px solid ${colorBorde};border-radius:14px;padding:14px;color:${colorBorde};font-weight:700;margin-bottom:14px" autocomplete="off">
         <div id="otp-error" style="font-size:12px;color:#ff6b6b;margin-bottom:10px;min-height:16px"></div>
         <button onclick="verificarOTP()" style="width:100%;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:12px;padding:13px;font-size:15px;cursor:pointer">✓ Verificar código</button>
         <button onclick="cerrarOTPModal()" style="width:100%;background:transparent;border:none;color:#888;padding:10px;font-size:12px;cursor:pointer;margin-top:6px">Cancelar</button>
@@ -3021,10 +3058,28 @@ async function doLogin(role){
 
   if(role === 'conductor'){
     if(!db){ toast('Sin conexión a Internet'); return; }
+    // EXCEPCIÓN: conductores demo (88880001-88880010) entran libre
+    const esDemoConductor = /^8888\d{4}$/.test(phone) && phone !== '88880000';
+    if(esDemoConductor){
+      const { data: demoUser } = await db.from('usuarios').select('nombre,apellidos').eq('telefono',phone).maybeSingle();
+      if(demoUser){
+        const nombreCompleto = demoUser.nombre + ' ' + (demoUser.apellidos||'');
+        iniciarOTP(role, phone, nombreCompleto);
+        return;
+      }
+    }
     toast('Verificando registro...');
-    const { data, error } = await db.from('usuarios').select('nombre,apellidos,tipo,estado_verificacion,numero_identificacion').eq('telefono',phone).maybeSingle();
-    if(!data){
-      showLoginMsg('🚗','No encontramos tu registro','Para operar como conductor en AVS primero debés completar el registro con tu documentación y esperar aprobación.','Registrarme como conductor',()=>go('registro'));
+    const { data, error } = await db.from('usuarios').select('nombre,apellidos,tipo,estado_verificacion,numero_identificacion,codigo_conductor').eq('telefono',phone).maybeSingle();
+    if(!data || !data.codigo_conductor){
+      // Conductor nuevo o sin código → pantalla de código pre-aprobado
+      const valNom = validarNombreCompleto(nameRaw);
+      if(!valNom.ok){ toast('👤 ' + valNom.msg); return; }
+      registroTemp = { telefono: phone, nombre: valNom.nombre, role: 'conductor' };
+      go('codigo-conductor');
+      setTimeout(() => {
+        const el = document.getElementById('cc-info');
+        if(el) el.textContent = 'Registrando conductor: ' + valNom.nombre + ' · ' + phone;
+      }, 100);
       return;
     }
     if(data.estado_verificacion === 'pendiente'){
@@ -3162,6 +3217,151 @@ async function regEnviarCedula(){
 function regCancelar(){
   registroTemp = null;
   go('login');
+}
+
+// === VALIDACIÓN DE CÓDIGO DE CONDUCTOR ===
+async function ccValidar(){
+  if(!registroTemp){ go('login'); return; }
+  const codigo = (document.getElementById('cc-input').value || '').trim().toUpperCase();
+  const errEl = document.getElementById('cc-error');
+  errEl.textContent = '';
+
+  if(!codigo){ errEl.textContent = '❌ Ingresá tu código'; return; }
+  if(codigo.length < 8){ errEl.textContent = '❌ Código muy corto'; return; }
+  if(!db){ toast('Sin conexión'); return; }
+
+  const btn = document.getElementById('cc-submit');
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+
+  try {
+    // Buscar código en BD
+    const { data: codData } = await db.from('codigos_conductor').select('*').eq('codigo', codigo).maybeSingle();
+    if(!codData){
+      errEl.textContent = '❌ Código no válido. Verificá que esté bien escrito o contactá al equipo AVS.';
+      btn.disabled = false; btn.textContent = '✓ Validar código';
+      return;
+    }
+    if(codData.estado === 'usado'){
+      errEl.textContent = '❌ Este código ya fue usado por otro conductor.';
+      btn.disabled = false; btn.textContent = '✓ Validar código';
+      return;
+    }
+    if(codData.estado === 'cancelado'){
+      errEl.textContent = '❌ Este código fue cancelado. Contactá al equipo AVS.';
+      btn.disabled = false; btn.textContent = '✓ Validar código';
+      return;
+    }
+
+    // Código válido → marcar como usado y crear cuenta de conductor
+    await db.from('codigos_conductor').update({
+      estado: 'usado',
+      usado_por_telefono: registroTemp.telefono,
+      fecha_uso: new Date().toISOString()
+    }).eq('codigo', codigo);
+
+    // Actualizar o crear usuario con rol conductor
+    const partes = registroTemp.nombre.split(' ');
+    const existente = await buscarUsuarioPorTelefono(registroTemp.telefono);
+
+    if(existente){
+      // Usuario existente → agregar rol de conductor
+      const rolesActuales = existente.roles_activos || ['usuario'];
+      const nuevoRoles = rolesActuales.includes('conductor') ? rolesActuales : [...rolesActuales, 'conductor'];
+      await db.from('usuarios').update({
+        codigo_conductor: codigo,
+        roles_activos: nuevoRoles,
+        estado_verificacion: 'aprobado',
+        aprobado_por: codData.generado_por || 'admin',
+        fecha_aprobacion: new Date().toISOString()
+      }).eq('telefono', registroTemp.telefono);
+    } else {
+      // Usuario nuevo → crear con rol conductor
+      await db.from('usuarios').insert({
+        telefono: registroTemp.telefono,
+        nombre: partes[0],
+        apellidos: partes.slice(1).join(' ') || '-',
+        tipo: 'conductor',
+        codigo_conductor: codigo,
+        roles_activos: ['usuario', 'conductor'],
+        estado_verificacion: 'aprobado',
+        aprobado_por: codData.generado_por || 'admin',
+        fecha_aprobacion: new Date().toISOString()
+      });
+    }
+
+    toast('✅ Código aceptado. Bienvenido a AVS conductor!');
+    setTimeout(() => iniciarOTP('conductor', registroTemp.telefono, registroTemp.nombre), 500);
+  } catch(e){
+    console.error('ccValidar error:', e);
+    errEl.textContent = '❌ Error: ' + (e.message || 'reintentá');
+    btn.disabled = false;
+    btn.textContent = '✓ Validar código';
+  }
+}
+
+// Generar códigos de conductor (solo admin)
+function generarCodigoConductor(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin O,0,I,1 para evitar confusión
+  let codigo = 'AVS-';
+  for(let i = 0; i < 4; i++) codigo += chars[Math.floor(Math.random() * chars.length)];
+  codigo += '-';
+  for(let i = 0; i < 4; i++) codigo += chars[Math.floor(Math.random() * chars.length)];
+  return codigo;
+}
+
+async function adminGenerarCodigos(cantidad){
+  if(!db){ toast('Sin conexión'); return; }
+  if(!user || !user.phone){ toast('No autenticado'); return; }
+  toast(`Generando ${cantidad} códigos...`);
+  const codigosGenerados = [];
+  try {
+    for(let i = 0; i < cantidad; i++){
+      let codigo;
+      let intentos = 0;
+      do {
+        codigo = generarCodigoConductor();
+        intentos++;
+        if(intentos > 10){ toast('Error generando códigos únicos'); return; }
+        // Verificar que no exista
+        const { data } = await db.from('codigos_conductor').select('codigo').eq('codigo', codigo).maybeSingle();
+        if(!data) break;
+      } while(true);
+      await db.from('codigos_conductor').insert({
+        codigo: codigo,
+        generado_por: user.phone,
+        estado: 'disponible'
+      });
+      codigosGenerados.push(codigo);
+    }
+    mostrarCodigosGenerados(codigosGenerados);
+    if(typeof cargarCodigosConductor === 'function') cargarCodigosConductor();
+  } catch(e){
+    console.error('adminGenerarCodigos:', e);
+    toast('❌ Error: ' + (e.message || 'reintentá'));
+  }
+}
+
+function mostrarCodigosGenerados(codigos){
+  let m = document.getElementById('codigos-modal');
+  if(m) m.remove();
+  m = document.createElement('div');
+  m.id = 'codigos-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(8,15,30,0.9);backdrop-filter:blur(8px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML = `
+    <div style="background:linear-gradient(135deg,#1a2540,#0d1525);border:1.5px solid #00d4aa;border-radius:18px;padding:24px;width:min(440px,94vw);max-height:88vh;overflow-y:auto;color:#fff">
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="font-size:42px;margin-bottom:6px">🎫</div>
+        <div style="font-family:var(--font-d);font-size:20px;font-weight:700">${codigos.length} código${codigos.length===1?'':'s'} generado${codigos.length===1?'':'s'}</div>
+        <div style="font-size:12px;color:#aaa;margin-top:4px">Compartilos con conductores aprobados</div>
+      </div>
+      <div style="background:rgba(0,0,0,0.3);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px;max-height:300px;overflow-y:auto">
+        ${codigos.map(c => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-family:monospace;font-size:14px"><span style="color:#00d4aa;font-weight:700">${c}</span><button onclick="navigator.clipboard.writeText('${c}');toast('Copiado: ${c}')" style="background:rgba(0,212,170,0.15);border:1px solid var(--g);color:var(--g);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">📋 Copiar</button></div>`).join('')}
+      </div>
+      <button onclick="navigator.clipboard.writeText('${codigos.join('\\n')}');toast('${codigos.length} códigos copiados al portapapeles')" style="width:100%;background:rgba(0,212,170,0.15);border:1px solid var(--g);color:var(--g);border-radius:12px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">📋 Copiar todos</button>
+      <button onclick="document.getElementById('codigos-modal').remove()" style="width:100%;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:12px;padding:12px;cursor:pointer">Listo</button>
+    </div>`;
+  document.body.appendChild(m);
 }
 
 function iniciarOTP(role, phone, nombre){
