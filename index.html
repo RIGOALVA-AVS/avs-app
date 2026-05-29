@@ -593,6 +593,51 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 </div>
 
 <!-- REGISTRO CONDUCTOR -->
+<!-- ============== PANTALLA DE REGISTRO CON CÉDULA (Usuario) ============== -->
+<div class="screen" id="registro-cedula">
+  <div style="background:linear-gradient(180deg,#0a1525,#0d1f14);height:100%;overflow-y:auto;padding:32px 20px 40px;color:#fff">
+    <div style="max-width:480px;margin:0 auto">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+        <button onclick="regCancelar()" style="background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#aaa;padding:6px 12px;font-size:12px;cursor:pointer">← Volver</button>
+      </div>
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:48px;margin-bottom:8px">🔐</div>
+        <div style="font-family:var(--font-d);font-size:22px;font-weight:700;margin-bottom:6px">Verificá tu identidad</div>
+        <div style="font-size:13px;color:#aaa;line-height:1.5">Necesitamos tu identificación para garantizar la seguridad de pasajeros y conductores en AVS. Solo lo pedimos una vez.</div>
+        <div id="reg-ced-info" style="font-size:11px;color:#00d4aa;margin-top:8px;font-family:'JetBrains Mono',monospace"></div>
+      </div>
+
+      <!-- Tabs de tipo de identificación -->
+      <div style="font-size:11px;color:#888;letter-spacing:1.5px;margin-bottom:8px">TIPO DE IDENTIFICACIÓN</div>
+      <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap">
+        <div class="reg-id-tab on" data-tipo="cedula_cr" onclick="regCambiarTipoId('cedula_cr')">🇨🇷 Cédula CR</div>
+        <div class="reg-id-tab" data-tipo="dimex" onclick="regCambiarTipoId('dimex')">📋 DIMEX</div>
+        <div class="reg-id-tab" data-tipo="pasaporte" onclick="regCambiarTipoId('pasaporte')">📕 Pasaporte</div>
+      </div>
+
+      <!-- Campo de identificación -->
+      <div style="font-size:11px;color:#888;letter-spacing:1.5px;margin-bottom:6px">NÚMERO</div>
+      <input type="text" id="reg-ced-input" placeholder="1-2345-6789" inputmode="numeric" maxlength="11" data-tipo-id="cedula_cr" style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(0,212,170,0.3);border-radius:14px;padding:14px;color:#fff;font-size:18px;font-weight:600;outline:none;font-family:'JetBrains Mono',monospace;letter-spacing:2px" autocomplete="off">
+      <div id="reg-ced-hint" style="font-size:11px;color:#888;margin-top:6px">Cédula de identidad costarricense — 9 dígitos</div>
+      <div id="reg-ced-error" style="font-size:12px;color:#ff6b6b;margin-top:8px;min-height:18px;line-height:1.4"></div>
+
+      <!-- Info de privacidad -->
+      <div style="background:rgba(0,212,170,0.05);border:1px solid rgba(0,212,170,0.2);border-radius:12px;padding:12px;margin-top:18px;font-size:12px;color:#aaa;line-height:1.5">
+        <div style="color:#00d4aa;font-weight:600;margin-bottom:4px">🛡️ Tu información está protegida</div>
+        Tu identificación es confidencial y se usa únicamente para verificar tu identidad. Nunca la compartimos con conductores ni terceros.
+      </div>
+
+      <button id="reg-ced-submit" onclick="regEnviarCedula()" style="width:100%;margin-top:18px;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:14px;padding:14px;font-size:15px;cursor:pointer">✓ Continuar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.reg-id-tab{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;font-size:13px;color:#aaa;cursor:pointer;transition:all 0.2s;flex:1;text-align:center;min-width:90px}
+.reg-id-tab:hover{border-color:rgba(0,212,170,0.4);color:#fff}
+.reg-id-tab.on{background:rgba(0,212,170,0.15);border-color:#00d4aa;color:#00d4aa;font-weight:600}
+</style>
+
 <div class="screen" id="registro">
   <div class="rhdr"><button class="rbk" onclick="go('login')">←</button><div class="rtit">Registro de Conductor</div></div>
   <div class="rsec"><div class="rstit">Datos personales</div>
@@ -2715,6 +2760,58 @@ function validarNombreCompleto(nom){
   if(!/^[a-zA-ZáéíóúñÁÉÍÓÚÑ\s']+$/.test(n)) return { ok:false, msg:'El nombre solo puede tener letras' };
   return { ok:true, nombre:n };
 }
+
+// === VALIDACIÓN DE IDENTIFICACIÓN ===
+// Cédula CR: 9 dígitos. Detecta cédulas obviamente inválidas.
+function validarCedulaCR(ced){
+  const c = String(ced||'').replace(/\D/g,'');
+  if(c.length !== 9) return { ok:false, msg:'La cédula debe tener 9 dígitos (sin guiones)' };
+  // Rechazar cédulas obviamente inválidas
+  if(/^(\d)\1{8}$/.test(c)) return { ok:false, msg:'Número de cédula inválido' };
+  if(c === '000000000' || c === '123456789') return { ok:false, msg:'Número de cédula inválido' };
+  // El primer dígito indica provincia (1-9 en CR)
+  if(c[0] === '0') return { ok:false, msg:'La cédula debe empezar con dígito del 1 al 9 (provincia)' };
+  return { ok:true, numero:c, tipo:'cedula_cr', formato:c.charAt(0)+'-'+c.substring(1,5)+'-'+c.substring(5) };
+}
+
+// DIMEX: residentes extranjeros — 11 o 12 dígitos
+function validarDIMEX(dimex){
+  const d = String(dimex||'').replace(/\D/g,'');
+  if(d.length < 11 || d.length > 12) return { ok:false, msg:'El DIMEX debe tener 11 o 12 dígitos' };
+  if(/^(\d)\1+$/.test(d)) return { ok:false, msg:'Número de DIMEX inválido' };
+  return { ok:true, numero:d, tipo:'dimex', formato:d };
+}
+
+// Pasaporte: turistas — alfanumérico
+function validarPasaporte(pas){
+  const p = String(pas||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(p.length < 6) return { ok:false, msg:'El pasaporte debe tener al menos 6 caracteres' };
+  if(p.length > 15) return { ok:false, msg:'El pasaporte no puede exceder 15 caracteres' };
+  return { ok:true, numero:p, tipo:'pasaporte', formato:p };
+}
+
+function validarIdentificacion(tipo, valor){
+  if(tipo === 'cedula_cr') return validarCedulaCR(valor);
+  if(tipo === 'dimex') return validarDIMEX(valor);
+  if(tipo === 'pasaporte') return validarPasaporte(valor);
+  return { ok:false, msg:'Tipo de identificación inválido' };
+}
+
+// Buscar usuario por teléfono o por identificación
+async function buscarUsuarioPorTelefono(telefono){
+  if(!db) return null;
+  try {
+    const { data } = await db.from('usuarios').select('*').eq('telefono', telefono).maybeSingle();
+    return data;
+  } catch(e){ console.warn(e); return null; }
+}
+async function buscarUsuarioPorIdentificacion(numero){
+  if(!db) return null;
+  try {
+    const { data } = await db.from('usuarios').select('*').eq('numero_identificacion', numero).maybeSingle();
+    return data;
+  } catch(e){ console.warn(e); return null; }
+}
 // Estado de intentos por teléfono (anti-brute-force)
 function getIntentos(tel){
   try{ return JSON.parse(localStorage.getItem('login-intentos-'+tel) || '{"count":0,"bloqueadoHasta":0}'); }
@@ -2811,9 +2908,6 @@ async function doLogin(role){
   const phoneRaw = document.getElementById('lphone').value.trim();
   const nameRaw = document.getElementById('lname').value.trim();
 
-  // === ACCESO DEMO OCULTO (botón secreto, no por teléfono) ===
-  // El acceso demo ahora se hace por touch largo en el logo (ver activarDemoOculto)
-
   // CAPA 1: Validar formato del teléfono
   const valTel = validarTelefonoCR(phoneRaw);
   if(!valTel.ok){ toast('📵 ' + valTel.msg); return; }
@@ -2828,7 +2922,6 @@ async function doLogin(role){
 
   // CAPA 3: Diferenciación por rol
   if(role === 'admin'){
-    // Admin: por ahora teléfono específico — más adelante email+password
     if(phone !== '88880000' && phone !== '88001234'){
       toast('🔒 Acceso administrativo restringido');
       return;
@@ -2840,7 +2933,7 @@ async function doLogin(role){
   if(role === 'conductor'){
     if(!db){ toast('Sin conexión a Internet'); return; }
     toast('Verificando registro...');
-    const { data, error } = await db.from('usuarios').select('nombre,apellidos,tipo,estado_verificacion').eq('telefono',phone).single();
+    const { data, error } = await db.from('usuarios').select('nombre,apellidos,tipo,estado_verificacion,numero_identificacion').eq('telefono',phone).maybeSingle();
     if(!data){
       showLoginMsg('🚗','No encontramos tu registro','Para operar como conductor en AVS primero debés completar el registro con tu documentación y esperar aprobación.','Registrarme como conductor',()=>go('registro'));
       return;
@@ -2853,21 +2946,133 @@ async function doLogin(role){
       showLoginMsg('❌','Solicitud rechazada','Tu solicitud no fue aprobada. Contactá al equipo AVS o registrate nuevamente con la documentación correcta.','Registrarme de nuevo',()=>go('registro'));
       return;
     }
-    // Conductor verificado → OTP
     const nombreCompleto = data.nombre + ' ' + (data.apellidos||'');
     iniciarOTP(role, phone, nombreCompleto);
     return;
   }
 
-  // Usuario (rol por defecto)
-  // CAPA 1: Validar nombre
+  // === USUARIO (rol por defecto) ===
+  if(!db){ toast('Sin conexión a Internet'); return; }
+  toast('Verificando...');
+
+  // Buscar si el teléfono ya está registrado
+  const existente = await buscarUsuarioPorTelefono(phone);
+
+  if(existente && existente.numero_identificacion){
+    // Usuario YA registrado con cédula → ir directo a OTP
+    const nombreGuardado = existente.nombre + ' ' + (existente.apellidos||'');
+    iniciarOTP(role, phone, nombreGuardado.trim());
+    return;
+  }
+
+  // Usuario nuevo (no existe) o existente sin cédula → necesita registrarse
+  // Validar nombre antes de mandar a registro
   const valNom = validarNombreCompleto(nameRaw);
   if(!valNom.ok){ toast('👤 ' + valNom.msg); return; }
-  const nombre = valNom.nombre;
 
-  // Si el teléfono ya existe → entra normal con OTP
-  // Si no existe → se crea cuenta en Supabase y va a OTP
-  iniciarOTP(role, phone, nombre);
+  // Guardar datos temporales y mandar a pantalla de registro con cédula
+  registroTemp = { telefono: phone, nombre: valNom.nombre, role: 'usuario' };
+  go('registro-cedula');
+  setTimeout(() => {
+    const el = document.getElementById('reg-ced-info');
+    if(el) el.textContent = 'Registrando: ' + valNom.nombre + ' · ' + phone;
+  }, 100);
+}
+
+let registroTemp = null;
+
+// Cambiar tipo de identificación en la pantalla de registro
+function regCambiarTipoId(tipo){
+  document.querySelectorAll('.reg-id-tab').forEach(t => t.classList.remove('on'));
+  const tab = document.querySelector(`.reg-id-tab[data-tipo="${tipo}"]`);
+  if(tab) tab.classList.add('on');
+  const input = document.getElementById('reg-ced-input');
+  const hint = document.getElementById('reg-ced-hint');
+  if(tipo === 'cedula_cr'){
+    input.placeholder = '1-2345-6789';
+    input.inputMode = 'numeric';
+    input.maxLength = 11;
+    hint.textContent = 'Cédula de identidad costarricense — 9 dígitos';
+  } else if(tipo === 'dimex'){
+    input.placeholder = '12345678901';
+    input.inputMode = 'numeric';
+    input.maxLength = 12;
+    hint.textContent = 'Documento de Identificación Migratorio (residentes extranjeros)';
+  } else if(tipo === 'pasaporte'){
+    input.placeholder = 'AB123456';
+    input.inputMode = 'text';
+    input.maxLength = 15;
+    hint.textContent = 'Pasaporte vigente (turistas y visitantes)';
+  }
+  input.dataset.tipoId = tipo;
+  input.value = '';
+  document.getElementById('reg-ced-error').textContent = '';
+}
+
+async function regEnviarCedula(){
+  if(!registroTemp){ go('login'); return; }
+  const input = document.getElementById('reg-ced-input');
+  const tipo = input.dataset.tipoId || 'cedula_cr';
+  const valor = input.value.trim();
+  const errEl = document.getElementById('reg-ced-error');
+  errEl.textContent = '';
+
+  // Validar formato
+  const val = validarIdentificacion(tipo, valor);
+  if(!val.ok){ errEl.textContent = '❌ ' + val.msg; return; }
+
+  // Validar unicidad: nadie más tiene esta identificación
+  if(!db){ toast('Sin conexión'); return; }
+  const btn = document.getElementById('reg-ced-submit');
+  if(btn){ btn.disabled = true; btn.textContent = 'Verificando...'; }
+
+  try {
+    const existeId = await buscarUsuarioPorIdentificacion(val.numero);
+    if(existeId && existeId.telefono !== registroTemp.telefono){
+      errEl.textContent = '❌ Esta identificación ya está registrada con otro teléfono. Si es tuya, contactá soporte: rigoalva@gmail.com';
+      if(btn){ btn.disabled = false; btn.textContent = '✓ Continuar'; }
+      return;
+    }
+
+    // Validar que el teléfono no esté usado con OTRA identificación
+    const existeTel = await buscarUsuarioPorTelefono(registroTemp.telefono);
+    if(existeTel && existeTel.numero_identificacion && existeTel.numero_identificacion !== val.numero){
+      errEl.textContent = '❌ Este teléfono ya está registrado con otra identificación.';
+      if(btn){ btn.disabled = false; btn.textContent = '✓ Continuar'; }
+      return;
+    }
+
+    // Crear o actualizar usuario en Supabase
+    const partes = registroTemp.nombre.split(' ');
+    const payload = {
+      telefono: registroTemp.telefono,
+      nombre: partes[0],
+      apellidos: partes.slice(1).join(' ') || '-',
+      tipo: 'usuario',
+      tipo_identificacion: val.tipo,
+      numero_identificacion: val.numero,
+      pais_identificacion: val.tipo === 'cedula_cr' ? 'CR' : (val.tipo === 'dimex' ? 'CR' : 'INT')
+    };
+
+    if(existeTel){
+      await db.from('usuarios').update(payload).eq('telefono', registroTemp.telefono);
+    } else {
+      await db.from('usuarios').insert(payload);
+    }
+
+    toast('✅ Registro completado');
+    // Continuar al OTP
+    iniciarOTP(registroTemp.role, registroTemp.telefono, registroTemp.nombre);
+  } catch(e){
+    console.error('regEnviarCedula error:', e);
+    errEl.textContent = '❌ Error al verificar: ' + (e.message || 'reintentá');
+    if(btn){ btn.disabled = false; btn.textContent = '✓ Continuar'; }
+  }
+}
+
+function regCancelar(){
+  registroTemp = null;
+  go('login');
 }
 
 function iniciarOTP(role, phone, nombre){
@@ -2890,20 +3095,10 @@ async function completarLogin(role, phone, nombre){
     saveSession(); applyUser(); go('conductor');
     return;
   }
-  // Usuario
+  // Usuario — ya está creado en Supabase con cédula (si pasó por registro)
   user = {name:nombre, role:'usuario', phone};
   saveSession(); applyUser();
-  if(db){
-    try {
-      const partes = nombre.split(' ');
-      const { data } = await db.from('usuarios').select('telefono').eq('telefono',phone).single();
-      if(data){
-        await db.from('usuarios').update({nombre:partes[0], apellidos:partes.slice(1).join(' ')||'-', tipo:'usuario'}).eq('telefono',phone);
-      } else {
-        await db.from('usuarios').insert({telefono:phone, nombre:partes[0], apellidos:partes.slice(1).join(' ')||'-', tipo:'usuario'});
-      }
-    } catch(e){}
-  }
+  registroTemp = null; // limpiar datos temporales
   go('pasajero');
 }
 
