@@ -2812,6 +2812,87 @@ async function buscarUsuarioPorIdentificacion(numero){
     return data;
   } catch(e){ console.warn(e); return null; }
 }
+
+// === ALARMA DE ACCESO NO AUTORIZADO A ADMIN ===
+async function registrarIntentoAccesoAdmin(phone, userInfo){
+  if(!db) return;
+  try {
+    await db.from('intentos_acceso_admin').insert({
+      telefono: phone,
+      nombre: userInfo ? ((userInfo.nombre || '') + ' ' + (userInfo.apellidos || '')).trim() : 'Desconocido',
+      numero_identificacion: userInfo ? userInfo.numero_identificacion : null,
+      user_agent: navigator.userAgent.substring(0, 200),
+      estado: 'pendiente'
+    });
+  } catch(e){ console.warn('No se pudo registrar intento:', e); }
+}
+
+function reproducirSonidoAlarma(){
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // 3 beeps consecutivos de alarma
+    [0, 0.3, 0.6].forEach(delay => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = 880;
+      osc.type = 'square';
+      gain.gain.setValueAtTime(0.15, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.2);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.2);
+    });
+  } catch(e){}
+}
+
+function mostrarAlarmaAccesoNoAutorizado(phone){
+  // Sonido
+  reproducirSonidoAlarma();
+  // Vibración (móvil)
+  if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+  // Modal rojo parpadeante
+  let m = document.getElementById('alarma-acceso-modal');
+  if(m) m.remove();
+  m = document.createElement('div');
+  m.id = 'alarma-acceso-modal';
+  m.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;animation:alarmaFlash 0.6s ease-in-out 5';
+  m.innerHTML = `
+    <style>
+      @keyframes alarmaFlash {
+        0%, 100% { background: rgba(180, 20, 20, 0.95); }
+        50% { background: rgba(30, 0, 0, 0.95); }
+      }
+    </style>
+    <div style="background:linear-gradient(135deg,#2a0808,#1a0404);border:2px solid #ff3333;border-radius:18px;padding:32px 24px;width:min(420px,94vw);color:#fff;text-align:center;box-shadow:0 0 40px rgba(255,50,50,0.5)">
+      <div style="font-size:64px;margin-bottom:12px">🚨</div>
+      <div style="font-family:var(--font-d);font-size:22px;font-weight:700;margin-bottom:10px;color:#ff6666">Acceso Denegado</div>
+      <div style="font-size:14px;color:#ffcccc;line-height:1.6;margin-bottom:16px">
+        Tu cuenta <b>NO</b> tiene permisos administrativos.<br>
+        Este intento ha sido <b>registrado</b> y el propietario de AVS ha sido <b>notificado</b>.
+      </div>
+      <div style="background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);border-radius:10px;padding:10px;margin-bottom:18px;font-size:11px;color:#ffaaaa;font-family:monospace">
+        📱 ${phone}<br>
+        🕐 ${new Date().toLocaleString('es-CR')}
+      </div>
+      <div style="font-size:12px;color:#aaa;line-height:1.5;margin-bottom:18px">
+        Si necesitás acceso administrativo, contactá a Rigoberto Alvarado: <span style="color:#ff9999">rigoalva@gmail.com</span>
+      </div>
+      <button onclick="cerrarAlarmaAcceso()" style="background:linear-gradient(135deg,#ff4444,#cc2222);border:none;color:#fff;font-weight:700;border-radius:12px;padding:12px 28px;cursor:pointer;font-size:14px">Entendido</button>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+function cerrarAlarmaAcceso(){
+  const m = document.getElementById('alarma-acceso-modal');
+  if(m){
+    m.style.animation = 'none';
+    m.style.background = 'rgba(0,0,0,0.5)';
+    m.style.transition = 'opacity 0.3s';
+    m.style.opacity = '0';
+    setTimeout(() => m.remove(), 300);
+  }
+}
 // Estado de intentos por teléfono (anti-brute-force)
 function getIntentos(tel){
   try{ return JSON.parse(localStorage.getItem('login-intentos-'+tel) || '{"count":0,"bloqueadoHasta":0}'); }
@@ -2922,11 +3003,19 @@ async function doLogin(role){
 
   // CAPA 3: Diferenciación por rol
   if(role === 'admin'){
-    if(phone !== '88880000' && phone !== '88001234'){
-      toast('🔒 Acceso administrativo restringido');
+    if(!db){ toast('Sin conexión a Internet'); return; }
+    toast('Verificando permisos...');
+    // Verificar contra Supabase si este teléfono tiene es_admin o es_owner
+    const adminUser = await buscarUsuarioPorTelefono(phone);
+    if(adminUser && (adminUser.es_admin === true || adminUser.es_owner === true)){
+      // Acceso autorizado
+      const nombreCompleto = (adminUser.nombre || 'Admin') + ' ' + (adminUser.apellidos || '');
+      iniciarOTP(role, phone, nombreCompleto.trim());
       return;
     }
-    iniciarOTP(role, phone, 'Admin AVS');
+    // ACCESO NO AUTORIZADO → DISPARAR ALARMA
+    await registrarIntentoAccesoAdmin(phone, adminUser);
+    mostrarAlarmaAccesoNoAutorizado(phone);
     return;
   }
 
