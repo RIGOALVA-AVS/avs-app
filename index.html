@@ -305,7 +305,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .pil{display:flex;align-items:center;gap:12px;font-size:14px;}
 .blogout{width:100%;background:transparent;border:1px solid rgba(226,75,74,0.3);color:var(--rd);border-radius:14px;padding:14px;font-size:14px;cursor:pointer;margin-top:8px;}
 
-/* ===== BOTÓN DE PÁNICO ===== */
+/* ===== BOTÓN DE PÁNICO (rojo - emergencia) ===== */
 .panic-btn {
   position: fixed; bottom: 90px; right: 16px; z-index: 500;
   width: 52px; height: 52px; border-radius: 50%;
@@ -323,6 +323,20 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   0%,100% { box-shadow: 0 4px 20px rgba(255,77,77,0.45); }
   50% { box-shadow: 0 4px 28px rgba(255,77,77,0.75), 0 0 0 8px rgba(255,77,77,0.12); }
 }
+
+/* ===== BOTÓN VERDE COMPARTIR (preventivo) ===== */
+.share-btn {
+  position: fixed; bottom: 152px; right: 16px; z-index: 500;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, #00d4aa, #00b894);
+  border: 2px solid rgba(0,212,170,0.4);
+  box-shadow: 0 4px 20px rgba(0,212,170,0.45);
+  display: none;
+  align-items: center; justify-content: center;
+  cursor: pointer; font-size: 22px;
+  transition: transform 0.15s;
+}
+.share-btn:active { transform: scale(0.92); }
 
 /* Modal pánico */
 .panic-modal {
@@ -715,6 +729,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="adtbtn" id="admtab-matchuber" onclick="switchAdminTab('matchuber')">💡 Match Uber</div>
     <div class="adtbtn" id="admtab-codigos" onclick="switchAdminTab('codigos')">🎫 Códigos</div>
     <div class="adtbtn" id="admtab-intentos" onclick="switchAdminTab('intentos')">🚨 Intentos</div>
+    <div class="adtbtn" id="admtab-emergencias" onclick="switchAdminTab('emergencias')">🆘 Emergencias</div>
   </div>
   <div id="admin-conductores">
     <div class="adtab" style="margin-top:8px">
@@ -774,6 +789,20 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div class="adtbtn" id="intbtn-rechazado" onclick="filtrarIntentos('rechazado')">❌ Rechazados</div>
     </div>
     <div id="intentoslist"><div class="nolist">Cargando intentos...</div></div>
+  </div>
+
+  <!-- ============== TAB: EMERGENCIAS ============== -->
+  <div id="admin-emergencias" style="display:none;padding:0 0 20px;overflow-y:auto;flex:1">
+    <div style="padding:14px 20px;background:linear-gradient(135deg,rgba(255,50,50,0.1),transparent);border-bottom:1px solid var(--bd);margin-bottom:10px">
+      <div style="font-family:var(--font-d);font-size:15px;font-weight:700;color:#ff6666;margin-bottom:4px">🆘 Emergencias activadas</div>
+      <div style="font-size:11px;color:var(--mt);line-height:1.4">Usuarios que activaron el botón SOS durante un viaje. Actuá rápido en las pendientes.</div>
+    </div>
+    <div class="adtab" style="margin-top:8px">
+      <div class="adtbtn on" id="emerbtn-activa" onclick="filtrarEmergencias('activa')">🆘 Activas</div>
+      <div class="adtbtn" id="emerbtn-atendida" onclick="filtrarEmergencias('atendida')">✅ Atendidas</div>
+      <div class="adtbtn" id="emerbtn-falsa" onclick="filtrarEmergencias('falsa')">❌ Falsa alarma</div>
+    </div>
+    <div id="emergenciaslist"><div class="nolist">Cargando emergencias...</div></div>
   </div>
 </div>
 
@@ -873,7 +902,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     </div>
     <button class="btnp" style="margin-top:8px" onclick="solicitar()">Solicitar Viaje</button>
   </div>
-  <button class="panic-btn" onclick="abrirPanico()" title="Botón de pánico">🆘</button>
+  <button class="share-btn" onclick="abrirCompartirViaje()" title="Compartir viaje con contactos">🟢</button>
+  <button class="panic-btn" onclick="abrirEmergencia()" title="EMERGENCIA REAL">🆘</button>
   <div class="bnav">
     <div class="nitem"><span class="nico on">🏠</span><span class="nlbl on">Inicio</span></div>
     <div class="nitem" onclick="abrirHistorial('usuario')"><span class="nico">🗺️</span><span class="nlbl">Mis Viajes</span></div>
@@ -908,7 +938,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="alogo">AVS</div>
     <div style="font-size:13px;color:var(--g)">✅ En camino</div>
   </div>
-  <button class="panic-btn" onclick="abrirPanico()" title="Botón de pánico">🆘</button>
+  <button class="share-btn" onclick="abrirCompartirViaje()" title="Compartir viaje con contactos">🟢</button>
+  <button class="panic-btn" onclick="abrirEmergencia()" title="EMERGENCIA REAL">🆘</button>
   <div class="tmap"><div id="rmap"></div></div>
   <div class="csheet">
     <!-- Código que el pasajero muestra al conductor -->
@@ -975,7 +1006,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="shdr"><div class="stit">Solicitudes activas</div><div class="snew" id="snew">0</div></div>
     <div id="slist"><div class="nolist">🚗 Activá tu disponibilidad para recibir viajes</div></div>
   </div>
-  <button class="panic-btn" onclick="abrirPanico()" title="Botón de pánico">🆘</button>
+  <button class="share-btn" onclick="abrirCompartirViaje()" title="Compartir viaje con contactos">🟢</button>
+  <button class="panic-btn" onclick="abrirEmergencia()" title="EMERGENCIA REAL">🆘</button>
   <div class="bnav">
     <div class="nitem"><span class="nico on">🏠</span><span class="nlbl on">Inicio</span></div>
     <div class="nitem" onclick="abrirHistorial('conductor')"><span class="nico">📋</span><span class="nlbl">Historial</span></div>
@@ -2170,6 +2202,9 @@ function mostrarSOS(show){
   document.querySelectorAll('.panic-btn').forEach(btn=>{
     btn.style.display = show ? 'flex' : 'none';
   });
+  document.querySelectorAll('.share-btn').forEach(btn=>{
+    btn.style.display = show ? 'flex' : 'none';
+  });
 }
 
 function abrirPanico(){
@@ -2205,6 +2240,216 @@ function panicCompartirMapa(){
   const url=`https://maps.google.com/?q=${lat},${lng}`;
   if(navigator.share){navigator.share({title:'🆘 Mi ubicación — AVS',text:`${user.name} comparte ubicación desde AVS`,url});}
   else{navigator.clipboard.writeText(url).then(()=>toast('📋 Link copiado — compartilo con quien necesites'));}
+}
+
+// ====== BOTÓN VERDE — COMPARTIR VIAJE PREVENTIVO ======
+async function abrirCompartirViaje(){
+  const contactos = JSON.parse(localStorage.getItem('avs_emergencia')||'[]');
+  if(!contactos.length){
+    toast('⚠️ Primero configurá tus contactos de confianza');
+    setTimeout(()=>go('emergencia'),300);
+    return;
+  }
+  if(!viajeId){
+    toast('⚠️ Esta función está disponible durante un viaje activo');
+    return;
+  }
+  // Crear o recuperar seguimiento
+  let pin, link;
+  if(db){
+    try {
+      const { data: existente } = await db.from('seguimientos_viaje').select('*').eq('viaje_id', viajeId).eq('estado','activo').maybeSingle();
+      if(existente){
+        pin = existente.pin;
+        link = `${window.location.origin}${window.location.pathname}?seguimiento=${existente.link_token}`;
+      } else {
+        pin = String(Math.floor(1000 + Math.random()*9000));
+        const token = 'sg' + Math.random().toString(36).substring(2,12);
+        await db.from('seguimientos_viaje').insert({
+          viaje_id: viajeId,
+          usuario_telefono: user.phone,
+          usuario_nombre: user.name,
+          contactos: contactos.slice(0,2),
+          pin: pin,
+          link_token: token,
+          estado: 'activo'
+        });
+        link = `${window.location.origin}${window.location.pathname}?seguimiento=${token}`;
+      }
+    } catch(e){
+      console.error(e);
+      pin = String(Math.floor(1000 + Math.random()*9000));
+      link = window.location.href;
+    }
+  } else {
+    pin = String(Math.floor(1000 + Math.random()*9000));
+    link = window.location.href;
+  }
+  mostrarCompartirModal(pin, link, contactos);
+}
+
+function mostrarCompartirModal(pin, link, contactos){
+  let m = document.getElementById('compartir-modal');
+  if(m) m.remove();
+  m = document.createElement('div');
+  m.id = 'compartir-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(8,15,30,0.92);backdrop-filter:blur(8px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  const mensaje = `🟢 *${user.name} está en un viaje AVS*\n\nPodés seguir su viaje en vivo aquí:\n${link}\n\n🔑 *PIN de acceso:* ${pin}\n\n_Te comparte esto por seguridad._`;
+  window._mensajeCompartir = mensaje; // global para copiar
+  const msgEncoded = encodeURIComponent(mensaje);
+  const contactosBtns = contactos.slice(0,2).map((c, i) => {
+    const tel = ('506' + c.tel.replace(/[^0-9]/g,'')).replace(/^506506/,'506');
+    return `<button onclick="window.open('https://wa.me/${tel}?text=${msgEncoded}','_blank');toast('Abriendo WhatsApp para ${c.nombre}')" style="width:100%;background:#25D366;border:none;color:#fff;font-weight:600;border-radius:12px;padding:12px;cursor:pointer;margin-bottom:8px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px">📱 Enviar a ${c.nombre} por WhatsApp</button>`;
+  }).join('');
+  m.innerHTML = `
+    <div style="background:linear-gradient(135deg,#0d2a1f,#0a1f17);border:1.5px solid #00d4aa;border-radius:18px;padding:24px;width:min(420px,94vw);max-height:88vh;overflow-y:auto;color:#fff">
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="font-size:42px;margin-bottom:6px">🟢</div>
+        <div style="font-family:var(--font-d);font-size:18px;font-weight:700;color:#00d4aa">Compartir viaje en vivo</div>
+        <div style="font-size:12px;color:#aaa;margin-top:4px;line-height:1.5">Tus contactos podrán ver tu viaje en tiempo real con este PIN</div>
+      </div>
+      <div style="background:rgba(0,212,170,0.08);border:1.5px solid #00d4aa;border-radius:12px;padding:16px;text-align:center;margin-bottom:16px">
+        <div style="font-size:11px;color:#888;letter-spacing:2px;margin-bottom:4px">PIN DE ACCESO</div>
+        <div style="font-family:monospace;font-size:36px;font-weight:800;color:#00d4aa;letter-spacing:8px">${pin}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:6px">Decile este PIN a tus contactos por aparte</div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;color:#888;letter-spacing:1px;margin-bottom:6px">ENVIAR LINK POR WHATSAPP</div>
+        ${contactosBtns}
+      </div>
+      <button onclick="copiarMensajeCompartir()" style="width:100%;background:rgba(0,212,170,0.15);border:1px solid var(--g);color:var(--g);border-radius:12px;padding:11px;cursor:pointer;margin-bottom:10px;font-size:13px;font-weight:600">📋 Copiar mensaje completo</button>
+      <button onclick="document.getElementById('compartir-modal').remove()" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.15);color:#aaa;border-radius:12px;padding:10px;cursor:pointer;font-size:13px">Cerrar</button>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+// ====== BOTÓN ROJO — EMERGENCIA REAL (versión mejorada) ======
+let emergenciaTimer = null;
+function abrirEmergencia(){
+  if(emergenciaTimer){ clearTimeout(emergenciaTimer); emergenciaTimer = null; }
+  let m = document.getElementById('emergencia-modal');
+  if(m) m.remove();
+  m = document.createElement('div');
+  m.id = 'emergencia-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(180,20,20,0.95);backdrop-filter:blur(6px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;animation:emerFlash 0.8s ease-in-out infinite';
+  m.innerHTML = `
+    <style>
+      @keyframes emerFlash { 0%,100% { background:rgba(180,20,20,0.95); } 50% { background:rgba(50,5,5,0.95); } }
+    </style>
+    <div style="background:linear-gradient(135deg,#2a0808,#1a0404);border:2px solid #ff3333;border-radius:18px;padding:28px 22px;width:min(420px,94vw);color:#fff;text-align:center;box-shadow:0 0 50px rgba(255,50,50,0.6)">
+      <div style="font-size:64px;margin-bottom:8px">🚨</div>
+      <div style="font-family:var(--font-d);font-size:22px;font-weight:800;color:#ff6666;margin-bottom:6px">¿EMERGENCIA?</div>
+      <div style="font-size:13px;color:#ffcccc;line-height:1.5;margin-bottom:14px">
+        ¿Estás en peligro real (accidente, asalto, cambio de destino sin consentimiento)?
+      </div>
+      <div id="emer-countdown" style="font-family:monospace;font-size:48px;font-weight:800;color:#ff3333;margin:10px 0;letter-spacing:4px">3</div>
+      <div style="font-size:12px;color:#ffaaaa;margin-bottom:18px">Confirmá en 3 segundos para activar</div>
+      <button onclick="confirmarEmergencia()" style="width:100%;background:linear-gradient(135deg,#ff3333,#cc0000);border:none;color:#fff;font-weight:800;border-radius:14px;padding:16px;cursor:pointer;font-size:16px;margin-bottom:10px">🚨 SÍ, ES EMERGENCIA</button>
+      <button onclick="cancelarEmergencia()" style="width:100%;background:transparent;border:1.5px solid rgba(255,255,255,0.3);color:#fff;border-radius:14px;padding:13px;cursor:pointer;font-size:14px">Cancelar (falsa alarma)</button>
+    </div>`;
+  document.body.appendChild(m);
+  if(navigator.vibrate) navigator.vibrate([400,100,400,100,400]);
+  let cuenta = 3;
+  const countEl = document.getElementById('emer-countdown');
+  emergenciaTimer = setInterval(() => {
+    cuenta--;
+    if(countEl) countEl.textContent = cuenta;
+    if(cuenta <= 0){
+      clearInterval(emergenciaTimer);
+      emergenciaTimer = null;
+    }
+  }, 1000);
+}
+
+function cancelarEmergencia(){
+  if(emergenciaTimer){ clearInterval(emergenciaTimer); emergenciaTimer = null; }
+  const m = document.getElementById('emergencia-modal');
+  if(m) m.remove();
+}
+
+async function confirmarEmergencia(){
+  if(emergenciaTimer){ clearInterval(emergenciaTimer); emergenciaTimer = null; }
+  const lat = userLoc?.lat || 9.9799;
+  const lng = userLoc?.lng || -84.3799;
+  const mapUrl = `https://maps.google.com/?q=${lat},${lng}`;
+  const ahora = new Date().toLocaleString('es-CR');
+
+  // Registrar emergencia en BD para panel admin
+  let conductor = '', placa = '';
+  try {
+    const cnomEl = document.getElementById('cnom');
+    const cplateEl = document.getElementById('cplate');
+    if(cnomEl) conductor = cnomEl.textContent || '';
+    if(cplateEl) placa = cplateEl.textContent || '';
+  } catch(e){}
+
+  if(db){
+    try {
+      await db.from('emergencias').insert({
+        viaje_id: viajeId,
+        usuario_telefono: user.phone,
+        usuario_nombre: user.name,
+        conductor_nombre: conductor,
+        vehiculo_placa: placa,
+        ubicacion_lat: lat,
+        ubicacion_lng: lng,
+        ubicacion_descripcion: mapUrl,
+        motivo: 'Botón SOS activado por usuario',
+        estado: 'activa'
+      });
+    } catch(e){ console.error(e); }
+  }
+
+  // Mostrar pantalla de "Emergencia activada"
+  const m = document.getElementById('emergencia-modal');
+  if(m) m.remove();
+  let m2 = document.createElement('div');
+  m2.id = 'emergencia-activa-modal';
+  m2.style.cssText = 'position:fixed;inset:0;background:rgba(8,15,30,0.95);backdrop-filter:blur(8px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+
+  const contactos = JSON.parse(localStorage.getItem('avs_emergencia')||'[]');
+  const mensaje911 = `🚨 EMERGENCIA AVS\n\n${user.name} reporta emergencia.\nUbicación GPS: ${mapUrl}\nConductor: ${conductor || 'N/A'} · Placa: ${placa || 'N/A'}\nHora: ${ahora}\n\nLlamar al 911`;
+  const mensajeContactos = `🚨 *EMERGENCIA — ${user.name}*\n\nActivé el botón SOS desde AVS.\n\n📍 Ubicación: ${mapUrl}\n🚗 Conductor: ${conductor || 'N/A'}\n🪪 Placa: ${placa || 'N/A'}\n⏰ ${ahora}\n\n¡NECESITO AYUDA!`;
+  window._mensajeEmergencia = mensajeContactos; // global para copiar
+  const msgContactosEnc = encodeURIComponent(mensajeContactos);
+
+  const contactosBtns = contactos.slice(0,3).map(c => {
+    const tel = ('506' + c.tel.replace(/[^0-9]/g,'')).replace(/^506506/,'506');
+    return `<button onclick="window.open('https://wa.me/${tel}?text=${msgContactosEnc}','_blank')" style="width:100%;background:#25D366;border:none;color:#fff;font-weight:700;border-radius:12px;padding:14px;cursor:pointer;margin-bottom:8px;font-size:14px">📱 WhatsApp a ${c.nombre}</button>`;
+  }).join('');
+
+  m2.innerHTML = `
+    <div style="background:linear-gradient(135deg,#2a0808,#1a0404);border:2px solid #ff3333;border-radius:18px;padding:24px;width:min(440px,94vw);max-height:92vh;overflow-y:auto;color:#fff;text-align:center;box-shadow:0 0 50px rgba(255,50,50,0.6)">
+      <div style="font-size:56px;margin-bottom:8px">🚨</div>
+      <div style="font-family:var(--font-d);font-size:20px;font-weight:800;color:#ff6666;margin-bottom:6px">EMERGENCIA ACTIVADA</div>
+      <div style="font-size:12px;color:#ffcccc;margin-bottom:14px;line-height:1.5">
+        El equipo AVS fue notificado. Ahora alertá a tus contactos y a la policía:
+      </div>
+      <a href="tel:911" style="display:block;background:linear-gradient(135deg,#ff3333,#cc0000);color:#fff;font-weight:800;border-radius:14px;padding:16px;text-decoration:none;font-size:18px;margin-bottom:14px">📞 LLAMAR AL 911</a>
+      <div style="font-size:11px;color:#aaa;margin-bottom:12px;letter-spacing:1px">CONTACTOS DE EMERGENCIA</div>
+      ${contactosBtns || '<div style="color:#888;font-size:12px;margin-bottom:12px">No tenés contactos configurados</div>'}
+      <div style="background:rgba(255,77,77,0.08);border:1px solid rgba(255,77,77,0.3);border-radius:12px;padding:12px;margin:14px 0;font-size:11px;color:#ffaaaa;line-height:1.5;text-align:left;font-family:monospace">
+        📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}<br>
+        🕐 ${ahora}<br>
+        🚗 ${conductor || 'N/A'} · ${placa || 'N/A'}
+      </div>
+      <button onclick="copiarDatosEmergencia()" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:12px;padding:11px;cursor:pointer;margin-bottom:8px;font-size:13px">📋 Copiar datos para enviar</button>
+      <button onclick="document.getElementById('emergencia-activa-modal').remove()" style="width:100%;background:transparent;border:none;color:#888;padding:10px;cursor:pointer;font-size:12px">Cerrar (mantengo viaje)</button>
+    </div>`;
+  document.body.appendChild(m2);
+  if(navigator.vibrate) navigator.vibrate([500,200,500,200,500]);
+  toast('🚨 Emergencia activada — AVS notificado');
+}
+
+function copiarMensajeCompartir(){
+  if(window._mensajeCompartir){
+    navigator.clipboard.writeText(window._mensajeCompartir).then(()=>toast('📋 Mensaje copiado'));
+  }
+}
+function copiarDatosEmergencia(){
+  if(window._mensajeEmergencia){
+    navigator.clipboard.writeText(window._mensajeEmergencia).then(()=>toast('📋 Datos copiados'));
+  }
 }
 function guardarContactosEmergencia(){
   const n1=document.getElementById('ec1nombre').value.trim(),t1=document.getElementById('ec1tel').value.trim();
@@ -2393,12 +2638,14 @@ function switchAdminTab(tab){
   const aM = document.getElementById('admin-matchuber'); if(aM) aM.style.display='none';
   const aC = document.getElementById('admin-codigos'); if(aC) aC.style.display='none';
   const aI = document.getElementById('admin-intentos'); if(aI) aI.style.display='none';
+  const aE = document.getElementById('admin-emergencias'); if(aE) aE.style.display='none';
   if(tab==='conductores'){document.getElementById('admin-conductores').style.display='block';cargarAdmin();}
   else if(tab==='recargas'){document.getElementById('admin-recargas').style.display='block';filtrarRecargas('pendiente');}
   else if(tab==='negocios' && aN){aN.style.display='block';if(typeof filtrarNegocios==='function')filtrarNegocios('pendiente');}
   else if(tab==='matchuber' && aM){aM.style.display='block';filtrarMatchUber('pendiente_aprobacion');}
   else if(tab==='codigos' && aC){aC.style.display='block';filtrarCodigos('disponible');}
   else if(tab==='intentos' && aI){aI.style.display='block';filtrarIntentos('pendiente');}
+  else if(tab==='emergencias' && aE){aE.style.display='block';filtrarEmergencias('activa');}
 }
 
 let matchUberFiltro = 'pendiente_aprobacion';
@@ -2594,6 +2841,80 @@ async function rechazarIntentoAdmin(id){
   }).eq('id', id);
   toast('🚫 Intento rechazado');
   cargarIntentosAdmin();
+}
+
+// ============== EMERGENCIAS (ADMIN) ==============
+let emergenciasFiltro = 'activa';
+function filtrarEmergencias(estado){
+  emergenciasFiltro = estado;
+  document.querySelectorAll('[id^="emerbtn-"]').forEach(b=>b.classList.remove('on'));
+  document.getElementById('emerbtn-'+estado).classList.add('on');
+  cargarEmergenciasAdmin();
+}
+async function cargarEmergenciasAdmin(){
+  if(!db) return;
+  const { data } = await db.from('emergencias').select('*').eq('estado', emergenciasFiltro).order('fecha',{ascending:false});
+  const lista = document.getElementById('emergenciaslist');
+  if(!data || data.length === 0){
+    lista.innerHTML = '<div class="nolist">' + (emergenciasFiltro === 'activa' ? '✅ Sin emergencias activas' : 'Sin emergencias en este estado') + '</div>';
+    return;
+  }
+  lista.innerHTML = data.map(e => {
+    const fecha = new Date(e.fecha).toLocaleString('es-CR', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const fechaAtencion = e.fecha_atencion ? new Date(e.fecha_atencion).toLocaleString('es-CR', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : null;
+    const colorBorde = emergenciasFiltro === 'activa' ? '#ff3333' : (emergenciasFiltro === 'atendida' ? 'var(--g)' : '#888');
+    const mapUrl = e.ubicacion_lat ? `https://maps.google.com/?q=${e.ubicacion_lat},${e.ubicacion_lng}` : '#';
+    const telLink = e.usuario_telefono ? `tel:${e.usuario_telefono}` : '#';
+    const acciones = emergenciasFiltro === 'activa' ? `
+      <div class="adacts">
+        <button class="adaprob" onclick="atenderEmergencia('${e.id}')">✅ Marcar atendida</button>
+        <button class="adrech" onclick="marcarFalsaEmergencia('${e.id}')">❌ Falsa alarma</button>
+      </div>` : '';
+    const animacion = emergenciasFiltro === 'activa' ? 'animation:pulse-emer 2s ease infinite;' : '';
+    return `<div class="adcard" style="margin:8px 20px;border-left:3px solid ${colorBorde};${animacion}">
+      <style>@keyframes pulse-emer { 0%,100% { box-shadow:0 0 0 0 rgba(255,51,51,0.3); } 50% { box-shadow:0 0 0 6px rgba(255,51,51,0); } }</style>
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+        <div>
+          <div class="adname" style="color:#ff6666">🆘 ${e.usuario_nombre || 'Usuario'}</div>
+          <div class="adinfo">📱 ${e.usuario_telefono || 'sin teléfono'} · 🕐 ${fecha}</div>
+        </div>
+        <div class="adbadge ${e.estado}">${e.estado.toUpperCase()}</div>
+      </div>
+      ${e.conductor_nombre ? `<div class="adinfo">🚗 Conductor: ${e.conductor_nombre} · 🪪 ${e.vehiculo_placa || 'sin placa'}</div>` : ''}
+      ${e.motivo ? `<div class="adinfo" style="margin-top:4px;font-style:italic">📝 ${e.motivo}</div>` : ''}
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        <a href="${mapUrl}" target="_blank" style="flex:1;min-width:120px;background:#4285F4;color:#fff;text-decoration:none;border-radius:10px;padding:9px 12px;font-size:12px;text-align:center;font-weight:600">📍 Ver en Maps</a>
+        <a href="${telLink}" style="flex:1;min-width:120px;background:#25D366;color:#fff;text-decoration:none;border-radius:10px;padding:9px 12px;font-size:12px;text-align:center;font-weight:600">📞 Llamar usuario</a>
+      </div>
+      ${fechaAtencion ? `<div class="adinfo" style="margin-top:8px;color:var(--g)">Atendida: ${fechaAtencion} por ${e.atendida_por || 'admin'}</div>` : ''}
+      ${e.notas_admin ? `<div class="adinfo" style="margin-top:4px;font-style:italic">📋 ${e.notas_admin}</div>` : ''}
+      ${acciones}
+    </div>`;
+  }).join('');
+}
+async function atenderEmergencia(id){
+  const notas = prompt('Notas de atención (opcional):') || '';
+  if(!db) return;
+  await db.from('emergencias').update({
+    estado: 'atendida',
+    atendida_por: (user && user.phone) || 'admin',
+    fecha_atencion: new Date().toISOString(),
+    notas_admin: notas
+  }).eq('id', id);
+  toast('✅ Emergencia marcada como atendida');
+  cargarEmergenciasAdmin();
+}
+async function marcarFalsaEmergencia(id){
+  if(!confirm('¿Marcar como falsa alarma?')) return;
+  if(!db) return;
+  await db.from('emergencias').update({
+    estado: 'falsa',
+    atendida_por: (user && user.phone) || 'admin',
+    fecha_atencion: new Date().toISOString(),
+    notas_admin: 'Marcada como falsa alarma'
+  }).eq('id', id);
+  toast('Marcada como falsa alarma');
+  cargarEmergenciasAdmin();
 }
 let recargasFiltro='pendiente';
 function filtrarRecargas(estado){recargasFiltro=estado;document.querySelectorAll('[id^="recbtn-"]').forEach(b=>b.classList.remove('on'));document.getElementById('recbtn-'+estado).classList.add('on');cargarRecargas();}
