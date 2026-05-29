@@ -2323,9 +2323,107 @@ function mostrarCompartirModal(pin, link, contactos){
   document.body.appendChild(m);
 }
 
-// ====== BOTÓN ROJO — EMERGENCIA REAL (versión mejorada) ======
+// ====== BOTÓN ROJO — EMERGENCIA REAL ======
 let emergenciaTimer = null;
+
+// PASO 1: Pantalla educativa con consecuencias y advertencias
 function abrirEmergencia(){
+  let m = document.getElementById('emer-educativo');
+  if(m) m.remove();
+  m = document.createElement('div');
+  m.id = 'emer-educativo';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(8,15,30,0.95);backdrop-filter:blur(8px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+  m.innerHTML = `
+    <div style="background:linear-gradient(135deg,#1a2540,#0d1525);border:2px solid #ff6666;border-radius:18px;padding:24px 22px;width:min(460px,96vw);max-height:96vh;overflow-y:auto;color:#fff;box-shadow:0 20px 60px rgba(255,50,50,0.3)">
+
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="font-size:54px;margin-bottom:6px">⚠️</div>
+        <div style="font-family:var(--font-d);font-size:22px;font-weight:800;color:#ff6666;margin-bottom:6px">Antes de continuar</div>
+        <div style="font-size:13px;color:#ffcccc;line-height:1.5">Activar el botón de emergencia es un acto serio que <b>moviliza recursos reales</b>. Por favor leé esto con atención.</div>
+      </div>
+
+      <!-- QUÉ HACE EL BOTÓN -->
+      <div style="background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.3);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="color:#ff9999;font-weight:700;margin-bottom:8px;font-size:13px;letter-spacing:1px">🚨 ESTO HARÁ EL BOTÓN ROJO:</div>
+        <ul style="margin:0;padding-left:22px;font-size:12.5px;color:#ffcccc;line-height:1.7">
+          <li>Enviará tu ubicación GPS exacta a AVS y tus contactos de emergencia</li>
+          <li>Te facilitará llamar al 911 inmediatamente</li>
+          <li>Registrará el evento de forma permanente con fecha, hora y conductor asignado</li>
+          <li>El equipo AVS recibirá una alerta crítica al instante</li>
+          <li>El conductor quedará marcado para revisión obligatoria</li>
+        </ul>
+      </div>
+
+      <!-- ADVERTENCIA LEGAL -->
+      <div style="background:rgba(245,166,35,0.08);border:1.5px solid rgba(245,166,35,0.4);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="color:#f5a623;font-weight:700;margin-bottom:8px;font-size:13px;letter-spacing:1px">⚖️ ADVERTENCIA LEGAL</div>
+        <div style="font-size:12.5px;color:#ffd699;line-height:1.6">
+          La <b>simulación de delito o falsa alarma</b> está sancionada por la ley costarricense y constituye una <b>falta penal</b>. AVS coopera plenamente con autoridades en investigaciones.
+          <div style="font-size:10.5px;color:#aa8855;margin-top:6px;font-style:italic">[Artículo del Código Penal CR pendiente verificación legal]</div>
+        </div>
+      </div>
+
+      <!-- SANCIONES INTERNAS AVS -->
+      <div style="background:rgba(96,165,250,0.05);border:1px solid rgba(96,165,250,0.3);border-radius:12px;padding:14px;margin-bottom:14px">
+        <div style="color:#60a5fa;font-weight:700;margin-bottom:8px;font-size:13px;letter-spacing:1px">🛡️ SANCIONES AVS POR FALSA ALARMA</div>
+        <div style="font-size:12px;color:#cdd9e6;line-height:1.7">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(96,165,250,0.15)">
+            <span>1ra ocurrencia</span>
+            <span style="color:#f5a623;font-weight:600">Advertencia + nota en cuenta</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(96,165,250,0.15)">
+            <span>2da ocurrencia</span>
+            <span style="color:#ff9966;font-weight:600">Suspensión 30 días + multa ₡25.000</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0">
+            <span>3ra ocurrencia</span>
+            <span style="color:#ff5555;font-weight:600">Bloqueo permanente + reporte OIJ</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHECKBOX OBLIGATORIO -->
+      <label style="display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,77,77,0.4);border-radius:12px;padding:12px;margin-bottom:14px;cursor:pointer" id="emer-check-label">
+        <input type="checkbox" id="emer-check" onchange="emerToggleConfirmar()" style="margin-top:2px;width:18px;height:18px;cursor:pointer;accent-color:#ff5555">
+        <span style="font-size:12.5px;color:#fff;line-height:1.5;font-weight:500">Entiendo las consecuencias y confirmo que <b style="color:#ff9999">ESTO ES UNA EMERGENCIA REAL</b> (accidente, asalto, peligro inminente o cambio de destino sin mi consentimiento).</span>
+      </label>
+
+      <!-- BOTONES (cancelar más grande que confirmar) -->
+      <button onclick="cancelarEmerEducativo()" style="width:100%;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:800;border-radius:14px;padding:15px;cursor:pointer;font-size:16px;margin-bottom:10px">✓ Mejor cancelo</button>
+      <button id="emer-btn-confirmar" onclick="abrirConfirmacionEmergencia()" disabled style="width:100%;background:#333;border:1px solid #555;color:#666;font-weight:600;border-radius:14px;padding:11px;cursor:not-allowed;font-size:13px">🚨 Estoy seguro/a, continuar</button>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+function emerToggleConfirmar(){
+  const check = document.getElementById('emer-check');
+  const btn = document.getElementById('emer-btn-confirmar');
+  if(!check || !btn) return;
+  if(check.checked){
+    btn.disabled = false;
+    btn.style.background = 'linear-gradient(135deg,#ff3333,#cc0000)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = '#ff3333';
+    btn.style.cursor = 'pointer';
+  } else {
+    btn.disabled = true;
+    btn.style.background = '#333';
+    btn.style.color = '#666';
+    btn.style.borderColor = '#555';
+    btn.style.cursor = 'not-allowed';
+  }
+}
+
+function cancelarEmerEducativo(){
+  const m = document.getElementById('emer-educativo');
+  if(m) m.remove();
+}
+
+// PASO 2: Confirmación con countdown de 3 segundos
+function abrirConfirmacionEmergencia(){
+  // Cerrar pantalla educativa
+  const edu = document.getElementById('emer-educativo');
+  if(edu) edu.remove();
   if(emergenciaTimer){ clearTimeout(emergenciaTimer); emergenciaTimer = null; }
   let m = document.getElementById('emergencia-modal');
   if(m) m.remove();
@@ -2340,7 +2438,7 @@ function abrirEmergencia(){
       <div style="font-size:64px;margin-bottom:8px">🚨</div>
       <div style="font-family:var(--font-d);font-size:22px;font-weight:800;color:#ff6666;margin-bottom:6px">¿EMERGENCIA?</div>
       <div style="font-size:13px;color:#ffcccc;line-height:1.5;margin-bottom:14px">
-        ¿Estás en peligro real (accidente, asalto, cambio de destino sin consentimiento)?
+        Última oportunidad: ¿confirmás que estás en peligro real?
       </div>
       <div id="emer-countdown" style="font-family:monospace;font-size:48px;font-weight:800;color:#ff3333;margin:10px 0;letter-spacing:4px">3</div>
       <div style="font-size:12px;color:#ffaaaa;margin-bottom:18px">Confirmá en 3 segundos para activar</div>
