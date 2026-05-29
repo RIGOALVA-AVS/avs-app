@@ -713,6 +713,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="adtbtn" id="admtab-recargas" onclick="switchAdminTab('recargas')">💰 Recargas</div>
     <div class="adtbtn" id="admtab-negocios" onclick="switchAdminTab('negocios')">🏪 Negocios</div>
     <div class="adtbtn" id="admtab-matchuber" onclick="switchAdminTab('matchuber')">💡 Match Uber</div>
+    <div class="adtbtn" id="admtab-codigos" onclick="switchAdminTab('codigos')">🎫 Códigos</div>
+    <div class="adtbtn" id="admtab-intentos" onclick="switchAdminTab('intentos')">🚨 Intentos</div>
   </div>
   <div id="admin-conductores">
     <div class="adtab" style="margin-top:8px">
@@ -738,6 +740,40 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div class="adtbtn" id="mubtn-rechazado_admin" onclick="filtrarMatchUber('rechazado_admin')">❌ Rechazadas</div>
     </div>
     <div id="matchuberlist"><div class="nolist">Cargando solicitudes Match Uber...</div></div>
+  </div>
+
+  <!-- ============== TAB: CÓDIGOS DE CONDUCTOR ============== -->
+  <div id="admin-codigos" style="display:none;padding:0 0 20px;overflow-y:auto;flex:1">
+    <div style="padding:14px 20px;background:linear-gradient(135deg,rgba(0,212,170,0.1),transparent);border-bottom:1px solid var(--bd);margin-bottom:10px">
+      <div style="font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--g);margin-bottom:4px">🎫 Generador de códigos</div>
+      <div style="font-size:11px;color:var(--mt);line-height:1.4;margin-bottom:10px">Generá códigos pre-aprobados para que conductores nuevos puedan registrarse. Solo conductores con código pueden activarse en AVS.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="adminGenerarCodigos(1)" style="flex:1;min-width:80px;background:rgba(0,212,170,0.15);border:1px solid var(--g);color:var(--g);border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer">+ 1</button>
+        <button onclick="adminGenerarCodigos(5)" style="flex:1;min-width:80px;background:rgba(0,212,170,0.15);border:1px solid var(--g);color:var(--g);border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer">+ 5</button>
+        <button onclick="adminGenerarCodigos(10)" style="flex:1;min-width:80px;background:rgba(0,212,170,0.15);border:1px solid var(--g);color:var(--g);border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer">+ 10</button>
+        <button onclick="adminGenerarCodigos(50)" style="flex:1;min-width:80px;background:rgba(245,166,35,0.15);border:1px solid #f5a623;color:#f5a623;border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer">+ 50</button>
+      </div>
+    </div>
+    <div class="adtab" style="margin-top:8px">
+      <div class="adtbtn on" id="codbtn-disponible" onclick="filtrarCodigos('disponible')">🟢 Disponibles</div>
+      <div class="adtbtn" id="codbtn-usado" onclick="filtrarCodigos('usado')">✅ Usados</div>
+      <div class="adtbtn" id="codbtn-cancelado" onclick="filtrarCodigos('cancelado')">❌ Cancelados</div>
+    </div>
+    <div id="codigoslist"><div class="nolist">Cargando códigos...</div></div>
+  </div>
+
+  <!-- ============== TAB: INTENTOS DE ACCESO ADMIN ============== -->
+  <div id="admin-intentos" style="display:none;padding:0 0 20px;overflow-y:auto;flex:1">
+    <div style="padding:14px 20px;background:linear-gradient(135deg,rgba(255,80,80,0.1),transparent);border-bottom:1px solid var(--bd);margin-bottom:10px">
+      <div style="font-family:var(--font-d);font-size:15px;font-weight:700;color:#ff6666;margin-bottom:4px">🚨 Intentos de acceso admin</div>
+      <div style="font-size:11px;color:var(--mt);line-height:1.4">Personas que intentaron entrar al panel admin sin permiso. Revisalos uno por uno y decidí si darles acceso o mantenerlos bloqueados.</div>
+    </div>
+    <div class="adtab" style="margin-top:8px">
+      <div class="adtbtn on" id="intbtn-pendiente" onclick="filtrarIntentos('pendiente')">⏳ Pendientes</div>
+      <div class="adtbtn" id="intbtn-aprobado" onclick="filtrarIntentos('aprobado')">✅ Aprobados</div>
+      <div class="adtbtn" id="intbtn-rechazado" onclick="filtrarIntentos('rechazado')">❌ Rechazados</div>
+    </div>
+    <div id="intentoslist"><div class="nolist">Cargando intentos...</div></div>
   </div>
 </div>
 
@@ -2355,10 +2391,14 @@ function switchAdminTab(tab){
   document.getElementById('admin-recargas').style.display='none';
   const aN = document.getElementById('admin-negocios'); if(aN) aN.style.display='none';
   const aM = document.getElementById('admin-matchuber'); if(aM) aM.style.display='none';
+  const aC = document.getElementById('admin-codigos'); if(aC) aC.style.display='none';
+  const aI = document.getElementById('admin-intentos'); if(aI) aI.style.display='none';
   if(tab==='conductores'){document.getElementById('admin-conductores').style.display='block';cargarAdmin();}
   else if(tab==='recargas'){document.getElementById('admin-recargas').style.display='block';filtrarRecargas('pendiente');}
   else if(tab==='negocios' && aN){aN.style.display='block';if(typeof filtrarNegocios==='function')filtrarNegocios('pendiente');}
   else if(tab==='matchuber' && aM){aM.style.display='block';filtrarMatchUber('pendiente_aprobacion');}
+  else if(tab==='codigos' && aC){aC.style.display='block';filtrarCodigos('disponible');}
+  else if(tab==='intentos' && aI){aI.style.display='block';filtrarIntentos('pendiente');}
 }
 
 let matchUberFiltro = 'pendiente_aprobacion';
@@ -2425,6 +2465,135 @@ async function rechazarMatchUberAdmin(id){
   }).eq('id', id);
   toast('❌ Rechazada silenciosamente');
   cargarMatchUberAdmin();
+}
+
+// ============== CÓDIGOS DE CONDUCTOR (ADMIN) ==============
+let codigosFiltro = 'disponible';
+function filtrarCodigos(estado){
+  codigosFiltro = estado;
+  document.querySelectorAll('[id^="codbtn-"]').forEach(b=>b.classList.remove('on'));
+  document.getElementById('codbtn-'+estado).classList.add('on');
+  cargarCodigosConductor();
+}
+async function cargarCodigosConductor(){
+  if(!db) return;
+  const { data } = await db.from('codigos_conductor').select('*').eq('estado', codigosFiltro).order('fecha_generacion',{ascending:false});
+  const lista = document.getElementById('codigoslist');
+  if(!data || data.length === 0){
+    lista.innerHTML = '<div class="nolist">Sin códigos en este estado</div>';
+    return;
+  }
+  lista.innerHTML = data.map(c => {
+    const fechaGen = new Date(c.fecha_generacion).toLocaleString('es-CR', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const fechaUso = c.fecha_uso ? new Date(c.fecha_uso).toLocaleString('es-CR', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : null;
+    const colorBorde = codigosFiltro === 'disponible' ? 'var(--g)' : (codigosFiltro === 'usado' ? '#f5a623' : '#ff6666');
+    const acciones = codigosFiltro === 'disponible' ? `
+      <div class="adacts">
+        <button class="adaprob" onclick="navigator.clipboard.writeText('${c.codigo}');toast('📋 Copiado: ${c.codigo}')">📋 Copiar código</button>
+        <button class="adrech" onclick="cancelarCodigoConductor('${c.id}','${c.codigo}')">❌ Cancelar código</button>
+      </div>` : '';
+    return `<div class="adcard" style="margin:8px 20px;border-left:3px solid ${colorBorde}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-family:monospace;font-size:18px;font-weight:700;color:var(--g);letter-spacing:2px">${c.codigo}</div>
+        <div class="adbadge ${c.estado}">${c.estado.toUpperCase()}</div>
+      </div>
+      <div class="adinfo">📅 Generado: ${fechaGen} por ${c.generado_por || 'system'}</div>
+      ${fechaUso ? `<div class="adinfo" style="color:#f5a623">✅ Usado: ${fechaUso} por 📱 ${c.usado_por_telefono || '?'}</div>` : ''}
+      ${c.notas ? `<div class="adinfo" style="margin-top:4px;font-style:italic">📝 ${c.notas}</div>` : ''}
+      ${acciones}
+    </div>`;
+  }).join('');
+}
+async function cancelarCodigoConductor(id, codigo){
+  if(!confirm('¿Cancelar el código ' + codigo + '?\\nNo se podrá usar más.')) return;
+  if(!db) return;
+  await db.from('codigos_conductor').update({ estado: 'cancelado' }).eq('id', id);
+  toast('Código cancelado');
+  cargarCodigosConductor();
+}
+
+// ============== INTENTOS DE ACCESO ADMIN ==============
+let intentosFiltro = 'pendiente';
+function filtrarIntentos(estado){
+  intentosFiltro = estado;
+  document.querySelectorAll('[id^="intbtn-"]').forEach(b=>b.classList.remove('on'));
+  document.getElementById('intbtn-'+estado).classList.add('on');
+  cargarIntentosAdmin();
+}
+async function cargarIntentosAdmin(){
+  if(!db) return;
+  const { data } = await db.from('intentos_acceso_admin').select('*').eq('estado', intentosFiltro).order('fecha',{ascending:false});
+  const lista = document.getElementById('intentoslist');
+  if(!data || data.length === 0){
+    lista.innerHTML = '<div class="nolist">Sin intentos en este estado</div>';
+    return;
+  }
+  lista.innerHTML = data.map(i => {
+    const fecha = new Date(i.fecha).toLocaleString('es-CR', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const fechaResol = i.fecha_resolucion ? new Date(i.fecha_resolucion).toLocaleString('es-CR', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : null;
+    const colorBorde = intentosFiltro === 'pendiente' ? '#ff6666' : (intentosFiltro === 'aprobado' ? 'var(--g)' : '#888');
+    const acciones = intentosFiltro === 'pendiente' ? `
+      <div class="adacts">
+        <button class="adaprob" onclick="aprobarIntentoAdmin('${i.id}','${i.telefono}')">✅ Darle acceso admin</button>
+        <button class="adrech" onclick="rechazarIntentoAdmin('${i.id}')">❌ Mantener bloqueado</button>
+      </div>` : '';
+    return `<div class="adcard" style="margin:8px 20px;border-left:3px solid ${colorBorde}">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+        <div>
+          <div class="adname">${i.nombre || 'Desconocido'}</div>
+          <div class="adinfo">📱 ${i.telefono}${i.numero_identificacion ? ' · 🆔 ' + i.numero_identificacion : ''}</div>
+        </div>
+        <div class="adbadge ${i.estado}">${i.estado.toUpperCase()}</div>
+      </div>
+      <div class="adinfo">🕐 ${fecha}</div>
+      ${i.user_agent ? `<div class="adinfo" style="font-size:10px;opacity:0.7;margin-top:4px;font-family:monospace;word-break:break-all">${i.user_agent.substring(0,80)}...</div>` : ''}
+      ${fechaResol ? `<div class="adinfo" style="margin-top:4px;color:var(--g)">Resuelto: ${fechaResol} por ${i.resuelto_por || 'admin'} · ${i.decision || ''}</div>` : ''}
+      ${acciones}
+    </div>`;
+  }).join('');
+}
+async function aprobarIntentoAdmin(id, telefono){
+  if(!confirm('¿Darle acceso admin al teléfono ' + telefono + '?')) return;
+  if(!db) return;
+  try {
+    // Marcar usuario como admin
+    const existente = await buscarUsuarioPorTelefono(telefono);
+    if(!existente){
+      toast('❌ Usuario no encontrado en BD');
+      return;
+    }
+    const rolesActuales = existente.roles_activos || ['usuario'];
+    const nuevosRoles = rolesActuales.includes('admin') ? rolesActuales : [...rolesActuales, 'admin'];
+    await db.from('usuarios').update({
+      es_admin: true,
+      roles_activos: nuevosRoles,
+      aprobado_por: (user && user.phone) || 'owner',
+      fecha_aprobacion: new Date().toISOString()
+    }).eq('telefono', telefono);
+    // Marcar intento como aprobado
+    await db.from('intentos_acceso_admin').update({
+      estado: 'aprobado',
+      decision: 'Aprobado: acceso admin otorgado',
+      resuelto_por: (user && user.phone) || 'owner',
+      fecha_resolucion: new Date().toISOString()
+    }).eq('id', id);
+    toast('✅ Acceso admin otorgado a ' + telefono);
+    cargarIntentosAdmin();
+  } catch(e){
+    console.error('aprobarIntentoAdmin:', e);
+    toast('❌ Error: ' + (e.message || 'reintentá'));
+  }
+}
+async function rechazarIntentoAdmin(id){
+  if(!db) return;
+  await db.from('intentos_acceso_admin').update({
+    estado: 'rechazado',
+    decision: 'Rechazado: acceso denegado',
+    resuelto_por: (user && user.phone) || 'owner',
+    fecha_resolucion: new Date().toISOString()
+  }).eq('id', id);
+  toast('🚫 Intento rechazado');
+  cargarIntentosAdmin();
 }
 let recargasFiltro='pendiente';
 function filtrarRecargas(estado){recargasFiltro=estado;document.querySelectorAll('[id^="recbtn-"]').forEach(b=>b.classList.remove('on'));document.getElementById('recbtn-'+estado).classList.add('on');cargarRecargas();}
