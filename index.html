@@ -11,6 +11,30 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>AVS — Atenas Viaje Seguro</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
+<script>
+// FORZAR ACTUALIZACIÓN — versión del app
+const APP_VERSION = '2026.05.28.18';
+(function(){
+  try {
+    const stored = localStorage.getItem('avs-version');
+    if(stored !== APP_VERSION){
+      localStorage.setItem('avs-version', APP_VERSION);
+      // Limpiar todos los caches
+      if('caches' in window){
+        caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
+      }
+      // Desregistrar service workers
+      if('serviceWorker' in navigator){
+        navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+      }
+      // Si es la primera vez con esta versión y no es página recién cargada, recargar sin caché
+      if(stored && !window.location.search.includes('v=')){
+        window.location.replace(window.location.pathname + '?v=' + APP_VERSION);
+      }
+    }
+  } catch(e){ console.warn('Version check failed', e); }
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -337,7 +361,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     width: 360px; flex: none; order: 1;
     border-radius: 0; border-top: none;
     border-right: 1px solid var(--bd2);
-    padding: 24px 20px; overflow-y: auto;
+    padding: 24px 20px 100px; overflow-y: auto;
     display: flex; flex-direction: column; gap: 10px;
   }
   .bhandle { display: none; }
