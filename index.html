@@ -901,17 +901,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="dfrom"><div class="dotg"></div><div class="ftxt" id="otxt">Mi ubicación actual</div></div>
     <div class="acwrap"><div class="dotr"></div><input type="text" id="dac" placeholder="Escribe tu destino..." autocomplete="off"></div>
     <!-- Servicios AVS -->
+    <!-- Fila 1: 3 servicios principales -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px;margin-top:4px">
       <div class="dest-chip" onclick="go('servicios')">🍽️<br><span style="font-size:10px">Restaurantes</span></div>
       <div class="dest-chip" onclick="go('servicios')">🏥<br><span style="font-size:10px">Salud</span></div>
       <div class="dest-chip" onclick="go('servicios')">🏨<br><span style="font-size:10px">Hospedaje</span></div>
-      <div class="dest-chip" onclick="go('servicios')">🛒<br><span style="font-size:10px">Mercado</span></div>
-      <div class="dest-chip" onclick="go('servicios')">🏪<br><span style="font-size:10px">Negocios</span></div>
-      <div class="dest-chip" onclick="go('servicios')">✨<br><span style="font-size:10px">Más</span></div>
     </div>
-    <!-- Acceso rápido a Municipalidad -->
-    <div class="dest-chip" onclick="abrirPortalMunicipal()" style="background:linear-gradient(135deg,rgba(96,165,250,0.15),rgba(96,165,250,0.05));border:1px solid rgba(96,165,250,0.4);color:#60a5fa;margin-bottom:6px;padding:10px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600">
-      🏛️ <span>Municipalidad</span>
+    <!-- Fila 2: Municipalidad + Más -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+      <div class="dest-chip" onclick="abrirPortalMunicipal()" style="background:linear-gradient(135deg,rgba(96,165,250,0.15),rgba(96,165,250,0.05));border:1px solid rgba(96,165,250,0.4);color:#60a5fa;padding:12px;font-weight:600">🏛️ Municipalidad</div>
+      <div class="dest-chip" onclick="go('servicios')" style="padding:12px;font-weight:600">✨ Más</div>
     </div>
     <div class="tinfo" id="tinfo">
       <div class="tiitem"><div class="tilbl">Distancia</div><div class="tival" id="tdist">—</div></div>
