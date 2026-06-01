@@ -375,8 +375,51 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     width: 360px; flex: none; order: 1;
     border-radius: 0; border-top: none;
     border-right: 1px solid var(--bd2);
-    padding: 24px 20px 100px; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 10px;
+    padding: 18px 18px 100px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 8px;
+    position: relative;
+  }
+  /* En PC: chips de tipo de vehículo más compactos */
+  #pasajero .vchips { gap: 4px !important; }
+  #pasajero .vchip {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    flex-shrink: 0;
+  }
+  /* Labels más compactas */
+  #pasajero .plabel {
+    font-size: 10px !important;
+    margin-bottom: 4px !important;
+    margin-top: 4px !important;
+  }
+  /* Inputs más bajos */
+  #pasajero .pinp {
+    padding: 9px 12px !important;
+    font-size: 13px !important;
+  }
+  /* Servicios grid más compacto */
+  #pasajero .dest-chip {
+    padding: 8px 4px !important;
+    font-size: 11px !important;
+  }
+  /* Info viaje más compacto */
+  #pasajero .tinfo {
+    padding: 10px !important;
+    gap: 6px !important;
+  }
+  #pasajero .tival {
+    font-size: 14px !important;
+  }
+  #pasajero .tilbl {
+    font-size: 9px !important;
+  }
+  /* Botón "Solicitar Viaje" sticky al final */
+  #pasajero .btnp {
+    position: sticky;
+    bottom: 0;
+    margin-top: 8px;
+    z-index: 10;
+    box-shadow: 0 -8px 16px rgba(13,21,37,0.8);
   }
   .bhandle { display: none; }
   /* En PC la barra inferior queda fija abajo, pero se ve más compacta */
