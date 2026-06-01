@@ -368,62 +368,40 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 @media (min-width: 1024px) {
 
   /* Pasajero PC — mapa grande + panel izquierdo */
-  #pasajero { flex-direction: row; }
+  #pasajero {
+    flex-direction: row;
+    height: 100vh;
+    overflow: hidden;
+  }
   #pasajero .ahdr { display: none; }
-  .mapc { flex: 1; order: 2; }
+  .mapc {
+    flex: 1; order: 2;
+    height: 100vh;
+  }
   .bpanel {
     width: 360px; flex: none; order: 1;
     border-radius: 0; border-top: none;
     border-right: 1px solid var(--bd2);
-    padding: 18px 18px 100px; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 8px;
+    padding: 24px 20px 90px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px;
+    height: 100vh;
+    box-sizing: border-box;
     position: relative;
   }
-  /* En PC: chips de tipo de vehículo más compactos */
-  #pasajero .vchips { gap: 4px !important; }
-  #pasajero .vchip {
-    padding: 6px 10px !important;
-    font-size: 11px !important;
-    flex-shrink: 0;
-  }
-  /* Labels más compactas */
-  #pasajero .plabel {
-    font-size: 10px !important;
-    margin-bottom: 4px !important;
-    margin-top: 4px !important;
-  }
-  /* Inputs más bajos */
-  #pasajero .pinp {
-    padding: 9px 12px !important;
-    font-size: 13px !important;
-  }
-  /* Servicios grid más compacto */
-  #pasajero .dest-chip {
-    padding: 8px 4px !important;
-    font-size: 11px !important;
-  }
-  /* Info viaje más compacto */
-  #pasajero .tinfo {
-    padding: 10px !important;
-    gap: 6px !important;
-  }
-  #pasajero .tival {
-    font-size: 14px !important;
-  }
-  #pasajero .tilbl {
-    font-size: 9px !important;
-  }
-  /* Botón "Solicitar Viaje" sticky al final */
-  #pasajero .btnp {
-    position: sticky;
-    bottom: 0;
-    margin-top: 8px;
-    z-index: 10;
-    box-shadow: 0 -8px 16px rgba(13,21,37,0.8);
-  }
   .bhandle { display: none; }
-  /* En PC la barra inferior queda fija abajo, pero se ve más compacta */
-  .bnav { max-width: 540px; left: 50%; transform: translateX(-50%); border-radius: 14px 14px 0 0; }
+  /* PC: barra inferior solo dentro del ancho del panel (no tapa el mapa) */
+  #pasajero .bnav {
+    position: absolute;
+    width: 360px;
+    max-width: 360px;
+    left: 0;
+    transform: none;
+    bottom: 0;
+    border-radius: 0;
+    border-top: 1px solid var(--bd);
+    z-index: 10;
+  }
 
   /* Header PC dentro del panel */
   .pc-header {
