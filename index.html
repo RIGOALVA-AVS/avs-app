@@ -1619,6 +1619,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
         <div style="font-size:22px;color:#f5a623">→</div>
       </div>
     </button>
+    <button onclick="startDemo('muni')" style="width:100%;background:linear-gradient(135deg,rgba(96,165,250,0.18),rgba(96,165,250,0.05));border:1px solid #60a5fa;border-radius:18px;padding:20px;margin-bottom:14px;text-align:left;cursor:pointer;color:#fff">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="font-size:42px">🏛️</div>
+        <div style="flex:1">
+          <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:3px">Demo de Gestión Municipal</div>
+          <div style="font-size:12px;color:#aaa;line-height:1.4">Portal municipal → Bienes inmuebles y servicios → SINPE → Comprobante → Trámites y avisos</div>
+          <div style="font-size:11px;color:#60a5fa;margin-top:6px">6 pasos · Controlado por el presentador</div>
+        </div>
+        <div style="font-size:22px;color:#60a5fa">→</div>
+      </div>
+    </button>
     <button onclick="go('login')" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:14px;padding:12px;color:#888;cursor:pointer;font-size:13px;margin-top:18px">← Salir del modo demo</button>
   </div>
 </div>
@@ -4764,7 +4775,7 @@ function iniciarModoDemo(){
 }
 
 function startDemo(tipo){
-  demoFlow = (tipo === 'viaje') ? DEMO_VIAJE : DEMO_PEDIDO;
+  demoFlow = (tipo === 'viaje') ? DEMO_VIAJE : (tipo === 'pedido') ? DEMO_PEDIDO : DEMO_MUNICIPAL;
   demoIdx = 0;
   document.getElementById('demo-stage').classList.add('on');
   renderDemoStep();
@@ -5148,7 +5159,114 @@ const DEMO_PEDIDO = [
       </div>
     `
   }
+]; 
+// ============== FLUJO 3: DEMO DE GESTIÓN MUNICIPAL ==============
+const DEMO_MUNICIPAL = [
+  {
+    kicker: 'Paso 1 — Portal municipal',
+    title: 'Don Carlos entra al portal de la Municipalidad',
+    narration: 'Desde la misma app AVS, el vecino abre el módulo Municipalidad. Sin ir al edificio, sin filas, sin horario de oficina. Todo desde el celular.',
+    visual: `
+      <div class="demo-phone-mock">
+        <div style="text-align:center;margin-top:10px">
+          <div style="font-size:34px">🏛️</div>
+          <div style="font-size:13px;font-weight:700;color:#60a5fa;margin-top:4px">Municipalidad de Atenas</div>
+        </div>
+        <div class="demo-card" style="border-color:rgba(96,165,250,0.4)">💰 Pagos municipales</div>
+        <div class="demo-card">📝 Trámites en línea</div>
+        <div class="demo-card">💬 Consultas y quejas</div>
+        <div class="demo-card">📢 Avisos y comunicados</div>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 2 — Bienes y servicios',
+    title: 'Consulta lo que debe de Bienes Inmuebles y Servicios',
+    narration: 'El vecino selecciona "Pagos municipales" y la app le muestra sus pendientes al día: el impuesto de Bienes Inmuebles, los servicios (basura) y la patente, todo en un solo lugar.',
+    visual: `
+      <div class="demo-receipt" style="border-color:rgba(96,165,250,0.5);color:#cfe">
+        <div class="row"><span>🏠 Bienes Inmuebles (trim.)</span><span>₡18.500</span></div>
+        <div class="row"><span>🗑️ Servicios (basura)</span><span>₡6.200</span></div>
+        <div class="row"><span>🏪 Patente comercial</span><span>₡12.000</span></div>
+        <div class="row tot" style="border-color:rgba(96,165,250,0.5);color:#60a5fa"><span>TOTAL A PAGAR</span><span>₡36.700</span></div>
+      </div>
+      <div style="margin-top:14px;font-size:13px;color:#aaa">Atenas no gestiona acueducto — solo lo que la Municipalidad sí cobra.</div>
+    `
+  },
+  {
+    kicker: 'Paso 3 — Pago SINPE',
+    title: 'Paga por SINPE Móvil, sin ir a la Municipalidad',
+    narration: 'El vecino paga directo a la cuenta SINPE de la Municipalidad de Atenas. AVS no cobra ninguna comisión sobre los pagos municipales: el módulo es 100% gratis para la muni y el vecino.',
+    visual: `
+      <div style="background:#0a2540;border:1px solid #60a5fa;border-radius:14px;padding:16px;max-width:340px;margin:0 auto;text-align:left">
+        <div style="color:#60a5fa;font-weight:700;margin-bottom:10px">📲 SINPE Móvil</div>
+        <div style="font-size:13px;color:#fff;line-height:1.7">
+          <div><b>Destinatario:</b> Municipalidad de Atenas</div>
+          <div><b>Número:</b> 8577-3476</div>
+          <div><b>Monto:</b> ₡36.700</div>
+          <div><b>Concepto:</b> BI+Serv+Patente · cédula</div>
+        </div>
+        <div style="margin-top:14px;padding:8px;background:#000;border-radius:8px;text-align:center;font-family:monospace;color:#60a5fa;font-size:12px">✓ Pago confirmado · Comisión AVS: ₡0</div>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 4 — Comprobante',
+    title: 'Recibe su comprobante al instante',
+    narration: 'La app genera el comprobante automáticamente y le queda guardado al vecino. La Municipalidad ve el pago registrado en su panel, sin digitar nada a mano.',
+    visual: `
+      <div style="font-size:70px;margin-bottom:10px">🧾</div>
+      <div style="background:rgba(96,165,250,0.1);border:1px solid #60a5fa;border-radius:14px;padding:16px;max-width:360px;margin:0 auto;text-align:left;font-size:13px;color:#fff;line-height:1.7">
+        <div><b>Comprobante:</b> AVS-MUNI-20461</div>
+        <div><b>Fecha:</b> hoy</div>
+        <div><b>Pagado:</b> Bienes Inmuebles, Servicios, Patente</div>
+        <div><b>Estado:</b> <span style="color:#00d4aa">✓ Al día</span></div>
+      </div>
+    `
+  },
+  {
+    kicker: 'Paso 5 — Más que pagos',
+    title: 'Trámites, consultas y avisos en el mismo lugar',
+    narration: 'El portal no es solo para pagar. El vecino puede sacar un permiso, poner una queja con seguimiento, o recibir los avisos del cantón (cortes de agua, eventos, emergencias) directo en la app.',
+    visual: `
+      <div style="max-width:440px;margin:0 auto">
+        <span class="demo-status-pill done">📝 Permiso solicitado</span>
+        <span class="demo-status-pill active">💬 Consulta respondida</span>
+        <span class="demo-status-pill done">📢 Aviso recibido</span>
+      </div>
+      <div style="margin-top:18px;padding:14px;background:rgba(96,165,250,0.08);border:1px solid #60a5fa;border-radius:12px;max-width:440px;margin-left:auto;margin-right:auto;font-size:13px;color:#fff">📢 "Corte de agua programado en Barrio Jesús, martes 8am-12md" — notificado a todos los vecinos.</div>
+    `
+  },
+  {
+    kicker: 'Paso 6 — Cierre del ciclo',
+    title: 'Gana el vecino. Gana la Municipalidad.',
+    narration: 'El vecino resolvió todo desde el celular. La Municipalidad moderniza su servicio sin invertir un colón y sin cobrar comisión a través de AVS. Atenas puede ser el primer cantón de Costa Rica con esta plataforma.',
+    visual: `
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+        <div class="demo-card" style="text-align:center;padding:18px;min-width:140px;border-color:#60a5fa">
+          <div style="font-size:32px;margin-bottom:6px">🧍</div>
+          <div style="font-size:13px;font-weight:700">El vecino</div>
+          <div style="font-size:11px;color:#60a5fa;margin-top:3px">Pagó sin filas</div>
+        </div>
+        <div class="demo-card" style="text-align:center;padding:18px;min-width:140px;border-color:#60a5fa">
+          <div style="font-size:32px;margin-bottom:6px">🏛️</div>
+          <div style="font-size:13px;font-weight:700">La Municipalidad</div>
+          <div style="font-size:11px;color:#60a5fa;margin-top:3px">Servicio digital · ₡0 costo</div>
+        </div>
+        <div class="demo-card" style="text-align:center;padding:18px;min-width:140px;border-color:#f5a623">
+          <div style="font-size:32px;margin-bottom:6px">⚡</div>
+          <div style="font-size:13px;font-weight:700;color:#f5a623">AVS</div>
+          <div style="font-size:11px;color:#f5a623;margin-top:3px">Comisión municipal: 0%</div>
+        </div>
+      </div>
+      <div style="margin-top:24px;padding:18px;background:rgba(96,165,250,0.08);border:1px solid #60a5fa;border-radius:14px;max-width:520px;margin-left:auto;margin-right:auto">
+        <div style="font-size:13px;color:#aaa;margin-bottom:6px">EL MÓDULO MUNICIPAL</div>
+        <div style="font-size:14px;color:#fff;line-height:1.5">Gratis para la Municipalidad y el vecino. <b style="color:#60a5fa">Atenas, primer cantón con plataforma cívica propia.</b></div>
+      </div>
+    `
+  }
 ];
+  
 
 if('serviceWorker'in navigator){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(reg=>reg.unregister());});}
 // Limpiar todos los caches al cargar (asegura que mobile no tenga versión vieja)
