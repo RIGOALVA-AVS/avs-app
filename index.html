@@ -3316,17 +3316,23 @@ let carritoNegocioNombre = '';
 let carritoNegocioCat = '';
 
 // ===== ABRIR COMERCIO DESDE LINK QR =====
+let comercioPendienteQR = null; // si el usuario llega por QR sin sesión, recordamos a qué comercio iba
 async function abrirComercioPorLink(comercioId){
-  // Si no hay sesión, entrar como invitado para poder ver el comercio
+  // Si NO hay sesión, recordamos el comercio y mandamos a login (el usuario debe identificarse)
   if(!(loadSession() && user.name && user.role)){
-    user = { name: 'Invitado', role: 'usuario', phone: '' };
-    try{ localStorage.setItem('avs_user', JSON.stringify(user)); }catch(e){}
-    if(typeof applyUser==='function') applyUser();
+    comercioPendienteQR = comercioId;
+    toast('Ingresá tus datos para continuar a tu pedido');
+    setTimeout(()=>go('login'), 600);
+    return;
   }
-  if(!db){ toast('Sin conexión'); setTimeout(()=>go('login'),1000); return; }
+  // Ya hay sesión → abrir el comercio directo
+  await irAComercio(comercioId);
+}
+
+async function irAComercio(comercioId){
+  if(!db){ toast('Sin conexión'); return; }
   const { data: neg } = await db.from('negocios').select('*').eq('id', comercioId).eq('estado','aprobado').maybeSingle();
   if(!neg){ toast('Comercio no disponible'); setTimeout(()=>go(user.role==='conductor'?'conductor':'pasajero'),1200); return; }
-  // Meter el comercio en el cache para que la categoría (salud, etc.) funcione bien
   if(typeof _negociosCache !== 'undefined'){
     if(!_negociosCache.find(n=>n.id===neg.id)) _negociosCache.push(neg);
   }
@@ -4274,6 +4280,13 @@ async function completarLogin(role, phone, nombre){
   user = {name:nombre, role:'usuario', phone};
   saveSession(); applyUser();
   registroTemp = null; // limpiar datos temporales
+  // Si venía de un QR de comercio, llevarlo directo ahí
+  if(comercioPendienteQR){
+    const cid = comercioPendienteQR;
+    comercioPendienteQR = null;
+    setTimeout(()=>irAComercio(cid), 300);
+    return;
+  }
   go('pasajero');
 }
 
