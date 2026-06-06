@@ -3315,6 +3315,24 @@ let carritoNegocioId = null;
 let carritoNegocioNombre = '';
 let carritoNegocioCat = '';
 
+// ===== ABRIR COMERCIO DESDE LINK QR =====
+async function abrirComercioPorLink(comercioId){
+  // Si no hay sesión, entrar como invitado para poder ver el comercio
+  if(!(loadSession() && user.name && user.role)){
+    user = { name: 'Invitado', role: 'usuario', phone: '' };
+    try{ localStorage.setItem('avs_user', JSON.stringify(user)); }catch(e){}
+    if(typeof applyUser==='function') applyUser();
+  }
+  if(!db){ toast('Sin conexión'); setTimeout(()=>go('login'),1000); return; }
+  const { data: neg } = await db.from('negocios').select('*').eq('id', comercioId).eq('estado','aprobado').maybeSingle();
+  if(!neg){ toast('Comercio no disponible'); setTimeout(()=>go(user.role==='conductor'?'conductor':'pasajero'),1200); return; }
+  // Meter el comercio en el cache para que la categoría (salud, etc.) funcione bien
+  if(typeof _negociosCache !== 'undefined'){
+    if(!_negociosCache.find(n=>n.id===neg.id)) _negociosCache.push(neg);
+  }
+  abrirCarrito(neg.id, neg.nombre);
+}
+
 async function abrirCarrito(negocioId, negocioNombre) {
   carritoNegocioId = negocioId;
   carritoNegocioNombre = negocioNombre;
@@ -4733,6 +4751,13 @@ window.addEventListener('DOMContentLoaded',()=>{
   const tokenSeguimiento = urlParams.get('seguimiento');
   if(tokenSeguimiento){
     setTimeout(() => abrirPantallaSeguimiento(tokenSeguimiento), 800);
+    return;
+  }
+
+  // ============== DETECTAR LINK DE COMERCIO (QR) ==============
+  const comercioQR = urlParams.get('comercio');
+  if(comercioQR){
+    setTimeout(() => abrirComercioPorLink(comercioQR), 1000);
     return;
   }
 
