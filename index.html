@@ -625,6 +625,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .escudo-muni{width:96px;height:auto;margin:0 auto 8px;display:block;filter:drop-shadow(0 12px 18px rgba(0,0,0,0.45));animation:escudoFloat 3.8s ease-in-out infinite;transform-origin:center}
 .escudo-muni-wrap{perspective:600px}
 </style>
+
+<style>
+/* Portal municipal del demo: en PC se ensancha y los 4 botones van en cuadrícula 2x2 */
+#demo-stage .demo-portal-mock{width:500px;max-width:92vw;min-height:0;height:auto;padding:16px 18px 22px;overflow:visible;box-sizing:border-box}
+#demo-stage .demo-portal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;width:100%}
+#demo-stage .demo-portal-grid .demo-card{margin:0;display:flex;align-items:center;min-height:46px;padding:9px 12px}
+@media (max-width:640px){
+  #demo-stage .demo-portal-mock{width:230px}
+  #demo-stage .demo-portal-grid{grid-template-columns:1fr;gap:8px}
+}
+</style>
 </head>
 <body>
 
@@ -904,7 +915,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div class="catbtn" onclick="selCat(this,'carga')">🧳 Carga</div>
     </div>
     <div class="plabel">¿A dónde vas?</div>
-    <div class="dfrom"><div class="dotg"></div><div class="ftxt" id="otxt">Mi ubicación actual</div></div>
+    <div class="acwrap"><div class="dotg"></div><input type="text" id="oac" placeholder="Mi ubicación actual" autocomplete="off"><button id="gpsBtn" onclick="usarUbicacionActual()" title="Usar mi ubicación actual" style="background:transparent;border:none;color:var(--g);font-size:18px;cursor:pointer;padding:0 2px;flex-shrink:0">📍</button></div>
     <div class="acwrap"><div class="dotr"></div><input type="text" id="dac" placeholder="Escribe tu destino..." autocomplete="off"></div>
     <!-- Servicios AVS -->
     <!-- Fila 1: 3 servicios principales -->
@@ -2782,7 +2793,11 @@ if (window.visualViewport) {
 }
 
 const ATENAS={lat:9.9799,lng:-84.3799};
-let gmap,dmap,rmapInst,autocomplete,dirSvc,dirRend,dirRendR,dirRendD;
+let gmap,dmap,rmapInst,autocomplete,origenAutocomplete,dirSvc,dirRend,dirRendR,dirRendD;
+let gpsLoc=null,origenEditado=false;
+let conductorMasCercanoKm=null; // distancia al chofer AVS más cercano (km) — para descuento por cercanía
+const RADIO_DESCUENTO_KM=2;     // si hay chofer a menos de esto, descuento al Económico
+const DESCUENTO_CERCANIA=0.10;  // 10% menos
 let userLoc=ATENAS,destLoc=null;
 let conductoresActivosMarkers=[];
 let conductoresActivosInterval=null;
@@ -2814,9 +2829,11 @@ async function mostrarConductoresActivos(){
     const data = Array.from(dataMap.values());
     conductoresActivosMarkers.forEach(m=>m.setMap(null));
     conductoresActivosMarkers=[];
+    let minKm=null; // rastrear el más cercano en esta pasada
     if(!data||data.length===0){
       const contEl=document.getElementById('conductores-activos-count');
       if(contEl)contEl.textContent='Sin conductores cerca';
+      actualizarCercania(null);
       return;
     }
     data.forEach(c=>{
@@ -2825,6 +2842,7 @@ async function mostrarConductoresActivos(){
       const R=6371,dLat=(c.lat-userLoc.lat)*Math.PI/180,dLng=(c.lng-userLoc.lng)*Math.PI/180;
       const a=Math.sin(dLat/2)**2+Math.cos(userLoc.lat*Math.PI/180)*Math.cos(c.lat*Math.PI/180)*Math.sin(dLng/2)**2;
       const km=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+      if(minKm===null||km<minKm)minKm=km;
       const minsLlegada=Math.max(1,Math.round(km*2.5+2));
       const m=new google.maps.Marker({
         position:{lat:c.lat,lng:c.lng},
@@ -2839,7 +2857,15 @@ async function mostrarConductoresActivos(){
     });
     const contEl=document.getElementById('conductores-activos-count');
     if(contEl)contEl.textContent=data.length+' conductores cerca';
+    actualizarCercania(minKm);
   }catch(e){console.warn('mostrarConductoresActivos:',e);}
+}
+// Recibe la distancia (km) al chofer más cercano; si cambia el estado de descuento, recalcula tarifa
+function actualizarCercania(km){
+  const antes = (conductorMasCercanoKm!==null && conductorMasCercanoKm<=RADIO_DESCUENTO_KM);
+  conductorMasCercanoKm = km;
+  const ahora = (km!==null && km<=RADIO_DESCUENTO_KM);
+  if(antes!==ahora && destLoc){ calcRoute(); } // solo recalcula si cambió y ya hay ruta
 }
 function iniciarSeguimientoConductoresActivos(){
   if(conductoresActivosInterval)clearInterval(conductoresActivosInterval);
@@ -2860,28 +2886,57 @@ function initMap(){
   dmap=new google.maps.Map(document.getElementById('dmap'),{center:ATENAS,zoom:14,disableDefaultUI:true,gestureHandling:'greedy',styles:mstyle()});
   dirRendD=new google.maps.DirectionsRenderer({map:dmap,suppressMarkers:false,polylineOptions:{strokeColor:'#f5a623',strokeWeight:4}});
   const inp=document.getElementById('dac');
-  autocomplete=new google.maps.places.Autocomplete(inp,{componentRestrictions:{country:'cr'},fields:['geometry','name','formatted_address']});
+  const atenasBounds=new google.maps.LatLngBounds(
+    new google.maps.LatLng(ATENAS.lat-0.08, ATENAS.lng-0.08),
+    new google.maps.LatLng(ATENAS.lat+0.08, ATENAS.lng+0.08)
+  );
+  autocomplete=new google.maps.places.Autocomplete(inp,{componentRestrictions:{country:'cr'},fields:['geometry','name','formatted_address'],bounds:atenasBounds,strictBounds:false});
   autocomplete.addListener('place_changed',()=>{const p=autocomplete.getPlace();if(!p.geometry)return;destLoc=p.geometry.location;calcRoute();});
-  if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{userLoc={lat:pos.coords.latitude,lng:pos.coords.longitude};gmap.setCenter(userLoc);new google.maps.Marker({position:userLoc,map:gmap,icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:'#00d4aa',fillOpacity:1,strokeColor:'#fff',strokeWeight:2}});new google.maps.Geocoder().geocode({location:userLoc},(r,s)=>{if(s==='OK'&&r[0]){const a=r[0].formatted_address.split(',')[0];document.getElementById('otxt').textContent=a;document.getElementById('mbadge').textContent='📍 '+a;}});},()=>{});}
+  if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{userLoc={lat:pos.coords.latitude,lng:pos.coords.longitude};gpsLoc={lat:userLoc.lat,lng:userLoc.lng};gmap.setCenter(userLoc);new google.maps.Marker({position:userLoc,map:gmap,icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:'#00d4aa',fillOpacity:1,strokeColor:'#fff',strokeWeight:2}});new google.maps.Geocoder().geocode({location:userLoc},(r,s)=>{if(s==='OK'&&r[0]){const a=r[0].formatted_address.split(',')[0];if(!origenEditado){document.getElementById('oac').value=a;}document.getElementById('mbadge').textContent='📍 '+a;}});},()=>{});}
+  const oinp=document.getElementById('oac');
+  origenAutocomplete=new google.maps.places.Autocomplete(oinp,{componentRestrictions:{country:'cr'},fields:['geometry','name','formatted_address'],bounds:atenasBounds,strictBounds:false});
+  origenAutocomplete.addListener('place_changed',()=>{const p=origenAutocomplete.getPlace();if(!p.geometry)return;userLoc={lat:p.geometry.location.lat(),lng:p.geometry.location.lng()};origenEditado=true;gmap.setCenter(userLoc);if(destLoc)calcRoute();});
 }
 // === ALGORITMO DE TARIFAS AVS (basado en lógica de Uber) ===
 // Tarifa = Base + (min × tarifa_min) + (km × tarifa_km) + Booking fee
 // Calibrado contra Uber CR: UberX = ₡15.000 para 27km/35min
 function calcularTarifaUberX(km, min){
-  const BASE = 600, POR_MIN = 60, POR_KM = 430, BOOKING = 300, MIN_FARE = 1200;
+  const BASE = 500, POR_MIN = 45, POR_KM = 250, BOOKING = 250, MIN_FARE = 1000;
   const total = BASE + (min * POR_MIN) + (km * POR_KM) + BOOKING;
   return Math.max(MIN_FARE, Math.round(total));
 }
 function calcularTarifaAVS(km, min){
   const uberX = calcularTarifaUberX(km, min);
   const uberComfort = Math.round(uberX * 1.10);
+  const hayChoferCerca = (conductorMasCercanoKm!==null && conductorMasCercanoKm<=RADIO_DESCUENTO_KM);
+  const economico = hayChoferCerca ? Math.round(uberX * (1-DESCUENTO_CERCANIA)) : uberX;
   return {
-    economico: Math.round(uberX * 0.97),
+    economico: economico,
     estandar: Math.round(uberComfort * 0.95),
     premium: uberComfort,
+    descuentoCercania: hayChoferCerca,
     referencia_uberX: uberX,
     referencia_uberComfort: uberComfort
   };
+}
+function usarUbicacionActual(){
+  origenEditado=false;
+  if(gpsLoc){
+    userLoc={lat:gpsLoc.lat,lng:gpsLoc.lng};
+    gmap.setCenter(userLoc);
+    new google.maps.Geocoder().geocode({location:userLoc},(r,s)=>{
+      if(s==='OK'&&r[0]){const a=r[0].formatted_address.split(',')[0];document.getElementById('oac').value=a;document.getElementById('mbadge').textContent='📍 '+a;}
+    });
+    if(destLoc)calcRoute();
+    toast('📍 Usando tu ubicación actual');
+  } else if(navigator.geolocation){
+    toast('Detectando tu ubicación...');
+    navigator.geolocation.getCurrentPosition(pos=>{
+      userLoc={lat:pos.coords.latitude,lng:pos.coords.longitude};gpsLoc={lat:userLoc.lat,lng:userLoc.lng};gmap.setCenter(userLoc);
+      new google.maps.Geocoder().geocode({location:userLoc},(r,s)=>{if(s==='OK'&&r[0]){const a=r[0].formatted_address.split(',')[0];document.getElementById('oac').value=a;document.getElementById('mbadge').textContent='📍 '+a;}});
+      if(destLoc)calcRoute();
+    },()=>{toast('No se pudo obtener tu ubicación');});
+  }
 }
 function calcRoute(){
   if(!destLoc) return;
@@ -2899,7 +2954,7 @@ function calcRoute(){
     document.getElementById('tfare').textContent = '₡' + cs.totalPasajero.toLocaleString('es-CR');
     document.getElementById('tinfo').classList.add('show');
     document.getElementById('fchips').innerHTML = [
-      {...cb, label:'Económico', sub:'-3% UberX'},
+      {...cb, label:'Económico', sub: tarifas.descuentoCercania ? '📍 chofer cerca −10%' : '= precio Uber'},
       {...cs, label:'Estándar',  sub:'-5% Comfort'},
       {...cp, label:'Premium',   sub:'nivel mercado'}
     ].map((c,i) => `<div class="fchip ${i===1?'sel':''}" onclick="selFareChip(this,${c.tarifa},${c.comisionAVS},${c.totalConductor})"><div class="famt">₡${c.totalPasajero.toLocaleString('es-CR')}</div><div class="ftyp">${c.label}</div><div style="font-size:9px;color:var(--g);margin-top:2px">${c.sub}</div></div>`).join('');
@@ -4268,7 +4323,7 @@ function generarCodigoViaje(){
 }
 let codigoViaje='';
 
-async function solicitar(){const dest=document.getElementById('dac').value;if(!dest){toast('Ingresá tu destino');return;}if(!destLoc){toast('Seleccioná un destino del autocomplete');return;}const ori=document.getElementById('otxt').textContent;document.getElementById('bori').textContent=ori;document.getElementById('bdst').textContent=dest;document.getElementById('bfare').textContent='₡'+selFare.toLocaleString('es-CR');
+async function solicitar(){const dest=document.getElementById('dac').value;if(!dest){toast('Ingresá tu destino');return;}if(!destLoc){toast('Seleccioná un destino del autocomplete');return;}const ori=document.getElementById('oac').value||'Mi ubicación actual';document.getElementById('bori').textContent=ori;document.getElementById('bdst').textContent=dest;document.getElementById('bfare').textContent='₡'+selFare.toLocaleString('es-CR');
   codigoViaje=generarCodigoViaje();
   go('buscando');if(db){const{data,error}=await db.from('viajes').insert({estado:'solicitado',origen_lat:userLoc.lat,origen_lng:userLoc.lng,origen_descripcion:ori,destino_lat:destLoc.lat(),destino_lng:destLoc.lng(),destino_descripcion:dest,tarifa_estimada:selFare,comision_avs:selCom,total_pasajero:selFare,total_conductor:selComConductor,categoria_vehiculo:selCategoria,codigo_confirmacion:codigoViaje}).select().single();if(data){viajeId=data.id;saveSession();document.getElementById('codigoDisplay').textContent=codigoViaje;mostrarSOS(true);toast('Viaje #'+data.id.slice(0,6)+' enviado');pasajeroWaitInterval=setInterval(async()=>{try{const{data:v}=await db.from('viajes').select('estado,conductor_nombre,conductor_placa').eq('id',viajeId).single();if(v&&v.estado==='aceptado'){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;if(v.conductor_nombre)document.getElementById('cnom').textContent=v.conductor_nombre;if(v.conductor_placa)document.getElementById('cplate').textContent=v.conductor_placa;trazarRutaPasajero();go('casignado');mostrarSOS(true);toast('¡Conductor en camino!');if(codigoViaje){document.getElementById('codigoPasajeroText').textContent=codigoViaje;document.getElementById('codigoDisplay').textContent=codigoViaje;}}}catch(e){}},2000);setTimeout(()=>{if(pasajeroWaitInterval){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;}if(document.getElementById('buscando').classList.contains('active')){toast('Sin conductores disponibles. Intentá de nuevo.');go('pasajero');}},180000);}else{toast('Error al crear viaje.');go('pasajero');}}else{setTimeout(()=>{go('casignado');toast('¡Conductor encontrado!');trazarRutaPasajero();},4000);}}
 let conductorTrackInterval=null,pasajeroTrackInterval=null,conductorMarker=null;
@@ -5173,15 +5228,17 @@ const DEMO_MUNICIPAL = [
     title: 'Don Carlos entra al portal de la Municipalidad',
     narration: 'Desde la misma app AVS, el vecino abre el módulo Municipalidad. Sin ir al edificio, sin filas, sin horario de oficina. Todo desde el celular.',
     visual: `
-      <div class="demo-phone-mock">
-        <div style="text-align:center;margin-top:10px">
-          <div style="font-size:34px">🏛️</div>
-          <div style="font-size:13px;font-weight:700;color:#60a5fa;margin-top:4px">Municipalidad de Atenas</div>
+      <div class="demo-phone-mock demo-portal-mock">
+        <div style="text-align:center;margin-top:2px">
+          <div style="font-size:28px">🏛️</div>
+          <div style="font-size:13px;font-weight:700;color:#60a5fa;margin-top:2px;margin-bottom:2px">Municipalidad de Atenas</div>
         </div>
-        <div class="demo-card" style="border-color:rgba(96,165,250,0.4)">💰 Pagos municipales</div>
-        <div class="demo-card">📝 Trámites en línea</div>
-        <div class="demo-card">💬 Consultas y quejas</div>
-        <div class="demo-card">📢 Avisos y comunicados</div>
+        <div class="demo-portal-grid">
+          <div class="demo-card" style="border-color:rgba(96,165,250,0.4)">💰 Pagos municipales</div>
+          <div class="demo-card">📝 Trámites en línea</div>
+          <div class="demo-card">💬 Consultas y quejas</div>
+          <div class="demo-card">📢 Avisos y comunicados</div>
+        </div>
       </div>
     `
   },
