@@ -942,9 +942,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       </button>
     </div>
     <button class="btnp" style="margin-top:8px" onclick="solicitar()">Solicitar Viaje</button>
-    <!-- ===== BOTÓN DE PRUEBA TEMPORAL (QUITAR DESPUÉS) ===== -->
-    <button onclick="pruebaChoferCerca()" style="margin-top:8px;width:100%;background:rgba(245,166,35,0.12);border:1.5px dashed #f5a623;border-radius:12px;padding:9px;font-size:12px;color:#f5a623;cursor:pointer">🧪 PRUEBA: simular chofer a 1 km</button>
-    <!-- ===== FIN BOTÓN DE PRUEBA ===== -->
   </div>
   <button class="share-btn" onclick="abrirCompartirViaje()" title="Compartir viaje con contactos">🟢</button>
   <button class="panic-btn" onclick="abrirEmergencia()" title="EMERGENCIA REAL">🆘</button>
@@ -1334,7 +1331,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
         <span style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--tx)" id="carrito-subtotal">₡0</span>
       </div>
       <!-- Opción entrega -->
-      <div style="margin-top:12px">
+      <div style="margin-top:12px" id="bloque-entrega">
         <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">¿Cómo recibís el pedido?</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div id="opt-recoger" onclick="selEntrega('recoger')" style="background:rgba(0,229,184,0.08);border:2px solid var(--g);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.2s">
@@ -1346,6 +1343,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
             <div style="font-size:22px">🚗</div>
             <div style="font-size:12px;font-weight:600;margin-top:4px">Delivery AVS</div>
             <div style="font-size:10px;color:var(--mt)">A tu ubicación</div>
+          </div>
+        </div>
+      </div>
+      <!-- Bloque para negocios de salud: contacto por asesor -->
+      <div style="margin-top:12px;display:none" id="bloque-contacto-salud">
+        <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">¿Cómo continúa tu solicitud?</div>
+        <div style="background:rgba(0,229,184,0.06);border:1.5px solid var(--bd2);border-radius:12px;padding:14px;display:flex;align-items:center;gap:10px">
+          <div style="font-size:24px">📞</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--tx)">Serás contactado por un asesor</div>
+            <div style="font-size:11px;color:var(--mt);margin-top:2px">El negocio se comunicará con vos para coordinar tu cita o servicio.</div>
           </div>
         </div>
       </div>
@@ -2017,7 +2025,7 @@ function actualizarTotalCarrito() {
 // ===== PREFACTURA Y CONFIRMACIÓN SINPE =====
 async function enviarPrefactura(pedidoId, negocioNombre, negocioSinpe, items, total, tipoEntrega, userPhone) {
   const itemsTexto = JSON.parse(items).map(i => `• ${i.cantidad}x ${i.nombre} — ₡${(i.precio*i.cantidad).toLocaleString('es-CR')}`).join('\n');
-  const entregaTxt = tipoEntrega === 'delivery' ? '🚗 Delivery AVS' : '🏪 Recoger en local';
+  const entregaTxt = tipoEntrega === 'delivery' ? '🚗 Delivery AVS' : (tipoEntrega === 'contacto' ? '📞 Contacto por asesor' : '🏪 Recoger en local');
   const msg = encodeURIComponent(
     `🧾 *PREFACTURA AVS*\n` +
     `📍 ${negocioNombre}\n\n` +
@@ -2923,13 +2931,6 @@ function calcularTarifaAVS(km, min){
     referencia_uberComfort: uberComfort
   };
 }
-// ===== FUNCIÓN DE PRUEBA TEMPORAL (QUITAR DESPUÉS) =====
-function pruebaChoferCerca(){
-  conductorMasCercanoKm = 1; // forzar chofer a 1 km
-  if(destLoc){ calcRoute(); toast('🧪 Simulando chofer a 1 km — mirá el Económico'); }
-  else { toast('🧪 Primero poné un destino, luego tocá esto'); }
-}
-// ===== FIN FUNCIÓN DE PRUEBA =====
 function usarUbicacionActual(){
   origenEditado=false;
   if(gpsLoc){
@@ -3312,6 +3313,7 @@ function clearSession(){localStorage.removeItem('avs_user');localStorage.removeI
 let carritoItems = [];
 let carritoNegocioId = null;
 let carritoNegocioNombre = '';
+let carritoNegocioCat = '';
 
 async function abrirCarrito(negocioId, negocioNombre) {
   carritoNegocioId = negocioId;
@@ -3319,6 +3321,19 @@ async function abrirCarrito(negocioId, negocioNombre) {
   carritoItems = [];
   tipoEntrega = 'recoger';
   tarifaDelivery = 0;
+  // Detectar categoría del negocio (para salud no aplica recoger/delivery)
+  carritoNegocioCat = (typeof _negociosCache !== 'undefined' && _negociosCache.find(n=>n.id===negocioId)||{}).categoria || '';
+  const esSalud = carritoNegocioCat === 'salud';
+  const bloqueEntrega = document.getElementById('bloque-entrega');
+  const bloqueContacto = document.getElementById('bloque-contacto-salud');
+  if (esSalud) {
+    tipoEntrega = 'contacto';
+    if(bloqueEntrega) bloqueEntrega.style.display = 'none';
+    if(bloqueContacto) bloqueContacto.style.display = 'block';
+  } else {
+    if(bloqueEntrega) bloqueEntrega.style.display = 'block';
+    if(bloqueContacto) bloqueContacto.style.display = 'none';
+  }
   document.getElementById('carrito-negocio-nombre').textContent = negocioNombre;
   document.getElementById('carrito-back').setAttribute('onclick', "go('lista-negocios')");
   go('carrito');
@@ -3366,7 +3381,7 @@ async function confirmarPedido() {
   const comision = Math.round(totalConDelivery * 0.10);
   const total = totalConDelivery + comision;
   const totalNegocio = subtotal - Math.round(subtotal * 0.10);
-  const entregaTexto = tipoEntrega === 'delivery' ? 'Delivery AVS' : 'Recoger en local';
+  const entregaTexto = tipoEntrega === 'delivery' ? 'Delivery AVS' : (tipoEntrega === 'contacto' ? 'Serás contactado por un asesor' : 'Recoger en local');
   if (!confirm('Confirmar pedido por \u20a1' + total.toLocaleString('es-CR') + '? ' + entregaTexto)) return;
   const notas = document.getElementById('carrito-notas') ? document.getElementById('carrito-notas').value.trim() : '';
   if (!db) { toast('Sin conexion'); return; }
