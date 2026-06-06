@@ -942,6 +942,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       </button>
     </div>
     <button class="btnp" style="margin-top:8px" onclick="solicitar()">Solicitar Viaje</button>
+    <!-- ===== BOTÓN DE PRUEBA TEMPORAL (QUITAR DESPUÉS) ===== -->
+    <button onclick="pruebaChoferCerca()" style="margin-top:8px;width:100%;background:rgba(245,166,35,0.12);border:1.5px dashed #f5a623;border-radius:12px;padding:9px;font-size:12px;color:#f5a623;cursor:pointer">🧪 PRUEBA: simular chofer a 1 km</button>
+    <!-- ===== FIN BOTÓN DE PRUEBA ===== -->
   </div>
   <button class="share-btn" onclick="abrirCompartirViaje()" title="Compartir viaje con contactos">🟢</button>
   <button class="panic-btn" onclick="abrirEmergencia()" title="EMERGENCIA REAL">🆘</button>
@@ -2860,12 +2863,13 @@ async function mostrarConductoresActivos(){
     actualizarCercania(minKm);
   }catch(e){console.warn('mostrarConductoresActivos:',e);}
 }
-// Recibe la distancia (km) al chofer más cercano; si cambia el estado de descuento, recalcula tarifa
+// Recibe la distancia (km) al chofer más cercano; refresca la tarifa
 function actualizarCercania(km){
   const antes = (conductorMasCercanoKm!==null && conductorMasCercanoKm<=RADIO_DESCUENTO_KM);
   conductorMasCercanoKm = km;
   const ahora = (km!==null && km<=RADIO_DESCUENTO_KM);
-  if(antes!==ahora && destLoc){ calcRoute(); } // solo recalcula si cambió y ya hay ruta
+  // Recalcula si cambió el estado del descuento Y ya hay una ruta calculada
+  if(antes!==ahora && destLoc && document.getElementById('fareSection').style.display==='block'){ calcRoute(); }
 }
 function iniciarSeguimientoConductoresActivos(){
   if(conductoresActivosInterval)clearInterval(conductoresActivosInterval);
@@ -2895,7 +2899,7 @@ function initMap(){
   if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{userLoc={lat:pos.coords.latitude,lng:pos.coords.longitude};gpsLoc={lat:userLoc.lat,lng:userLoc.lng};gmap.setCenter(userLoc);new google.maps.Marker({position:userLoc,map:gmap,icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:'#00d4aa',fillOpacity:1,strokeColor:'#fff',strokeWeight:2}});new google.maps.Geocoder().geocode({location:userLoc},(r,s)=>{if(s==='OK'&&r[0]){const a=r[0].formatted_address.split(',')[0];if(!origenEditado){document.getElementById('oac').value=a;}document.getElementById('mbadge').textContent='📍 '+a;}});},()=>{});}
   const oinp=document.getElementById('oac');
   origenAutocomplete=new google.maps.places.Autocomplete(oinp,{componentRestrictions:{country:'cr'},fields:['geometry','name','formatted_address'],bounds:atenasBounds,strictBounds:false});
-  origenAutocomplete.addListener('place_changed',()=>{const p=origenAutocomplete.getPlace();if(!p.geometry)return;userLoc={lat:p.geometry.location.lat(),lng:p.geometry.location.lng()};origenEditado=true;gmap.setCenter(userLoc);if(destLoc)calcRoute();});
+  origenAutocomplete.addListener('place_changed',()=>{const p=origenAutocomplete.getPlace();if(!p.geometry)return;userLoc={lat:p.geometry.location.lat(),lng:p.geometry.location.lng()};origenEditado=true;gmap.setCenter(userLoc);mostrarConductoresActivos();if(destLoc)calcRoute();});
 }
 // === ALGORITMO DE TARIFAS AVS (basado en lógica de Uber) ===
 // Tarifa = Base + (min × tarifa_min) + (km × tarifa_km) + Booking fee
@@ -2919,6 +2923,13 @@ function calcularTarifaAVS(km, min){
     referencia_uberComfort: uberComfort
   };
 }
+// ===== FUNCIÓN DE PRUEBA TEMPORAL (QUITAR DESPUÉS) =====
+function pruebaChoferCerca(){
+  conductorMasCercanoKm = 1; // forzar chofer a 1 km
+  if(destLoc){ calcRoute(); toast('🧪 Simulando chofer a 1 km — mirá el Económico'); }
+  else { toast('🧪 Primero poné un destino, luego tocá esto'); }
+}
+// ===== FIN FUNCIÓN DE PRUEBA =====
 function usarUbicacionActual(){
   origenEditado=false;
   if(gpsLoc){
