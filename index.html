@@ -2913,7 +2913,7 @@ function initMap(){
 // Tarifa = Base + (min × tarifa_min) + (km × tarifa_km) + Booking fee
 // Calibrado contra Uber CR: UberX = ₡15.000 para 27km/35min
 function calcularTarifaUberX(km, min){
-  const BASE = 500, POR_MIN = 45, POR_KM = 250, BOOKING = 250, MIN_FARE = 1000;
+  const BASE = 317, POR_MIN = 50, POR_KM = 354, BOOKING = 0, MIN_FARE = 1000;
   const total = BASE + (min * POR_MIN) + (km * POR_KM) + BOOKING;
   return Math.max(MIN_FARE, Math.round(total));
 }
