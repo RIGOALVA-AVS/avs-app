@@ -1183,7 +1183,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <!-- CTA para negocios -->
     <div style="background:rgba(0,229,184,0.07);border:1px solid var(--bd2);border-radius:16px;padding:16px;text-align:center">
       <div style="font-size:15px;font-weight:600;margin-bottom:6px">¿Tenés un negocio?</div>
-      <div style="font-size:12px;color:var(--mt);margin-bottom:12px;line-height:1.5">Unite a la red AVS y llegá a más clientes en Atenas. Comisión del 10% solo cuando vendés.</div>
+      <div style="font-size:12px;color:var(--mt);margin-bottom:12px;line-height:1.5">Unite a la red AVS y llegá a más clientes en Atenas. Condiciones que se acuerdan al momento de afiliarte.</div>
       <button class="btnp" style="margin-top:0" onclick="go('registro-negocio')">🏪 Registrá tu negocio</button>
     </div>
   </div>
@@ -1228,7 +1228,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div style="font-size:11px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Descripción breve</div>
     <textarea class="ifield" placeholder="¿Qué ofrecés? Horarios, especialidades..." id="neg-desc" rows="3" style="resize:none;margin-bottom:10px"></textarea>
     <div style="background:rgba(0,229,184,0.07);border:1px solid var(--bd2);border-radius:12px;padding:12px;font-size:12px;color:var(--mt);margin-bottom:16px;line-height:1.6">
-      💡 AVS cobra <strong style="color:var(--g)">10% de comisión</strong> por transacciones. El saldo se recarga vía SINPE igual que los conductores.
+      💡 AVS descuenta una <strong style="color:var(--g)">comisión por transacción</strong> según lo acordado con tu negocio. El saldo se recarga vía SINPE igual que los conductores.
     </div>
     <button class="btnp" onclick="enviarRegistroNegocio()">Enviar solicitud</button>
   </div>
@@ -1372,7 +1372,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
         <div>
           <span style="font-size:14px;color:var(--mt)">Total</span>
-          <div style="font-size:10px;color:var(--mt)" id="comision-label">Incluye 10% comisión AVS</div>
+          <div style="font-size:10px;color:var(--mt)" id="comision-label">Total a pagar</div>
         </div>
         <span style="font-family:var(--font-d);font-size:22px;font-weight:800;color:var(--g)" id="carrito-total">₡0</span>
       </div>
@@ -2014,9 +2014,9 @@ function actualizarTotalCarrito() {
   if (totEl) totEl.textContent = '₡' + total.toLocaleString('es-CR');
   if (lblEl) {
     if (tipoEntrega === 'delivery') {
-      lblEl.textContent = 'Subtotal + delivery ₡' + tarifaDelivery.toLocaleString('es-CR') + ' + 10% AVS';
+      lblEl.textContent = 'Total a pagar (incluye delivery ₡' + tarifaDelivery.toLocaleString('es-CR') + ')';
     } else {
-      lblEl.textContent = 'Incluye 10% comisión AVS';
+      lblEl.textContent = 'Total a pagar';
     }
   }
 }
@@ -5142,7 +5142,7 @@ const DEMO_PEDIDO = [
   {
     kicker: 'Paso 3 — Delivery o Recoger',
     title: 'Elige Delivery AVS · Tarifa por moto: ₡1.500',
-    narration: 'Las tarifas de delivery están escaladas por distancia y tipo de vehículo. Para distancias cortas en moto es muy económico. María paga ₡9.200 + 10% de comisión AVS.',
+    narration: 'Las tarifas de delivery están escaladas por distancia y tipo de vehículo. Para distancias cortas en moto es muy económico.',
     visual: `
       <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:18px">
         <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;min-width:120px">
@@ -5167,7 +5167,7 @@ const DEMO_PEDIDO = [
   {
     kicker: 'Paso 4 — Pago SINPE',
     title: 'Pago directo al negocio por SINPE Móvil',
-    narration: 'AVS no cobra al cliente — el cliente paga directo al negocio usando SINPE Móvil de Costa Rica. La comisión del 10% se descuenta automáticamente al cierre del día.',
+    narration: 'AVS no cobra al cliente — el cliente paga directo al negocio usando SINPE Móvil de Costa Rica. La comisión se descuenta del crédito del negocio según lo acordado.',
     visual: `
       <div style="background:#0a3d2a;border:1px solid #25d366;border-radius:14px;padding:16px;max-width:340px;margin:0 auto;text-align:left">
         <div style="color:#25d366;font-weight:700;margin-bottom:10px">📲 SINPE Móvil</div>
@@ -5254,7 +5254,7 @@ const DEMO_PEDIDO = [
   {
     kicker: 'Paso 9 — Cierre del ciclo',
     title: 'Tres ganadores: María, Pizzería La Finca, Pedro',
-    narration: 'En un solo flujo: el cliente recibió calidad, el negocio local vendió sin tener app propia, el conductor ganó dinero extra. AVS conectó toda la cadena cobrando solo 10% de comisión.',
+    narration: 'En un solo flujo: el cliente recibió calidad, el negocio local vendió sin tener app propia, el conductor ganó dinero extra. AVS conectó toda la cadena, y la riqueza se quedó en el cantón.',
     visual: `
       <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
         <div class="demo-card" style="text-align:center;padding:18px;min-width:130px">
