@@ -2825,8 +2825,8 @@ const ATENAS={lat:9.9799,lng:-84.3799};
 let gmap,dmap,rmapInst,autocomplete,origenAutocomplete,dirSvc,dirRend,dirRendR,dirRendD;
 let gpsLoc=null,origenEditado=false;
 let conductorMasCercanoKm=null; // distancia al chofer AVS más cercano (km) — para descuento por cercanía
-const RADIO_DESCUENTO_KM=2;     // si hay chofer a menos de esto, descuento al Económico
-const DESCUENTO_CERCANIA=0.10;  // 10% menos
+const RADIO_DESCUENTO_KM=2;          // si hay chofer a menos de esto, aplica descuento al Económico
+const DESCUENTO_CERCANIA_COLONES=600; // descuento fijo en colones (más justo que un %)
 let userLoc=ATENAS,destLoc=null;
 let conductoresActivosMarkers=[];
 let conductoresActivosInterval=null;
@@ -2944,11 +2944,11 @@ function calcularTarifaAVS(km, min){
   const oficial = calcularTarifaOficial(km);
   const top = Math.round(oficial * 0.85);          // -15% de la oficial
   const estandar = Math.round(top * 0.85);         // -15% del TOP
-  // Económica: descuento mayor sobre la oficial (-45%) para un precio competitivo.
+  // Económica: descuento mayor sobre la oficial (-42%) para un precio competitivo.
   // El conductor puede hacer contraoferta a un escalón superior si no le conviene.
-  let economica = Math.round(oficial * 0.55);      // oficial -45%
+  let economica = Math.round(oficial * 0.58);      // oficial -42%
   const hayChoferCerca = (conductorMasCercanoKm!==null && conductorMasCercanoKm<=RADIO_DESCUENTO_KM);
-  if(hayChoferCerca){ economica = Math.round(economica * (1-DESCUENTO_CERCANIA)); } // -10% extra
+  if(hayChoferCerca){ economica = economica - DESCUENTO_CERCANIA_COLONES; } // -₡600 fijos
   return {
     economico: Math.max(TARIFA_MIN_FARE, economica),
     estandar: Math.max(TARIFA_MIN_FARE, estandar),
