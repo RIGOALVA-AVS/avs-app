@@ -849,6 +849,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
   <!-- Columna 1: Form -->
   <div id="loginSheet" class="lsheet">
+    <!-- Carrusel de comercios aliados (solo PC) -->
+    <div class="login-pc-only" id="avsCarrusel" style="border-radius:12px;overflow:hidden;border:1.5px solid rgba(0,229,184,0.3);margin-bottom:14px;position:relative;aspect-ratio:1/1;">
+      <div id="avsCarruselPuntos" style="position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:3;"></div>
+      <div id="avsCarruselEtiqueta" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(8,15,30,0.9));color:#fff;font-size:11px;padding:16px 10px 8px;font-weight:bold;font-family:var(--font-d);z-index:2;"></div>
+    </div>
     <div class="ltit">Bienvenido 👋</div>
     <div class="ldesc">Ingresá tus datos para continuar</div>
     <div class="ilabel">Teléfono</div>
@@ -4756,10 +4761,52 @@ function conductorFinalizar(){
     mostrarCalificacion(vid,'conductor',user.name.split(' ')[0],'');
   },1500);
 }
+// ===== CARRUSEL DE COMERCIOS ALIADOS (solo PC, pantalla de login) =====
+function initCarruselComercios(){
+  const cont = document.getElementById('avsCarrusel');
+  if(!cont) return;
+  const BASE = 'https://rigoalva-avs.github.io/avs-app/carrusel/';
+  // Orden de rotación: marca AVS primero, luego los comercios que pautan
+  const slides = [
+    {img:'avs.jpg',    nombre:'Atenas Viaje Seguro'},
+    {img:'optica.jpg', nombre:'Óptica Centro Visual'},
+    {img:'coope.jpg',  nombre:'Súper Coopeatenas'},
+    {img:'finca.jpg',  nombre:'La Finca Restaurante'},
+    {img:'vital.jpg',  nombre:'Línea Vital'}
+  ];
+  const puntos = document.getElementById('avsCarruselPuntos');
+  const etiqueta = document.getElementById('avsCarruselEtiqueta');
+  // Limpiar por si se reinicia
+  cont.querySelectorAll('img.avs-car-img').forEach(el=>el.remove());
+  puntos.innerHTML='';
+  slides.forEach((s,i)=>{
+    const img = document.createElement('img');
+    img.className='avs-car-img';
+    img.src = BASE + s.img;
+    img.alt = s.nombre;
+    img.style.cssText='width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:'+(i===0?'1':'0')+';transition:opacity 0.8s;';
+    cont.insertBefore(img, cont.firstChild);
+    const p = document.createElement('div');
+    p.style.cssText='width:6px;height:6px;border-radius:50%;background:'+(i===0?'#00e5b8':'rgba(255,255,255,0.4)')+';';
+    puntos.appendChild(p);
+  });
+  etiqueta.textContent = slides[0].nombre;
+  let idx=0;
+  const imgs = cont.querySelectorAll('img.avs-car-img');
+  const pts = puntos.children;
+  if(window._avsCarruselTimer) clearInterval(window._avsCarruselTimer);
+  window._avsCarruselTimer = setInterval(()=>{
+    imgs[idx].style.opacity='0'; pts[idx].style.background='rgba(255,255,255,0.4)';
+    idx=(idx+1)%slides.length;
+    imgs[idx].style.opacity='1'; pts[idx].style.background='#00e5b8';
+    etiqueta.textContent = slides[idx].nombre;
+  },3500);
+}
+
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
+  initCarruselComercios();
 
-  // ============== DETECTAR LINK DE SEGUIMIENTO ==============
   const urlParams = new URLSearchParams(window.location.search);
   const tokenSeguimiento = urlParams.get('seguimiento');
   if(tokenSeguimiento){
