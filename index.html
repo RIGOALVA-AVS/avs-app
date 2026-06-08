@@ -214,6 +214,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 #gmap{width:100%;height:100%;background:#0a1a12;}
 .mbadge{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(8,15,30,0.88);border:1px solid var(--bd2);border-radius:20px;padding:6px 16px;font-size:12px;color:var(--tx2);white-space:nowrap;z-index:10;backdrop-filter:blur(8px);}
 .bpanel{background:var(--sf);border-radius:28px 28px 0 0;padding:14px 20px 90px;border-top:1px solid var(--bd2);box-shadow:0 -4px 24px rgba(0,0,0,0.2);}
+.servcol{display:none;}
 .bhandle{width:40px;height:4px;background:var(--bd2);border-radius:2px;margin:0 auto 16px;}
 .plabel{font-size:10px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;font-weight:500;}
 .dfrom{display:flex;align-items:center;gap:12px;background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:12px 16px;margin-bottom:8px;}
@@ -400,8 +401,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   /* PC: barra inferior solo dentro del ancho del panel (no tapa el mapa) */
   #pasajero .bnav {
     position: absolute;
-    width: 400px;
-    max-width: 400px;
+    width: 360px;
+    max-width: 360px;
     left: 0;
     transform: none;
     bottom: 0;
@@ -410,7 +411,46 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     z-index: 10;
   }
 
-  /* Header PC dentro del panel */
+  /* Columna intermedia de servicios (solo PC) */
+  .servicios-movil { display: none; }
+  #pasajero .servcol {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    order: 2;
+    width: 132px;
+    flex: none;
+    height: 100vh;
+    box-sizing: border-box;
+    padding: 24px 12px;
+    background: var(--sf);
+    border-right: 1px solid var(--bd2);
+    overflow-y: auto;
+  }
+  .servcol-tit {
+    font-size: 9px; letter-spacing: 1.5px; color: var(--mt);
+    text-transform: uppercase; text-align: center; margin-bottom: 4px;
+  }
+  .servcol-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 12px 6px; border-radius: 14px; cursor: pointer;
+    background: rgba(0,229,184,0.05); border: 1px solid var(--bd2);
+    transition: all 0.18s; text-align: center;
+  }
+  .servcol-btn:hover { background: rgba(0,229,184,0.12); border-color: var(--g); transform: translateY(-1px); }
+  .servcol-ico { font-size: 22px; line-height: 1; }
+  .servcol-lbl { font-size: 10px; color: var(--tx); font-weight: 600; }
+  .servcol-muni {
+    background: linear-gradient(135deg,rgba(96,165,250,0.15),rgba(96,165,250,0.05));
+    border: 1px solid rgba(96,165,250,0.4);
+  }
+  .servcol-muni .servcol-lbl { color: #60a5fa; }
+  .servcol-sep { height: 1px; background: var(--bd2); margin: 2px 4px; }
+  /* el mapa va de tercero en PC, después de servicios */
+  #pasajero .mapc { order: 3; }
+  /* panel un poco más angosto para dar aire al conjunto */
+  #pasajero .bpanel { width: 360px; }
   .pc-header {
     display: flex !important;
     align-items: center;
@@ -928,7 +968,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="plabel">¿A dónde vas?</div>
     <div class="acwrap"><div class="dotg"></div><input type="text" id="oac" placeholder="Mi ubicación actual" autocomplete="off"><button id="gpsBtn" onclick="usarUbicacionActual()" title="Usar mi ubicación actual" style="background:transparent;border:none;color:var(--g);font-size:18px;cursor:pointer;padding:0 2px;flex-shrink:0">📍</button></div>
     <div class="acwrap"><div class="dotr"></div><input type="text" id="dac" placeholder="Escribe tu destino..." autocomplete="off"></div>
-    <!-- Servicios AVS -->
+    <!-- Servicios AVS (solo móvil — en PC se muestran en la columna intermedia) -->
+    <div class="servicios-movil">
     <!-- Fila 1: 3 servicios principales -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px;margin-top:4px">
       <div class="dest-chip" onclick="verNegocios('restaurantes')">🍽️<br><span style="font-size:10px">Restaurantes</span></div>
@@ -940,6 +981,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div class="dest-chip" onclick="abrirPortalMunicipal()" style="background:linear-gradient(135deg,rgba(96,165,250,0.15),rgba(96,165,250,0.05));border:1px solid rgba(96,165,250,0.4);color:#60a5fa;padding:12px;font-weight:600">🏛️ Municipalidad</div>
       <div class="dest-chip" onclick="go('servicios')" style="padding:12px;font-weight:600">✨ Más</div>
     </div>
+    </div><!-- /servicios-movil -->
     <div class="tinfo" id="tinfo">
       <div class="tiitem"><div class="tilbl">Distancia</div><div class="tival" id="tdist">—</div></div>
       <div class="tiitem"><div class="tilbl">Tiempo</div><div class="tival" id="tdur">—</div></div>
@@ -953,6 +995,26 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       </button>
     </div>
     <button class="btnp" style="margin-top:8px" onclick="solicitar()">Solicitar Viaje</button>
+  </div>
+  <!-- COLUMNA INTERMEDIA DE SERVICIOS (solo PC) -->
+  <div class="servcol">
+    <div class="servcol-tit">SERVICIOS</div>
+    <div class="servcol-btn servcol-muni" onclick="abrirPortalMunicipal()">
+      <span class="servcol-ico">🏛️</span><span class="servcol-lbl">Municipalidad</span>
+    </div>
+    <div class="servcol-sep"></div>
+    <div class="servcol-btn" onclick="verNegocios('restaurantes')">
+      <span class="servcol-ico">🍽️</span><span class="servcol-lbl">Restaurantes</span>
+    </div>
+    <div class="servcol-btn" onclick="verNegocios('salud')">
+      <span class="servcol-ico">🏥</span><span class="servcol-lbl">Salud</span>
+    </div>
+    <div class="servcol-btn" onclick="verNegocios('hospedaje')">
+      <span class="servcol-ico">🏨</span><span class="servcol-lbl">Hospedaje</span>
+    </div>
+    <div class="servcol-btn" onclick="go('servicios')">
+      <span class="servcol-ico">✨</span><span class="servcol-lbl">Más</span>
+    </div>
   </div>
   <button class="share-btn" onclick="abrirCompartirViaje()" title="Compartir viaje con contactos">🟢</button>
   <button class="panic-btn" onclick="abrirEmergencia()" title="EMERGENCIA REAL">🆘</button>
@@ -4439,11 +4501,11 @@ function abrirRegistro(){
     <div class="ldesc">¿Cómo querés registrarte? Elegí una opción.</div>
     <div id="reg-cards" style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
       <div class="reg-card" onclick="elegirRegistro('usuario')">
-        <span class="reg-card-ico">🚗</span>
+        <span class="reg-card-ico">👤</span>
         <div><div class="reg-card-tit">Usuario</div><div class="reg-card-desc">Pedí viajes y comprá en comercios locales</div></div>
       </div>
       <div class="reg-card" onclick="elegirRegistro('conductor')">
-        <span class="reg-card-ico">🧑‍✈️</span>
+        <span class="reg-card-ico">🚗</span>
         <div><div class="reg-card-tit">Conductor</div><div class="reg-card-desc">Ofrecé viajes y entregas (requiere documentos)</div></div>
       </div>
       <div class="reg-card" onclick="elegirRegistro('comercio')">
@@ -4490,8 +4552,8 @@ function abrirIngreso(role){
     <input class="ifield" type="text" placeholder="Tu nombre completo" id="lname" enterkeyhint="done" onkeydown="if(event.key==='Enter'){this.blur();}">
     ${esAdmin
       ? `<button class="btnp" onclick="doLogin('admin')" style="margin-top:6px">🛡️ Acceso admin</button>`
-      : `<button class="btnp" onclick="doLogin('usuario')" style="margin-top:6px">🚗 Entrar como Usuario</button>
-         <button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button>
+      : `<button class="btnp" onclick="doLogin('usuario')" style="margin-top:6px">👤 Entrar como Usuario</button>
+         <button class="btno" onclick="doLogin('conductor')">🚗 Entrar como Conductor</button>
          <button class="btno" onclick="doLoginNegocio()" style="margin-top:6px">🏪 Acceso negocio</button>`}
     <button class="btno" onclick="resetLoginSheet()" style="margin-top:10px">← Volver</button>`;
 }
