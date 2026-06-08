@@ -1044,7 +1044,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <div class="scrd">
     <div class="srow">
       <div><div class="slbl">Saldo AVS disponible</div><div class="samt">₡6.500</div></div>
-      <div style="font-size:12px;color:var(--mt);text-align:right"><div>Comisión AVS</div><div style="color:var(--tx);font-weight:500">10%</div></div>
     </div>
     <div class="sbg"><div class="sfill"></div></div>
     <div class="rchips">
@@ -2992,9 +2991,9 @@ function calcRoute(){
     document.getElementById('tfare').textContent = '₡' + cs.totalPasajero.toLocaleString('es-CR');
     document.getElementById('tinfo').classList.add('show');
     document.getElementById('fchips').innerHTML = [
-      {...cb, label:'Económica', sub: tarifas.descuentoCercania ? '📍 chofer cerca −10%' : 'precio competitivo'},
+      {...cb, label:'Económica', sub: tarifas.descuentoCercania ? '📍 chofer cerca' : 'precio competitivo'},
       {...cs, label:'Estándar',  sub:'equilibrada'},
-      {...cp, label:'TOP',       sub:'tarifa oficial −15%'}
+      {...cp, label:'TOP',       sub:'mejor servicio'}
     ].map((c,i) => `<div class="fchip ${i===1?'sel':''}" onclick="selFareChip(this,${c.tarifa},${c.comisionAVS},${c.totalConductor})"><div class="famt">₡${c.totalPasajero.toLocaleString('es-CR')}</div><div class="ftyp">${c.label}</div><div style="font-size:9px;color:var(--g);margin-top:2px">${c.sub}</div></div>`).join('');
     selFare = tarifas.estandar;
     selCom = cs.comisionAVS;
@@ -4728,7 +4727,7 @@ async function cargarSolicitudes(){
       <div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px;color:var(--mt)"><span>Tarifa AVS normal</span><span>₡${tarifaAVSNormal.toLocaleString('es-CR')} → conductor ₡${totalCondNormal.toLocaleString('es-CR')}</span></div>
         <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#f5a623;font-weight:600">Precio ofrecido</span><span>₡${precioOfrecido.toLocaleString('es-CR')}</span></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Comisión AVS (10%)</span><span style="color:var(--rd)">−₡${comAVS.toLocaleString('es-CR')}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Comisión AVS</span><span style="color:var(--rd)">−₡${comAVS.toLocaleString('es-CR')}</span></div>
         <div style="border-top:1px solid var(--bd);padding-top:6px;margin-top:2px;display:flex;justify-content:space-between;font-weight:600">
           <span style="color:var(--g)">Vos recibís</span>
           <span style="color:var(--g);font-family:var(--font-d);font-size:15px">₡${totalCond.toLocaleString('es-CR')}</span>
@@ -5171,13 +5170,13 @@ const DEMO_VIAJE = [
   {
     kicker: 'Paso 7 — Llegada al destino',
     title: 'Carlos finaliza el viaje. María paga ₡15.267',
-    narration: 'Del total, Carlos recibe ₡13.740 (90%) y AVS retiene ₡1.527 de comisión (10%). Cuando hay convenio con la municipalidad, ese 10% se divide 50/50 entre AVS y el cantón — la muni participa de los ingresos del transporte local sin invertir un centavo.',
+    narration: 'Del total del viaje, la mayor parte es para el conductor y una pequeña parte es la comisión de AVS. Cuando hay convenio con la municipalidad, esa comisión se comparte con el cantón — la muni participa de los ingresos del transporte local sin invertir un centavo.',
     visual: `
       <div class="demo-receipt">
         <div style="text-align:center;font-weight:700;color:#00d4aa;margin-bottom:8px">RECIBO VIAJE AVS</div>
         <div class="row"><span>Tarifa estándar (27 km · 35 min)</span><span>₡15.267</span></div>
-        <div class="row"><span>Para el conductor (90%)</span><span style="color:#00d4aa">₡13.740</span></div>
-        <div class="row"><span>Comisión AVS (10%)</span><span style="color:#f5a623">₡1.527</span></div>
+        <div class="row"><span>Para el conductor</span><span style="color:#00d4aa">₡13.740</span></div>
+        <div class="row"><span>Comisión AVS</span><span style="color:#f5a623">₡1.527</span></div>
         <div class="row tot"><span>Total</span><span>₡15.267</span></div>
         <div style="text-align:center;margin-top:10px;font-size:11px;color:#888">Pagado por SINPE Móvil · 5% más barato que Uber Comfort</div>
       </div>
@@ -5276,7 +5275,7 @@ const DEMO_PEDIDO = [
       <div class="demo-receipt">
         <div class="row"><span>Subtotal</span><span>₡7.700</span></div>
         <div class="row"><span>Delivery (moto, 0.8 km)</span><span>₡1.500</span></div>
-        <div class="row"><span>Comisión AVS (10%)</span><span>₡920</span></div>
+        <div class="row"><span>Comisión AVS</span><span>₡920</span></div>
         <div class="row tot"><span>TOTAL</span><span>₡10.120</span></div>
       </div>
     `
@@ -5500,7 +5499,7 @@ const DEMO_MUNICIPAL = [
         <div class="demo-card" style="text-align:center;padding:18px;min-width:140px;border-color:#f5a623">
           <div style="font-size:32px;margin-bottom:6px">⚡</div>
           <div style="font-size:13px;font-weight:700;color:#f5a623">AVS</div>
-          <div style="font-size:11px;color:#f5a623;margin-top:3px">Comisión municipal: 0%</div>
+          <div style="font-size:11px;color:#f5a623;margin-top:3px">Módulo municipal gratis</div>
         </div>
       </div>
       <div style="margin-top:24px;padding:18px;background:rgba(96,165,250,0.08);border:1px solid #60a5fa;border-radius:14px;max-width:520px;margin-left:auto;margin-right:auto">
