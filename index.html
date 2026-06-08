@@ -996,7 +996,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     </div>
     <button class="btnp" style="margin-top:8px" onclick="solicitar()">Solicitar Viaje</button>
     <!-- Carrusel publicitario de comercios aliados -->
-    <div id="avsCarruselPasajero" style="border-radius:12px;overflow:hidden;border:1.5px solid rgba(0,229,184,0.3);margin-top:14px;position:relative;aspect-ratio:16/7;">
+    <div id="avsCarruselPasajero" style="border-radius:12px;overflow:hidden;border:1.5px solid rgba(0,229,184,0.3);margin-top:14px;position:relative;height:180px;flex-shrink:0;min-height:180px;">
       <div id="avsCarruselPasajeroPuntos" style="position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:3;"></div>
       <div id="avsCarruselPasajeroEtiqueta" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(8,15,30,0.9));color:#fff;font-size:11px;padding:16px 10px 8px;font-weight:bold;font-family:var(--font-d);z-index:2;"></div>
     </div>
@@ -4497,13 +4497,17 @@ function mostrarRegistroRequerido(servicio) {
     </div>`;
 }
 
-function resetLoginSheet(){document.querySelector('#login .lsheet').innerHTML=`<div class="ltit">Bienvenido 👋</div><div class="ldesc">Tu puente seguro de movilidad y comercio en Atenas</div><button class="btnp" onclick="abrirRegistro()" style="margin-top:10px">📝 Regístrese Aquí</button><button class="btno" onclick="abrirIngreso()" style="margin-top:8px">🔑 Ya tengo cuenta / Ingresar</button><button class="btno login-pc-only" onclick="abrirPortalMunicipal()" style="margin-top:6px;border-color:rgba(96,165,250,0.4);color:#60a5fa">🏛️ Municipalidad</button><div class="lsw" style="margin-top:10px">¿Admin AVS? <a onclick="abrirIngreso('admin')">Acceso admin</a></div><div class="lsw login-pc-only" style="margin-top:3px">¿Funcionario municipal? <a onclick="doLoginFuncionario()" style="color:#60a5fa">Ingresar</a></div>`;}
+function resetLoginSheet(){document.querySelector('#login .lsheet').innerHTML=`<div class="login-pc-only" id="avsCarrusel" style="border-radius:12px;overflow:hidden;border:1.5px solid rgba(0,229,184,0.3);margin-bottom:14px;position:relative;aspect-ratio:1/1;"><div id="avsCarruselPuntos" style="position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:3;"></div><div id="avsCarruselEtiqueta" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(8,15,30,0.9));color:#fff;font-size:11px;padding:16px 10px 8px;font-weight:bold;font-family:var(--font-d);z-index:2;"></div></div><div class="ltit">Bienvenido 👋</div><div class="ldesc">Tu puente seguro de movilidad y comercio en Atenas</div><button class="btnp" onclick="abrirRegistro()" style="margin-top:10px">📝 Regístrese Aquí</button><button class="btno" onclick="abrirIngreso()" style="margin-top:8px">🔑 Ya tengo cuenta / Ingresar</button><button class="btno login-pc-only" onclick="abrirPortalMunicipal()" style="margin-top:6px;border-color:rgba(96,165,250,0.4);color:#60a5fa">🏛️ Municipalidad</button><div class="lsw" style="margin-top:10px">¿Admin AVS? <a onclick="abrirIngreso('admin')">Acceso admin</a></div><div class="lsw login-pc-only" style="margin-top:3px">¿Funcionario municipal? <a onclick="doLoginFuncionario()" style="color:#60a5fa">Ingresar</a></div>`;setTimeout(()=>initCarruselGenerico('avsCarrusel'),60);}
 
 // === PANTALLA DE SELECCIÓN DE REGISTRO (Fase 1) ===
 // Despliega las 3 tarjetas: Usuario / Conductor / Comercio.
 function abrirRegistro(){
   const sheet = document.querySelector('#login .lsheet');
   sheet.innerHTML = `
+    <div class="login-pc-only" id="avsCarruselReg" style="border-radius:12px;overflow:hidden;border:1.5px solid rgba(0,229,184,0.3);margin-bottom:14px;position:relative;aspect-ratio:1/1;">
+      <div id="avsCarruselRegPuntos" style="position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:3;"></div>
+      <div id="avsCarruselRegEtiqueta" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(8,15,30,0.9));color:#fff;font-size:11px;padding:16px 10px 8px;font-weight:bold;font-family:var(--font-d);z-index:2;"></div>
+    </div>
     <div class="ltit">Crear cuenta 📝</div>
     <div class="ldesc">¿Cómo querés registrarte? Elegí una opción.</div>
     <div id="reg-cards" style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
@@ -4521,6 +4525,7 @@ function abrirRegistro(){
       </div>
     </div>
     <button class="btno" onclick="resetLoginSheet()" style="margin-top:14px">← Volver</button>`;
+  setTimeout(()=>initCarruselGenerico('avsCarruselReg'),60);
 }
 
 // Al elegir una tarjeta, las otras desaparecen y arranca el flujo correspondiente.
@@ -5014,8 +5019,9 @@ function initCarruselGenerico(idBase){
 }
 
 function initCarruselComercios(){
-  // Carrusel del login (cuadrado) + carrusel del panel pasajero (banner)
+  // Carruseles del login (cuadrados) + carrusel del panel pasajero (banner)
   initCarruselGenerico('avsCarrusel');
+  initCarruselGenerico('avsCarruselReg');
   initCarruselGenerico('avsCarruselPasajero');
 }
 
