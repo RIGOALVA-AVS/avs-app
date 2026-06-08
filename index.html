@@ -702,6 +702,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div id="reg-ced-hint" style="font-size:11px;color:#888;margin-top:6px">Cédula de identidad costarricense — 9 dígitos</div>
       <div id="reg-ced-error" style="font-size:12px;color:#ff6b6b;margin-top:8px;min-height:18px;line-height:1.4"></div>
 
+      <!-- Fecha de nacimiento -->
+      <div style="font-size:11px;color:#888;letter-spacing:1.5px;margin-top:18px;margin-bottom:6px">FECHA DE NACIMIENTO</div>
+      <input type="date" id="reg-fecha-nac" style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(0,212,170,0.3);border-radius:14px;padding:14px;color:#fff;font-size:16px;font-weight:600;outline:none" autocomplete="off">
+      <div style="font-size:11px;color:#888;margin-top:6px">Debés ser mayor de edad (18 años) para usar AVS.</div>
+
       <!-- Info de privacidad -->
       <div style="background:rgba(0,212,170,0.05);border:1px solid rgba(0,212,170,0.2);border-radius:12px;padding:12px;margin-top:18px;font-size:12px;color:#aaa;line-height:1.5">
         <div style="color:#00d4aa;font-weight:600;margin-bottom:4px">🛡️ Tu información está protegida</div>
@@ -1693,7 +1698,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <div style="background:var(--bg);height:100%;overflow-y:auto">
     <!-- Header -->
     <div style="background:linear-gradient(135deg,#1e3a8a 0%,#0a1525 100%);padding:32px 20px 24px;color:#fff;position:relative">
-      <button onclick="go('login')" style="position:absolute;top:24px;left:16px;width:36px;height:36px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;color:#fff;font-size:18px;cursor:pointer">←</button>
+      <button onclick="volverInicio()" style="position:absolute;top:24px;left:16px;width:36px;height:36px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;color:#fff;font-size:18px;cursor:pointer">←</button>
       <div style="text-align:center;padding-top:12px" class="escudo-muni-wrap">
         <img src="escudo-atenas.png" alt="Escudo de Atenas" class="escudo-muni">
         <div style="font-family:var(--font-d);font-size:20px;font-weight:700" id="muni-nombre">Municipalidad de Atenas</div>
@@ -1791,9 +1796,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
         <div style="font-size:28px;margin-bottom:6px">🏪</div>
         <div style="font-family:var(--font-d);font-size:13px;font-weight:600">Patentes</div>
       </button>
-      <button onclick="iniciarPagoMunicipal('Acueducto')" style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:18px 12px;color:var(--tx);cursor:pointer">
-        <div style="font-size:28px;margin-bottom:6px">💧</div>
-        <div style="font-family:var(--font-d);font-size:13px;font-weight:600">Acueducto</div>
+      <button onclick="iniciarPagoMunicipal('Concesiones')" style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:18px 12px;color:var(--tx);cursor:pointer">
+        <div style="font-size:28px;margin-bottom:6px">📋</div>
+        <div style="font-family:var(--font-d);font-size:13px;font-weight:600">Concesiones</div>
+      </button>
+      <button onclick="iniciarPagoMunicipal('Alquiler de Mercado')" style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:18px 12px;color:var(--tx);cursor:pointer">
+        <div style="font-size:28px;margin-bottom:6px">🏬</div>
+        <div style="font-family:var(--font-d);font-size:13px;font-weight:600">Alquiler de Mercado</div>
+      </button>
+      <button onclick="iniciarPagoMunicipal('Permisos de Construcción')" style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:18px 12px;color:var(--tx);cursor:pointer">
+        <div style="font-size:28px;margin-bottom:6px">🏗️</div>
+        <div style="font-family:var(--font-d);font-size:13px;font-weight:600">Permisos de Construcción</div>
       </button>
     </div>
     <div id="pago-form" style="display:none"></div>
@@ -3646,7 +3659,7 @@ async function enviarRegistroNegocio(){
 }
 
 
-function go(id){
+function go(id, _fromPop){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   setTimeout(()=>{if(id==='usuario'||id==='pasajero')aplicarLayoutPasajeroPC();},50);
@@ -3654,8 +3667,35 @@ function go(id){
   if(id==='admin')cargarAdmin();
   if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);
   if(id==='usuario'||id==='pasajero'){setTimeout(iniciarSeguimientoConductoresActivos,1500);}else{detenerSeguimientoConductoresActivos();}
+  // Registrar en el historial del navegador (para que el botón "atrás" navegue entre pantallas, no salga al login)
+  if(!_fromPop){
+    try{ history.pushState({avsScreen:id}, '', '#'+id); }catch(e){}
+  }
+  window._avsPantallaActual = id;
 }
+// El botón "atrás" del navegador vuelve a la pantalla anterior dentro de la app (no recarga ni saca al login)
+window.addEventListener('popstate', function(ev){
+  const destino = (ev.state && ev.state.avsScreen) ? ev.state.avsScreen : null;
+  if(destino && document.getElementById(destino)){
+    go(destino, true);
+  } else {
+    // Si no hay estado previo, ir a la pantalla principal según el rol (NO al login, salvo que no haya sesión)
+    if(loadSession() && user.name && user.role){
+      const home = user.role==='conductor' ? 'conductor' : (user.role==='usuario' ? 'pasajero' : window._avsPantallaActual);
+      go(home, true);
+    } else {
+      go('login', true);
+    }
+  }
+});
 function toast(msg){const t=document.getElementById('toastEl');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function volverInicio(){
+  if(loadSession() && user.name && user.role){
+    go(user.role==='conductor' ? 'conductor' : 'pasajero');
+  } else {
+    go('login');
+  }
+}
 function logout(){clearSession();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
 async function doLoginNegocio(){
   const phone = document.getElementById('lphone').value.trim();
@@ -3688,6 +3728,18 @@ function validarNombreCompleto(nom){
 }
 
 // === VALIDACIÓN DE IDENTIFICACIÓN ===
+// Calcula la edad a partir de una fecha (YYYY-MM-DD). Devuelve número o null si inválida.
+function calcularEdad(fechaStr){
+  if(!fechaStr) return null;
+  const nac = new Date(fechaStr);
+  if(isNaN(nac.getTime())) return null;
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  const m = hoy.getMonth() - nac.getMonth();
+  if(m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+  if(edad < 0) return null;
+  return edad;
+}
 // Cédula CR: 9 dígitos. Detecta cédulas obviamente inválidas.
 function validarCedulaCR(ced){
   const c = String(ced||'').replace(/\D/g,'');
@@ -4062,6 +4114,14 @@ async function regEnviarCedula(){
   const val = validarIdentificacion(tipo, valor);
   if(!val.ok){ errEl.textContent = '❌ ' + val.msg; return; }
 
+  // Validar fecha de nacimiento y mayoría de edad
+  const fechaNac = document.getElementById('reg-fecha-nac').value;
+  if(!fechaNac){ errEl.textContent = '❌ Ingresá tu fecha de nacimiento.'; return; }
+  const edad = calcularEdad(fechaNac);
+  if(edad === null){ errEl.textContent = '❌ Fecha de nacimiento inválida.'; return; }
+  if(edad < 18){ errEl.textContent = '❌ Debés ser mayor de edad (18 años) para registrarte en AVS.'; return; }
+  if(edad > 110){ errEl.textContent = '❌ Revisá la fecha de nacimiento.'; return; }
+
   // Validar unicidad: nadie más tiene esta identificación
   if(!db){ toast('Sin conexión'); return; }
   const btn = document.getElementById('reg-ced-submit');
@@ -4092,6 +4152,7 @@ async function regEnviarCedula(){
       tipo: 'usuario',
       tipo_identificacion: val.tipo,
       numero_identificacion: val.numero,
+      fecha_nacimiento: fechaNac,
       pais_identificacion: val.tipo === 'cedula_cr' ? 'CR' : (val.tipo === 'dimex' ? 'CR' : 'INT')
     };
 
@@ -5402,14 +5463,14 @@ const DEMO_MUNICIPAL = [
   {
     kicker: 'Paso 5 — Más que pagos',
     title: 'Trámites, consultas y avisos en el mismo lugar',
-    narration: 'El portal no es solo para pagar. El vecino puede sacar un permiso, poner una queja con seguimiento, o recibir los avisos del cantón (cortes de agua, eventos, emergencias) directo en la app.',
+    narration: 'El portal no es solo para pagar. El vecino puede sacar un permiso, poner una queja con seguimiento, o recibir los avisos del cantón (obras, eventos, emergencias) directo en la app.',
     visual: `
       <div style="max-width:440px;margin:0 auto">
         <span class="demo-status-pill done">📝 Permiso solicitado</span>
         <span class="demo-status-pill active">💬 Consulta respondida</span>
         <span class="demo-status-pill done">📢 Aviso recibido</span>
       </div>
-      <div style="margin-top:18px;padding:14px;background:rgba(96,165,250,0.08);border:1px solid #60a5fa;border-radius:12px;max-width:440px;margin-left:auto;margin-right:auto;font-size:13px;color:#fff">📢 "Corte de agua programado en Barrio Jesús, martes 8am-12md" — notificado a todos los vecinos.</div>
+      <div style="margin-top:18px;padding:14px;background:rgba(96,165,250,0.08);border:1px solid #60a5fa;border-radius:12px;max-width:440px;margin-left:auto;margin-right:auto;font-size:13px;color:#fff">📢 "Bacheo y reparación en la carretera vecinal La Presa–Los Ángeles, martes 8am-12md" — notificado a todos los vecinos.</div>
     `
   },
   {
@@ -5583,9 +5644,32 @@ async function abrirInfoMunicipal(){
 
 async function abrirTramitesMunicipales(){
   go('tramites-municipales');
-  if(!db || !muniActual){document.getElementById('tramites-lista').innerHTML = '<div style="text-align:center;color:var(--mt);padding:40px">Sin conexión</div>'; return;}
-  const {data} = await db.from('tramites_municipales').select('*').eq('municipalidad_id', muniActual.id).eq('activo', true).order('nombre');
-  if(!data || data.length===0){document.getElementById('tramites-lista').innerHTML = '<div style="text-align:center;color:var(--mt);padding:40px">Sin trámites disponibles</div>'; return;}
+  let data = null;
+  if(db && muniActual){
+    const res = await db.from('tramites_municipales').select('*').eq('municipalidad_id', muniActual.id).eq('activo', true).order('nombre');
+    data = res.data;
+  }
+  // Si no hay trámites reales todavía, mostrar ejemplos de demostración
+  if(!data || data.length===0){
+    const ejemplos = [
+      {nombre:'Permiso de construcción', descripcion:'Solicitá el permiso para obras menores o mayores.', requisitos:'Planos, copia de cédula, plano catastrado.', costo:0},
+      {nombre:'Patente comercial nueva', descripcion:'Abrí tu negocio con la patente al día.', requisitos:'Cédula, uso de suelo, formulario de solicitud.', costo:0},
+      {nombre:'Certificación de bienes inmuebles', descripcion:'Obtené la certificación de tu propiedad.', requisitos:'Número de finca, copia de cédula.', costo:2500},
+      {nombre:'Uso de suelo', descripcion:'Consultá el uso permitido de un terreno.', requisitos:'Plano catastrado, ubicación de la propiedad.', costo:1500},
+      {nombre:'Constancia de no contribuyente', descripcion:'Documento para trámites varios.', requisitos:'Copia de cédula.', costo:1000}
+    ];
+    document.getElementById('tramites-lista').innerHTML =
+      '<div style="text-align:center;color:var(--mt);font-size:12px;margin-bottom:14px;font-style:italic">Ejemplos de trámites (demostración)</div>' +
+      ejemplos.map(t=>`
+      <button onclick="abrirDetalleTramite('demo','${t.nombre}','${t.descripcion}','${t.requisitos}',${t.costo})" style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:10px;display:block;width:100%;text-align:left;color:var(--tx);cursor:pointer">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-family:var(--font-d);font-size:14px;font-weight:600">${t.nombre}</div>
+          <div style="font-family:var(--font-d);font-size:13px;font-weight:700;color:#60a5fa">${t.costo>0?'₡'+t.costo.toLocaleString('es-CR'):'Gratis'}</div>
+        </div>
+        <div style="font-size:12px;color:var(--mt);line-height:1.4">${t.descripcion}</div>
+      </button>`).join('');
+    return;
+  }
   document.getElementById('tramites-lista').innerHTML = data.map(t=>`
     <button onclick="abrirDetalleTramite('${t.id}','${(t.nombre||'').replace(/'/g,'')}','${(t.descripcion||'').replace(/'/g,'')}','${(t.requisitos||'').replace(/'/g,'')}',${t.costo||0})" style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:10px;display:block;width:100%;text-align:left;color:var(--tx);cursor:pointer">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
