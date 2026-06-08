@@ -2929,24 +2929,32 @@ function initMap(){
 }
 // === ALGORITMO DE TARIFAS AVS (basado en lógica de Uber) ===
 // Tarifa = Base + (min × tarifa_min) + (km × tarifa_km) + Booking fee
-// Calibrado contra Uber CR: UberX = ₡15.000 para 27km/35min
-function calcularTarifaUberX(km, min){
-  const BASE = 317, POR_MIN = 50, POR_KM = 354, BOOKING = 0, MIN_FARE = 1000;
-  const total = BASE + (min * POR_MIN) + (km * POR_KM) + BOOKING;
-  return Math.max(MIN_FARE, Math.round(total));
+// === Cálculo de tarifa basado en tarifa oficial ARESEP (ver calcularTarifaAVS abajo) ===
+// === TARIFA AVS basada en tarifa oficial ARESEP (taxi sedán) ===
+// Base oficial: ₡840/km (resolución RE-0050-IT-2026). Cálculo por kilómetro.
+// 3 escalones en cascada, cada uno -15% del anterior:
+//   TOP = oficial -15%  |  Estándar = TOP -15%  |  Económica = Estándar -15%
+// Promo "chofer cerca": -10% adicional sobre la Económica.
+const TARIFA_OFICIAL_KM = 840;   // colones por km (ARESEP)
+const TARIFA_MIN_FARE = 1000;    // tarifa mínima
+function calcularTarifaOficial(km){
+  return Math.max(TARIFA_MIN_FARE, Math.round(TARIFA_OFICIAL_KM * km));
 }
 function calcularTarifaAVS(km, min){
-  const uberX = calcularTarifaUberX(km, min);
-  const uberComfort = Math.round(uberX * 1.10);
+  const oficial = calcularTarifaOficial(km);
+  const top = Math.round(oficial * 0.85);          // -15% de la oficial
+  const estandar = Math.round(top * 0.85);         // -15% del TOP
+  // Económica: descuento mayor sobre la oficial (-45%) para un precio competitivo.
+  // El conductor puede hacer contraoferta a un escalón superior si no le conviene.
+  let economica = Math.round(oficial * 0.55);      // oficial -45%
   const hayChoferCerca = (conductorMasCercanoKm!==null && conductorMasCercanoKm<=RADIO_DESCUENTO_KM);
-  const economico = hayChoferCerca ? Math.round(uberX * (1-DESCUENTO_CERCANIA)) : uberX;
+  if(hayChoferCerca){ economica = Math.round(economica * (1-DESCUENTO_CERCANIA)); } // -10% extra
   return {
-    economico: economico,
-    estandar: Math.round(uberComfort * 0.95),
-    premium: uberComfort,
+    economico: Math.max(TARIFA_MIN_FARE, economica),
+    estandar: Math.max(TARIFA_MIN_FARE, estandar),
+    premium: Math.max(TARIFA_MIN_FARE, top),   // "premium" interno = TOP (tarifa oficial -15%)
     descuentoCercania: hayChoferCerca,
-    referencia_uberX: uberX,
-    referencia_uberComfort: uberComfort
+    referencia_oficial: oficial
   };
 }
 function usarUbicacionActual(){
@@ -2984,9 +2992,9 @@ function calcRoute(){
     document.getElementById('tfare').textContent = '₡' + cs.totalPasajero.toLocaleString('es-CR');
     document.getElementById('tinfo').classList.add('show');
     document.getElementById('fchips').innerHTML = [
-      {...cb, label:'Económico', sub: tarifas.descuentoCercania ? '📍 chofer cerca −10%' : '= precio Uber'},
-      {...cs, label:'Estándar',  sub:'-5% Comfort'},
-      {...cp, label:'Premium',   sub:'nivel mercado'}
+      {...cb, label:'Económica', sub: tarifas.descuentoCercania ? '📍 chofer cerca −10%' : 'precio competitivo'},
+      {...cs, label:'Estándar',  sub:'equilibrada'},
+      {...cp, label:'TOP',       sub:'tarifa oficial −15%'}
     ].map((c,i) => `<div class="fchip ${i===1?'sel':''}" onclick="selFareChip(this,${c.tarifa},${c.comisionAVS},${c.totalConductor})"><div class="famt">₡${c.totalPasajero.toLocaleString('es-CR')}</div><div class="ftyp">${c.label}</div><div style="font-size:9px;color:var(--g);margin-top:2px">${c.sub}</div></div>`).join('');
     selFare = tarifas.estandar;
     selCom = cs.comisionAVS;
