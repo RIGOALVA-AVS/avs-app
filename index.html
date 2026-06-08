@@ -995,6 +995,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       </button>
     </div>
     <button class="btnp" style="margin-top:8px" onclick="solicitar()">Solicitar Viaje</button>
+    <!-- Carrusel publicitario de comercios aliados -->
+    <div id="avsCarruselPasajero" style="border-radius:12px;overflow:hidden;border:1.5px solid rgba(0,229,184,0.3);margin-top:14px;position:relative;aspect-ratio:16/7;">
+      <div id="avsCarruselPasajeroPuntos" style="position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:3;"></div>
+      <div id="avsCarruselPasajeroEtiqueta" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(8,15,30,0.9));color:#fff;font-size:11px;padding:16px 10px 8px;font-weight:bold;font-family:var(--font-d);z-index:2;"></div>
+    </div>
   </div>
   <!-- COLUMNA INTERMEDIA DE SERVICIOS (solo PC) -->
   <div class="servcol">
@@ -1019,7 +1024,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <button class="share-btn" onclick="abrirCompartirViaje()" title="Compartir viaje con contactos">🟢</button>
   <button class="panic-btn" onclick="abrirEmergencia()" title="EMERGENCIA REAL">🆘</button>
   <div class="bnav">
-    <div class="nitem"><span class="nico on">🏠</span><span class="nlbl on">Inicio</span></div>
+    <div class="nitem" onclick="go('pasajero')"><span class="nico on">🏠</span><span class="nlbl on">Inicio</span></div>
     <div class="nitem" onclick="abrirHistorial('usuario')"><span class="nico">🗺️</span><span class="nlbl">Mis Viajes</span></div>
     <div class="nitem" onclick="abrirSaldoUsuario()"><span class="nico">💳</span><span class="nlbl">Saldo</span></div>
     <div class="nitem" onclick="go('perfil')"><span class="nico">👤</span><span class="nlbl">Perfil</span></div>
@@ -1165,6 +1170,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 </div>
 
 <div class="screen" id="perfil">
+  <div style="padding:16px 20px 0"><button onclick="volverInicio()" style="background:transparent;border:1px solid var(--bd2);border-radius:10px;color:var(--g);padding:6px 14px;font-size:13px;cursor:pointer">← Inicio</button></div>
   <div class="phdr"><div class="pavt" id="pinit">RA</div><div><div class="pname" id="pnom">Usuario</div><div class="prole" id="prol">Usuario · Atenas</div></div></div>
   <div class="psec"><div class="pstit">Mi cuenta</div>
     <div class="pitem" onclick="toast('Próximamente')"><div class="pil"><span>👤</span><span>Datos personales</span></div><span>›</span></div>
@@ -3734,6 +3740,7 @@ function go(id, _fromPop){
   document.getElementById(id).classList.add('active');
   setTimeout(()=>{if(id==='usuario'||id==='pasajero')aplicarLayoutPasajeroPC();},50);
   if(id==='registro')setTimeout(()=>{loadRegProgress();},100);
+  if(id==='pasajero')setTimeout(()=>{initCarruselGenerico('avsCarruselPasajero');},120);
   if(id==='admin')cargarAdmin();
   if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);
   if(id==='usuario'||id==='pasajero'){setTimeout(iniciarSeguimientoConductoresActivos,1500);}else{detenerSeguimientoConductoresActivos();}
@@ -4959,21 +4966,27 @@ function conductorFinalizar(){
   },1500);
 }
 // ===== CARRUSEL DE COMERCIOS ALIADOS (solo PC, pantalla de login) =====
-function initCarruselComercios(){
-  const cont = document.getElementById('avsCarrusel');
-  if(!cont) return;
-  const BASE = 'https://rigoalva-avs.github.io/avs-app/carrusel/';
-  // Orden de rotación: marca AVS primero, luego los comercios que pautan
-  const slides = [
+// Lista central de slides del carrusel (marca AVS primero, luego comercios que pautan)
+function _avsCarruselSlides(){
+  return [
     {img:'avs.jpg',    nombre:'Atenas Viaje Seguro'},
     {img:'optica.jpg', nombre:'Óptica Centro Visual'},
     {img:'coope.jpg',  nombre:'Súper Coopeatenas'},
     {img:'finca.jpg',  nombre:'La Finca Restaurante'},
     {img:'vital.jpg',  nombre:'Línea Vital'}
   ];
-  const puntos = document.getElementById('avsCarruselPuntos');
-  const etiqueta = document.getElementById('avsCarruselEtiqueta');
-  // Limpiar por si se reinicia
+}
+
+// Carrusel reutilizable. idBase = id del contenedor; debe tener dentro
+// un elemento con id (idBase+'Puntos') y otro (idBase+'Etiqueta').
+function initCarruselGenerico(idBase){
+  const cont = document.getElementById(idBase);
+  if(!cont) return;
+  const BASE = 'https://rigoalva-avs.github.io/avs-app/carrusel/';
+  const slides = _avsCarruselSlides();
+  const puntos = document.getElementById(idBase+'Puntos');
+  const etiqueta = document.getElementById(idBase+'Etiqueta');
+  if(!puntos || !etiqueta) return;
   cont.querySelectorAll('img.avs-car-img').forEach(el=>el.remove());
   puntos.innerHTML='';
   slides.forEach((s,i)=>{
@@ -4982,7 +4995,6 @@ function initCarruselComercios(){
     img.src = BASE + s.img;
     img.alt = s.nombre;
     img.style.cssText='width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:1;opacity:'+(i===0?'1':'0')+';transition:opacity 0.8s;';
-    // Insertar las imágenes al inicio pero EN ORDEN (antes de puntos/etiqueta que tienen z-index mayor)
     puntos.parentNode.insertBefore(img, puntos);
     const p = document.createElement('div');
     p.style.cssText='width:6px;height:6px;border-radius:50%;background:'+(i===0?'#00e5b8':'rgba(255,255,255,0.4)')+';';
@@ -4992,13 +5004,19 @@ function initCarruselComercios(){
   let idx=0;
   const imgs = cont.querySelectorAll('img.avs-car-img');
   const pts = puntos.children;
-  if(window._avsCarruselTimer) clearInterval(window._avsCarruselTimer);
-  window._avsCarruselTimer = setInterval(()=>{
+  if(cont._timer) clearInterval(cont._timer);
+  cont._timer = setInterval(()=>{
     imgs[idx].style.opacity='0'; pts[idx].style.background='rgba(255,255,255,0.4)';
     idx=(idx+1)%slides.length;
     imgs[idx].style.opacity='1'; pts[idx].style.background='#00e5b8';
     etiqueta.textContent = slides[idx].nombre;
   },3500);
+}
+
+function initCarruselComercios(){
+  // Carrusel del login (cuadrado) + carrusel del panel pasajero (banner)
+  initCarruselGenerico('avsCarrusel');
+  initCarruselGenerico('avsCarruselPasajero');
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
