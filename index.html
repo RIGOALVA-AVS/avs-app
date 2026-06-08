@@ -197,6 +197,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .btno:active{background:rgba(0,229,184,0.05);}
 .lsw{text-align:center;margin-top:5px;font-size:11px;color:var(--mt);}
 .lsw a{color:var(--g);cursor:pointer;font-weight:500;text-decoration:none;}
+.reg-card{display:flex;align-items:center;gap:12px;background:rgba(0,229,184,0.05);border:1.5px solid rgba(0,229,184,0.22);border-radius:14px;padding:14px;cursor:pointer;transition:all 0.18s;text-align:left;}
+.reg-card:hover{border-color:var(--g);background:rgba(0,229,184,0.10);transform:translateY(-1px);}
+.reg-card:active{transform:scale(0.99);}
+.reg-card.reg-card-sel{border-color:var(--g);background:rgba(0,229,184,0.16);}
+.reg-card-ico{font-size:26px;flex-shrink:0;}
+.reg-card-tit{font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--tx);}
+.reg-card-desc{font-size:11px;color:var(--mt);line-height:1.4;margin-top:2px;}
 
 /* RESTO DE PANTALLAS */
 #pasajero{background:var(--bg);}
@@ -860,17 +867,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div id="avsCarruselEtiqueta" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(8,15,30,0.9));color:#fff;font-size:11px;padding:16px 10px 8px;font-weight:bold;font-family:var(--font-d);z-index:2;"></div>
     </div>
     <div class="ltit">Bienvenido 👋</div>
-    <div class="ldesc">Ingresá tus datos para continuar</div>
-    <div class="ilabel">Teléfono</div>
-    <input class="ifield" type="tel" placeholder="8888-8888" id="lphone" enterkeyhint="next" onkeydown="if(event.key==='Enter'){document.getElementById('lname').focus();}">
-    <div class="ilabel" style="margin-top:4px">Nombre</div>
-    <input class="ifield" type="text" placeholder="Tu nombre completo" id="lname" enterkeyhint="done" onkeydown="if(event.key==='Enter'){this.blur();}">
-    <button class="btnp" onclick="doLogin('usuario')" style="margin-top:6px">🚗 Entrar como Usuario</button>
-    <button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button>
-    <button class="btno" onclick="doLoginNegocio()" style="margin-top:6px">🏪 Acceso negocio</button>
+    <div class="ldesc">Tu puente seguro de movilidad y comercio en Atenas</div>
+    <button class="btnp" onclick="abrirRegistro()" style="margin-top:10px">📝 Regístrese Aquí</button>
+    <button class="btno" onclick="abrirIngreso()" style="margin-top:8px">🔑 Ya tengo cuenta / Ingresar</button>
     <button class="btno login-pc-only" onclick="abrirPortalMunicipal()" style="margin-top:6px;border-color:rgba(96,165,250,0.4);color:#60a5fa">🏛️ Municipalidad</button>
-    <div class="lsw">¿Conductor nuevo? <a onclick="go('registro'); setTimeout(loadRegProgress,100)">Registrate aquí</a></div>
-    <div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>
+    <div class="lsw" style="margin-top:10px">¿Admin AVS? <a onclick="abrirIngreso('admin')">Acceso admin</a></div>
     <div class="lsw login-pc-only" style="margin-top:3px">¿Funcionario municipal? <a onclick="doLoginFuncionario()" style="color:#60a5fa">Ingresar</a></div>
   </div>
 
@@ -1217,7 +1218,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 <div class="screen" id="registro-negocio">
   <div style="background:var(--bg);height:100%;overflow-y:auto;padding:48px 24px 40px">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-      <button onclick="go('servicios')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
+      <button onclick="go('login')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
       <div style="font-family:var(--font-d);font-size:20px;font-weight:700">Registrá tu negocio</div>
     </div>
     <div style="font-size:11px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Datos del negocio</div>
@@ -4427,7 +4428,73 @@ function mostrarRegistroRequerido(servicio) {
     </div>`;
 }
 
-function resetLoginSheet(){document.querySelector('#login .lsheet').innerHTML=`<div class="ltit">Bienvenido 👋</div><div class="ldesc">Ingresá con tu número de teléfono</div><div class="ilabel">Teléfono</div><input class="ifield" type="tel" placeholder="8888-8888" id="lphone" enterkeyhint="next" onkeydown="if(event.key==='Enter'){document.getElementById('lname').focus();}"><div class="ilabel" style="margin-top:4px">Nombre</div><input class="ifield" type="text" placeholder="Tu nombre completo" id="lname" enterkeyhint="done" onkeydown="if(event.key==='Enter'){this.blur();}"><button class="btnp" onclick="doLogin('usuario')" style="margin-top:6px">🚗 Entrar como Usuario</button><button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button><div class="lsw">¿Conductor nuevo? <a onclick="go('registro');setTimeout(loadRegProgress,100)">Registrate aquí</a></div><div class="lsw" style="margin-top:3px">¿Admin AVS? <a onclick="doLogin('admin')">Acceso admin</a></div>`;}
+function resetLoginSheet(){document.querySelector('#login .lsheet').innerHTML=`<div class="ltit">Bienvenido 👋</div><div class="ldesc">Tu puente seguro de movilidad y comercio en Atenas</div><button class="btnp" onclick="abrirRegistro()" style="margin-top:10px">📝 Regístrese Aquí</button><button class="btno" onclick="abrirIngreso()" style="margin-top:8px">🔑 Ya tengo cuenta / Ingresar</button><button class="btno login-pc-only" onclick="abrirPortalMunicipal()" style="margin-top:6px;border-color:rgba(96,165,250,0.4);color:#60a5fa">🏛️ Municipalidad</button><div class="lsw" style="margin-top:10px">¿Admin AVS? <a onclick="abrirIngreso('admin')">Acceso admin</a></div><div class="lsw login-pc-only" style="margin-top:3px">¿Funcionario municipal? <a onclick="doLoginFuncionario()" style="color:#60a5fa">Ingresar</a></div>`;}
+
+// === PANTALLA DE SELECCIÓN DE REGISTRO (Fase 1) ===
+// Despliega las 3 tarjetas: Usuario / Conductor / Comercio.
+function abrirRegistro(){
+  const sheet = document.querySelector('#login .lsheet');
+  sheet.innerHTML = `
+    <div class="ltit">Crear cuenta 📝</div>
+    <div class="ldesc">¿Cómo querés registrarte? Elegí una opción.</div>
+    <div id="reg-cards" style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
+      <div class="reg-card" onclick="elegirRegistro('usuario')">
+        <span class="reg-card-ico">🚗</span>
+        <div><div class="reg-card-tit">Usuario</div><div class="reg-card-desc">Pedí viajes y comprá en comercios locales</div></div>
+      </div>
+      <div class="reg-card" onclick="elegirRegistro('conductor')">
+        <span class="reg-card-ico">🧑‍✈️</span>
+        <div><div class="reg-card-tit">Conductor</div><div class="reg-card-desc">Ofrecé viajes y entregas (requiere documentos)</div></div>
+      </div>
+      <div class="reg-card" onclick="elegirRegistro('comercio')">
+        <span class="reg-card-ico">🏪</span>
+        <div><div class="reg-card-tit">Comercio</div><div class="reg-card-desc">Sumá tu negocio al marketplace de Atenas</div></div>
+      </div>
+    </div>
+    <button class="btno" onclick="resetLoginSheet()" style="margin-top:14px">← Volver</button>`;
+}
+
+// Al elegir una tarjeta, las otras desaparecen y arranca el flujo correspondiente.
+function elegirRegistro(tipo){
+  const cards = document.getElementById('reg-cards');
+  if(cards){
+    // ocultar las demás tarjetas con una transición simple
+    cards.querySelectorAll('.reg-card').forEach(c=>{
+      if(!c.getAttribute('onclick').includes("'"+tipo+"'")) c.style.display='none';
+      else { c.classList.add('reg-card-sel'); }
+    });
+  }
+  // Pequeña pausa para que se vea la selección, luego ir al flujo que YA existe
+  setTimeout(()=>{
+    if(tipo==='usuario'){
+      abrirIngreso('usuario');  // usuario nuevo entra con tel+nombre y sigue a registro-cédula+fecha nac.
+    } else if(tipo==='conductor'){
+      go('registro'); setTimeout(loadRegProgress,100);
+    } else if(tipo==='comercio'){
+      go('registro-negocio');
+    }
+  }, 220);
+}
+
+// === INGRESO (login con teléfono) — para quien YA tiene cuenta ===
+// role opcional: 'admin' abre directo el acceso admin.
+function abrirIngreso(role){
+  const sheet = document.querySelector('#login .lsheet');
+  const esAdmin = (role==='admin');
+  sheet.innerHTML = `
+    <div class="ltit">${esAdmin?'Acceso Admin 🛡️':'Ingresar 🔑'}</div>
+    <div class="ldesc">${esAdmin?'Ingresá el teléfono autorizado.':'Ingresá con tu número de teléfono.'}</div>
+    <div class="ilabel">Teléfono</div>
+    <input class="ifield" type="tel" placeholder="8888-8888" id="lphone" enterkeyhint="next" onkeydown="if(event.key==='Enter'){document.getElementById('lname').focus();}">
+    <div class="ilabel" style="margin-top:4px">Nombre</div>
+    <input class="ifield" type="text" placeholder="Tu nombre completo" id="lname" enterkeyhint="done" onkeydown="if(event.key==='Enter'){this.blur();}">
+    ${esAdmin
+      ? `<button class="btnp" onclick="doLogin('admin')" style="margin-top:6px">🛡️ Acceso admin</button>`
+      : `<button class="btnp" onclick="doLogin('usuario')" style="margin-top:6px">🚗 Entrar como Usuario</button>
+         <button class="btno" onclick="doLogin('conductor')">🧑‍✈️ Entrar como Conductor</button>
+         <button class="btno" onclick="doLoginNegocio()" style="margin-top:6px">🏪 Acceso negocio</button>`}
+    <button class="btno" onclick="resetLoginSheet()" style="margin-top:10px">← Volver</button>`;
+}
 function applyUser(){
   const ini=user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'U';
   ['uinit','pinit','cinit'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ini;});
