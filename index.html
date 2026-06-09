@@ -758,7 +758,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
       <!-- Fecha de nacimiento -->
       <div style="font-size:11px;color:#888;letter-spacing:1.5px;margin-top:18px;margin-bottom:6px">FECHA DE NACIMIENTO</div>
-      <input type="date" id="reg-fecha-nac" style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(0,212,170,0.3);border-radius:14px;padding:14px;color:#fff;font-size:16px;font-weight:600;outline:none" autocomplete="off">
+      <div id="reg-fecha-nac-cont"></div>
       <div style="font-size:11px;color:#888;margin-top:6px">Debés ser mayor de edad (18 años) para usar AVS.</div>
 
       <!-- Info de privacidad -->
@@ -787,7 +787,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <input class="ifield" type="email" placeholder="Correo electrónico" id="rcorreo" oninput="saveRegProgress()" style="margin-top:10px">
     <input class="ifield" type="text" placeholder="Número de cédula" id="rcedula" oninput="saveRegProgress()" style="margin-top:10px">
     <div style="font-size:11px;color:var(--mt);margin:8px 2px 2px">Fecha de nacimiento (debés ser mayor de edad)</div>
-    <input class="ifield" type="date" id="rfechanac" oninput="saveRegProgress()">
+    <div id="rfechanac-cont"></div>
   </div>
   <input type="file" id="docFileInput" accept="image/*" capture="environment" style="display:none">
   <div class="rsec"><div class="rstit">Tipo de vehículo</div>
@@ -3161,6 +3161,39 @@ async function _onDocFileSelected(ev){
     if(st)st.textContent='Toca para subir foto';
   }
 }
+// === SELECTOR DE FECHA DE NACIMIENTO CON 3 DESPLEGABLES (Día/Mes/Año) ===
+// Mucho más cómodo que el calendario para fechas lejanas.
+const AVS_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+// Genera el HTML de los 3 desplegables. 'pref' es un prefijo único para los IDs.
+function fechaNacHTML(pref){
+  const anioActual = new Date().getFullYear();
+  let optDias = '<option value="">Día</option>';
+  for(let d=1; d<=31; d++) optDias += `<option value="${d}">${d}</option>`;
+  let optMeses = '<option value="">Mes</option>';
+  AVS_MESES.forEach((m,i)=>{ optMeses += `<option value="${i+1}">${m}</option>`; });
+  let optAnios = '<option value="">Año</option>';
+  // Desde 18 años atrás (ya mayores de edad) hasta 100 años atrás
+  for(let a=anioActual-18; a>=anioActual-100; a--) optAnios += `<option value="${a}">${a}</option>`;
+  return `<div style="display:flex;gap:8px">
+    <select id="${pref}-dia" class="ifield" style="flex:1;padding:12px" onchange="${pref==='r-fn'?'saveRegProgress()':''}">${optDias}</select>
+    <select id="${pref}-mes" class="ifield" style="flex:1.4;padding:12px" onchange="${pref==='r-fn'?'saveRegProgress()':''}">${optMeses}</select>
+    <select id="${pref}-anio" class="ifield" style="flex:1;padding:12px" onchange="${pref==='r-fn'?'saveRegProgress()':''}">${optAnios}</select>
+  </div>`;
+}
+// Lee los 3 desplegables y devuelve la fecha en formato YYYY-MM-DD (o '' si falta algo)
+function leerFechaNac(pref){
+  const d=document.getElementById(pref+'-dia'), m=document.getElementById(pref+'-mes'), a=document.getElementById(pref+'-anio');
+  if(!d||!m||!a||!d.value||!m.value||!a.value) return '';
+  const dd=String(d.value).padStart(2,'0'), mm=String(m.value).padStart(2,'0');
+  return `${a.value}-${mm}-${dd}`;
+}
+// Carga una fecha YYYY-MM-DD en los 3 desplegables
+function ponerFechaNac(pref, fecha){
+  if(!fecha) return;
+  const partes = fecha.split('-'); if(partes.length<3) return;
+  const a=document.getElementById(pref+'-anio'), m=document.getElementById(pref+'-mes'), d=document.getElementById(pref+'-dia');
+  if(a)a.value=parseInt(partes[0]); if(m)m.value=parseInt(partes[1]); if(d)d.value=parseInt(partes[2]);
+}
 // === MARCAS Y MODELOS COMUNES EN COSTA RICA ===
 const AVS_MARCAS_MODELOS = {
   'Toyota': ['Yaris','Corolla','Hilux','RAV4','Rush','Fortuner','Land Cruiser','Prado','Hiace','Avanza','Raize','Corolla Cross','Tacoma','4Runner'],
@@ -3221,9 +3254,9 @@ function validarAnioVehiculo(){
   if(antiguedad > 15){ msg.textContent='❌ El vehículo no puede tener más de 15 años (máximo permitido en AVS).'; msg.style.color='#ff6b6b'; return false; }
   msg.textContent='✅ Vehículo dentro del límite de antigüedad'; msg.style.color='#00e5b8'; return true;
 }
-function saveRegProgress(){const p={nombre:document.getElementById('rnombre')?.value||'',telefono:document.getElementById('rtelefono')?.value||'',correo:document.getElementById('rcorreo')?.value||'',cedula:document.getElementById('rcedula')?.value||'',fechanac:document.getElementById('rfechanac')?.value||'',placa:document.getElementById('rplaca')?.value||'',marca:document.getElementById('rmarca')?.value||'',modelo:document.getElementById('rmodelo')?.value||'',anio:document.getElementById('ranio')?.value||'',capacidad:document.getElementById('rcapacidad')?.value||'',vehiculo:regVehiculo,features:regFeatures,docs:regDocs};localStorage.setItem('avs_reg',JSON.stringify(p));}
-function loadRegProgress(){try{const p=localStorage.getItem('avs_reg');if(!p)return;const prog=JSON.parse(p);['rnombre','rtelefono','rcorreo','rcedula','rplaca','rmodelo','rcapacidad'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=prog[id.replace('r','')]||'';});const fnel=document.getElementById('rfechanac');if(fnel)fnel.value=prog.fechanac||'';const mkel=document.getElementById('rmarca');if(mkel&&prog.marca){mkel.value=prog.marca;onMarcaChange();}const anel=document.getElementById('ranio');if(anel){anel.value=prog.anio||'';if(prog.anio)validarAnioVehiculo();}regVehiculo=prog.vehiculo||'sedan';regFeatures=prog.features||{ac:false,pet:false,carga:false};regDocs=prog.docs||{};document.querySelectorAll('#vtype-chips .vchip').forEach(c=>{c.classList.remove('sel');if(c.getAttribute('onclick')?.includes("'"+regVehiculo+"'"))c.classList.add('sel');});['ac','pet','carga'].forEach(f=>{const t=document.getElementById('tog-'+f);if(t&&regFeatures[f])t.classList.add('on');});Object.keys(regDocs).forEach(tipo=>{const el=document.getElementById('doc-'+tipo),st=document.getElementById('dst-'+tipo);if(el)el.classList.add('ok');if(st){st.textContent='✅ Documento cargado';st.classList.add('ok');}});}catch(e){}}
-async function enviarRegistro(){const nombre=document.getElementById('rnombre').value.trim(),telefono=document.getElementById('rtelefono').value.trim(),correo=document.getElementById('rcorreo').value.trim(),cedula=document.getElementById('rcedula').value.trim(),fechanac=document.getElementById('rfechanac')?document.getElementById('rfechanac').value:'',placa=document.getElementById('rplaca').value.trim(),marca=document.getElementById('rmarca')?document.getElementById('rmarca').value.trim():'',modeloRaw=document.getElementById('rmodelo').value.trim(),anio=document.getElementById('ranio')?document.getElementById('ranio').value.trim():'',cap=document.getElementById('rcapacidad').value.trim();const modelo=[marca,modeloRaw,anio].filter(Boolean).join(' ');if(!nombre||!telefono||!placa||!marca||!modeloRaw||!cedula){toast('Completá todos los campos obligatorios (incluí marca y modelo)');return;}if(!anio){toast('Ingresá el año del vehículo');return;}const _anioN=parseInt(anio),_actual=new Date().getFullYear();if(isNaN(_anioN)||_anioN<1990||_anioN>_actual+1){toast('Revisá el año del vehículo');return;}if(_actual-_anioN>15){toast('El vehículo no puede tener más de 15 años');return;}if(!fechanac){toast('Ingresá tu fecha de nacimiento');return;}var hoy=new Date(),fn=new Date(fechanac),edad=hoy.getFullYear()-fn.getFullYear(),mm=hoy.getMonth()-fn.getMonth();if(mm<0||(mm===0&&hoy.getDate()<fn.getDate()))edad--;if(isNaN(edad)||edad<18){toast('Debés ser mayor de edad (18+) para registrarte');return;}const docsReq=['cedula','licencia','circulacion','seguro','revision','foto-ext','foto-int'];const faltantes=docsReq.filter(d=>!regDocs[d]);if(faltantes.length>0){toast('Falta subir '+faltantes.length+' documento(s)');return;}if(!consentimientoOK('conductor'))return;if(db){try{const{data:coincide}=await db.rpc('avs_verificar_cedula',{p_cedula:cedula,p_nombre:nombre});if(coincide===false){const seguir=confirm('La cédula y el nombre no coinciden con el registro nacional. ¿Enviar la solicitud igual para revisión manual?');if(!seguir)return;}}catch(e){}const{data:existe}=await db.from('usuarios').select('telefono').eq('telefono',telefono).single();if(existe){toast('Ya existe un registro con ese teléfono');return;}const{error}=await db.from('usuarios').insert({telefono,nombre,tipo:'conductor',placa,modelo_vehiculo:modelo,tipo_vehiculo:regVehiculo,capacidad:parseInt(cap)||4,tiene_ac:regFeatures.ac,pet_friendly:regFeatures.pet,acepta_carga:regFeatures.carga,cedula_identidad:cedula,fecha_nacimiento:fechanac,correo,estado_verificacion:'pendiente',documentos_url:regDocs,consent_version:AVS_CONSENT_VERSION,consent_fecha:new Date().toISOString()});if(error){console.error(error);toast('Error al enviar. Intentá de nuevo.');return;}try{const filas=docsReq.filter(d=>typeof regDocs[d]==='string'&&regDocs[d].indexOf('/')>=0).map(d=>({cedula:cedula.replace(/[^0-9a-zA-Z]/g,''),tipo_doc:d,ruta_archivo:regDocs[d],estado:'pendiente'}));if(filas.length>0)await db.from('documentos_conductor').insert(filas);}catch(e){console.error('docs:',e);}}localStorage.removeItem('avs_reg');document.getElementById('registro').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;gap:16px"><div style="font-size:64px">⏳</div><div style="font-family:var(--font-d);font-size:22px;font-weight:700">Solicitud enviada</div><div style="font-size:14px;color:var(--mt);line-height:1.6">Tu solicitud fue recibida. El equipo AVS revisará tu documentación y te contactará al <strong style="color:var(--tx)">${telefono}</strong> en un plazo de 24-48 horas.</div><button class="btnp" onclick="go('login')" style="margin-top:20px;max-width:300px">Volver al inicio</button></div>`;}
+function saveRegProgress(){const p={nombre:document.getElementById('rnombre')?.value||'',telefono:document.getElementById('rtelefono')?.value||'',correo:document.getElementById('rcorreo')?.value||'',cedula:document.getElementById('rcedula')?.value||'',fechanac:leerFechaNac('r-fn'),placa:document.getElementById('rplaca')?.value||'',marca:document.getElementById('rmarca')?.value||'',modelo:document.getElementById('rmodelo')?.value||'',anio:document.getElementById('ranio')?.value||'',capacidad:document.getElementById('rcapacidad')?.value||'',vehiculo:regVehiculo,features:regFeatures,docs:regDocs};localStorage.setItem('avs_reg',JSON.stringify(p));}
+function loadRegProgress(){try{const p=localStorage.getItem('avs_reg');if(!p)return;const prog=JSON.parse(p);['rnombre','rtelefono','rcorreo','rcedula','rplaca','rmodelo','rcapacidad'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=prog[id.replace('r','')]||'';});if(prog.fechanac)ponerFechaNac('r-fn',prog.fechanac);const mkel=document.getElementById('rmarca');if(mkel&&prog.marca){mkel.value=prog.marca;onMarcaChange();}const anel=document.getElementById('ranio');if(anel){anel.value=prog.anio||'';if(prog.anio)validarAnioVehiculo();}regVehiculo=prog.vehiculo||'sedan';regFeatures=prog.features||{ac:false,pet:false,carga:false};regDocs=prog.docs||{};document.querySelectorAll('#vtype-chips .vchip').forEach(c=>{c.classList.remove('sel');if(c.getAttribute('onclick')?.includes("'"+regVehiculo+"'"))c.classList.add('sel');});['ac','pet','carga'].forEach(f=>{const t=document.getElementById('tog-'+f);if(t&&regFeatures[f])t.classList.add('on');});Object.keys(regDocs).forEach(tipo=>{const el=document.getElementById('doc-'+tipo),st=document.getElementById('dst-'+tipo);if(el)el.classList.add('ok');if(st){st.textContent='✅ Documento cargado';st.classList.add('ok');}});}catch(e){}}
+async function enviarRegistro(){const nombre=document.getElementById('rnombre').value.trim(),telefono=document.getElementById('rtelefono').value.trim(),correo=document.getElementById('rcorreo').value.trim(),cedula=document.getElementById('rcedula').value.trim(),fechanac=leerFechaNac('r-fn'),placa=document.getElementById('rplaca').value.trim(),marca=document.getElementById('rmarca')?document.getElementById('rmarca').value.trim():'',modeloRaw=document.getElementById('rmodelo').value.trim(),anio=document.getElementById('ranio')?document.getElementById('ranio').value.trim():'',cap=document.getElementById('rcapacidad').value.trim();const modelo=[marca,modeloRaw,anio].filter(Boolean).join(' ');if(!nombre||!telefono||!placa||!marca||!modeloRaw||!cedula){toast('Completá todos los campos obligatorios (incluí marca y modelo)');return;}if(!anio){toast('Ingresá el año del vehículo');return;}const _anioN=parseInt(anio),_actual=new Date().getFullYear();if(isNaN(_anioN)||_anioN<1990||_anioN>_actual+1){toast('Revisá el año del vehículo');return;}if(_actual-_anioN>15){toast('El vehículo no puede tener más de 15 años');return;}if(!fechanac){toast('Ingresá tu fecha de nacimiento');return;}var hoy=new Date(),fn=new Date(fechanac),edad=hoy.getFullYear()-fn.getFullYear(),mm=hoy.getMonth()-fn.getMonth();if(mm<0||(mm===0&&hoy.getDate()<fn.getDate()))edad--;if(isNaN(edad)||edad<18){toast('Debés ser mayor de edad (18+) para registrarte');return;}const docsReq=['cedula','licencia','circulacion','seguro','revision','foto-ext','foto-int'];const faltantes=docsReq.filter(d=>!regDocs[d]);if(faltantes.length>0){toast('Falta subir '+faltantes.length+' documento(s)');return;}if(!consentimientoOK('conductor'))return;if(db){try{const{data:coincide}=await db.rpc('avs_verificar_cedula',{p_cedula:cedula,p_nombre:nombre});if(coincide===false){const seguir=confirm('La cédula y el nombre no coinciden con el registro nacional. ¿Enviar la solicitud igual para revisión manual?');if(!seguir)return;}}catch(e){}const{data:existe}=await db.from('usuarios').select('telefono').eq('telefono',telefono).single();if(existe){toast('Ya existe un registro con ese teléfono');return;}const{error}=await db.from('usuarios').insert({telefono,nombre,tipo:'conductor',placa,modelo_vehiculo:modelo,tipo_vehiculo:regVehiculo,capacidad:parseInt(cap)||4,tiene_ac:regFeatures.ac,pet_friendly:regFeatures.pet,acepta_carga:regFeatures.carga,cedula_identidad:cedula,fecha_nacimiento:fechanac,correo,estado_verificacion:'pendiente',documentos_url:regDocs,consent_version:AVS_CONSENT_VERSION,consent_fecha:new Date().toISOString()});if(error){console.error(error);toast('Error al enviar. Intentá de nuevo.');return;}try{const filas=docsReq.filter(d=>typeof regDocs[d]==='string'&&regDocs[d].indexOf('/')>=0).map(d=>({cedula:cedula.replace(/[^0-9a-zA-Z]/g,''),tipo_doc:d,ruta_archivo:regDocs[d],estado:'pendiente'}));if(filas.length>0)await db.from('documentos_conductor').insert(filas);}catch(e){console.error('docs:',e);}}localStorage.removeItem('avs_reg');document.getElementById('registro').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;gap:16px"><div style="font-size:64px">⏳</div><div style="font-family:var(--font-d);font-size:22px;font-weight:700">Solicitud enviada</div><div style="font-size:14px;color:var(--mt);line-height:1.6">Tu solicitud fue recibida. El equipo AVS revisará tu documentación y te contactará al <strong style="color:var(--tx)">${telefono}</strong> en un plazo de 24-48 horas.</div><button class="btnp" onclick="go('login')" style="margin-top:20px;max-width:300px">Volver al inicio</button></div>`;}
 function switchAdminTab(tab){
   document.querySelectorAll('[id^="admtab-"]').forEach(el=>el.classList.remove('on'));
   document.getElementById('admtab-'+tab).classList.add('on');
@@ -3895,7 +3928,7 @@ function go(id, _fromPop){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   setTimeout(()=>{if(id==='usuario'||id==='pasajero')aplicarLayoutPasajeroPC();},50);
-  if(id==='registro')setTimeout(()=>{llenarMarcas();loadRegProgress();},100);
+  if(id==='registro')setTimeout(()=>{const cont=document.getElementById('rfechanac-cont');if(cont&&!cont.innerHTML.trim())cont.innerHTML=fechaNacHTML('r-fn');llenarMarcas();loadRegProgress();},100);
   // Insertar el bloque de consentimiento en cada registro (si el slot existe y está vacío)
   setTimeout(()=>{
     [['registro','conductor'],['registro-negocio','comercio'],['registro-cedula','usuario']].forEach(([pant,cid])=>{
@@ -3905,7 +3938,7 @@ function go(id, _fromPop){
   },60);
   if(id==='pasajero')setTimeout(()=>{initCarruselGenerico('avsCarruselPasajero');},120);
   // Rehabilitar el botón de verificar cédula al entrar (evita que quede "pegado" en Verificando...)
-  if(id==='registro-cedula'){setTimeout(()=>{const b=document.getElementById('reg-ced-submit');if(b){b.disabled=false;b.textContent='✓ Continuar';}const e=document.getElementById('reg-ced-error');if(e)e.textContent='';},40);}
+  if(id==='registro-cedula'){setTimeout(()=>{const b=document.getElementById('reg-ced-submit');if(b){b.disabled=false;b.textContent='✓ Continuar';}const e=document.getElementById('reg-ced-error');if(e)e.textContent='';const fc=document.getElementById('reg-fecha-nac-cont');if(fc&&!fc.innerHTML.trim())fc.innerHTML=fechaNacHTML('u-fn');},40);}
   if(id==='admin')cargarAdmin();
   if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);
   if(id==='usuario'||id==='pasajero'){setTimeout(iniciarSeguimientoConductoresActivos,1500);}else{detenerSeguimientoConductoresActivos();}
@@ -4512,7 +4545,7 @@ async function regEnviarCedula(){
   if(!val.ok){ errEl.textContent = '❌ ' + val.msg; return; }
 
   // Validar fecha de nacimiento y mayoría de edad
-  const fechaNac = document.getElementById('reg-fecha-nac').value;
+  const fechaNac = leerFechaNac('u-fn');
   if(!fechaNac){ errEl.textContent = '❌ Ingresá tu fecha de nacimiento.'; return; }
   const edad = calcularEdad(fechaNac);
   if(edad === null){ errEl.textContent = '❌ Fecha de nacimiento inválida.'; return; }
