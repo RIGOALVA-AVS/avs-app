@@ -3891,7 +3891,53 @@ function evidenciaConsentimiento(){
   return { consent_version: AVS_CONSENT_VERSION, consent_fecha: new Date().toISOString() };
 }
 
-// Verifica si el usuario (por teléfono) ya aceptó el consentimiento.
+// Verifica si al usuario le faltan datos básicos (cédula o fecha de nacimiento).
+// Si faltan, muestra un modal obligatorio. Devuelve promesa true/false.
+async function asegurarDatosBasicos(phone){
+  if(!db) return true;
+  let actual = null;
+  try{
+    const { data } = await db.from('usuarios').select('numero_identificacion,fecha_nacimiento').eq('telefono',phone).maybeSingle();
+    actual = data;
+    // Si ya tiene ambos, puede continuar
+    if(data && data.numero_identificacion && data.fecha_nacimiento) return true;
+  }catch(e){ return true; }
+
+  return new Promise((resolve)=>{
+    const faltaCedula = !actual || !actual.numero_identificacion;
+    const faltaFecha = !actual || !actual.fecha_nacimiento;
+    const ov = document.createElement('div');
+    ov.id = 'datos-modal-ov';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    ov.innerHTML = `<div style="background:var(--sf,#0f1c2e);border:1px solid var(--bd2,#1e3a52);border-radius:18px;max-width:420px;width:100%;padding:22px;">
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--tx,#fff);margin-bottom:6px">Completá tus datos</div>
+      <div style="font-size:13px;color:var(--mt,#9fb3c8);margin-bottom:16px">Para tu seguridad y la de la comunidad AVS, necesitamos completar tu información. Solo te lo pedimos una vez.</div>
+      ${faltaCedula?`<div style="font-size:11px;color:var(--mt,#9fb3c8);margin:0 2px 4px">Número de cédula</div><input id="datos-cedula" type="text" placeholder="Cédula (9 dígitos)" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid var(--bd2,#1e3a52);border-radius:12px;padding:12px;color:var(--tx,#fff);font-size:14px;margin-bottom:12px">`:''}
+      ${faltaFecha?`<div style="font-size:11px;color:var(--mt,#9fb3c8);margin:0 2px 4px">Fecha de nacimiento (debés ser mayor de edad)</div><input id="datos-fecha" type="date" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid var(--bd2,#1e3a52);border-radius:12px;padding:12px;color:var(--tx,#fff);font-size:14px;margin-bottom:16px">`:''}
+      <button id="datos-modal-ok" style="width:100%;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:12px;padding:13px;font-size:14px;cursor:pointer">Guardar y continuar</button>
+    </div>`;
+    document.body.appendChild(ov);
+    document.getElementById('datos-modal-ok').onclick = async ()=>{
+      const upd = {};
+      if(faltaCedula){
+        const ced = (document.getElementById('datos-cedula').value||'').trim();
+        if(!ced){ toast('Ingresá tu número de cédula'); return; }
+        upd.numero_identificacion = ced;
+      }
+      if(faltaFecha){
+        const fch = (document.getElementById('datos-fecha').value||'');
+        if(!fch){ toast('Ingresá tu fecha de nacimiento'); return; }
+        // Validar mayoría de edad
+        const hoy=new Date(),fn=new Date(fch);let edad=hoy.getFullYear()-fn.getFullYear();const m=hoy.getMonth()-fn.getMonth();if(m<0||(m===0&&hoy.getDate()<fn.getDate()))edad--;
+        if(isNaN(edad)||edad<18){ toast('Debés ser mayor de edad (18+) para usar AVS'); return; }
+        upd.fecha_nacimiento = fch;
+      }
+      try{ await db.from('usuarios').update(upd).eq('telefono',phone); }catch(e){ toast('Error al guardar. Reintentá.'); return; }
+      ov.remove();
+      resolve(true);
+    };
+  });
+}
 // Si NO lo aceptó, muestra un modal obligatorio. Devuelve una promesa que
 // se resuelve en true (puede continuar) o false (canceló).
 async function asegurarConsentimiento(phone){
@@ -4590,6 +4636,9 @@ async function completarLogin(role, phone, nombre){
     saveSession(); applyUser(); go('conductor');
     return;
   }
+  // Usuario: si le faltan datos básicos (cédula/fecha nac.), pedirlos (una vez, obligatorio)
+  const datosOK = await asegurarDatosBasicos(phone);
+  if(!datosOK){ toast('Necesitás completar tus datos para usar AVS'); resetLoginSheet(); go('login'); return; }
   // Usuario — ya está creado en Supabase con cédula (si pasó por registro)
   user = {name:nombre, role:'usuario', phone};
   saveSession(); applyUser();
