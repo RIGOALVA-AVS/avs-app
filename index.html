@@ -198,6 +198,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .lsw{text-align:center;margin-top:5px;font-size:11px;color:var(--mt);}
 .lsw a{color:var(--g);cursor:pointer;font-weight:500;text-decoration:none;}
 .reg-card{display:flex;align-items:center;gap:12px;background:rgba(0,229,184,0.05);border:1.5px solid rgba(0,229,184,0.22);border-radius:14px;padding:14px;cursor:pointer;transition:all 0.18s;text-align:left;}
+.consent-box{background:rgba(255,255,255,0.03);border:1px solid var(--bd2);border-radius:12px;padding:12px 14px;margin:14px 0;}
+.consent-toggle{font-size:13px;color:var(--g);cursor:pointer;font-weight:600;user-select:none;}
+.consent-text{font-size:12px;color:var(--mt);line-height:1.55;margin-top:10px;max-height:180px;overflow-y:auto;padding:8px;background:rgba(0,0,0,0.15);border-radius:8px;}
+.consent-check{display:flex;align-items:flex-start;gap:10px;margin-top:12px;cursor:pointer;font-size:12px;color:var(--tx);line-height:1.45;}
+.consent-check input{margin-top:2px;width:18px;height:18px;flex-shrink:0;accent-color:var(--g);cursor:pointer;}
 .reg-card:hover{border-color:var(--g);background:rgba(0,229,184,0.10);transform:translateY(-1px);}
 .reg-card:active{transform:scale(0.99);}
 .reg-card.reg-card-sel{border-color:var(--g);background:rgba(0,229,184,0.16);}
@@ -760,6 +765,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
         Tu identificación es confidencial y se usa únicamente para verificar tu identidad. Nunca la compartimos con conductores ni terceros.
       </div>
 
+      <div id="consent-slot-usuario"></div>
       <button id="reg-ced-submit" onclick="regEnviarCedula()" style="width:100%;margin-top:18px;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:14px;padding:14px;font-size:15px;cursor:pointer">✓ Continuar</button>
     </div>
   </div>
@@ -809,6 +815,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="docitem" id="doc-foto-ext" onclick="simDoc('foto-ext')"><div style="display:flex;align-items:center;gap:12px"><span class="docico">📸</span><div><div class="docnm">Foto exterior del vehículo</div><div class="docst" id="dst-foto-ext">Toca para subir foto</div></div></div><span>›</span></div>
     <div class="docitem" id="doc-foto-int" onclick="simDoc('foto-int')"><div style="display:flex;align-items:center;gap:12px"><span class="docico">🛻</span><div><div class="docnm">Foto interior del vehículo</div><div class="docst" id="dst-foto-int">Toca para subir foto</div></div></div><span>›</span></div>
   </div>
+  <div id="consent-slot-conductor"></div>
   <button class="btnp" onclick="enviarRegistro()" style="margin-bottom:40px">Enviar solicitud de registro</button>
 </div>
 
@@ -1311,6 +1318,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div style="background:rgba(0,229,184,0.07);border:1px solid var(--bd2);border-radius:12px;padding:12px;font-size:12px;color:var(--mt);margin-bottom:16px;line-height:1.6">
       💡 AVS descuenta una <strong style="color:var(--g)">comisión por transacción</strong> según lo acordado con tu negocio. El saldo se recarga vía SINPE igual que los conductores.
     </div>
+    <div id="consent-slot-comercio"></div>
     <button class="btnp" onclick="enviarRegistroNegocio()">Enviar solicitud</button>
   </div>
 </div>
@@ -3147,7 +3155,7 @@ async function _onDocFileSelected(ev){
 }
 function saveRegProgress(){const p={nombre:document.getElementById('rnombre')?.value||'',telefono:document.getElementById('rtelefono')?.value||'',correo:document.getElementById('rcorreo')?.value||'',cedula:document.getElementById('rcedula')?.value||'',fechanac:document.getElementById('rfechanac')?.value||'',placa:document.getElementById('rplaca')?.value||'',modelo:document.getElementById('rmodelo')?.value||'',capacidad:document.getElementById('rcapacidad')?.value||'',vehiculo:regVehiculo,features:regFeatures,docs:regDocs};localStorage.setItem('avs_reg',JSON.stringify(p));}
 function loadRegProgress(){try{const p=localStorage.getItem('avs_reg');if(!p)return;const prog=JSON.parse(p);['rnombre','rtelefono','rcorreo','rcedula','rplaca','rmodelo','rcapacidad'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=prog[id.replace('r','')]||'';});const fnel=document.getElementById('rfechanac');if(fnel)fnel.value=prog.fechanac||'';regVehiculo=prog.vehiculo||'sedan';regFeatures=prog.features||{ac:false,pet:false,carga:false};regDocs=prog.docs||{};document.querySelectorAll('#vtype-chips .vchip').forEach(c=>{c.classList.remove('sel');if(c.getAttribute('onclick')?.includes("'"+regVehiculo+"'"))c.classList.add('sel');});['ac','pet','carga'].forEach(f=>{const t=document.getElementById('tog-'+f);if(t&&regFeatures[f])t.classList.add('on');});Object.keys(regDocs).forEach(tipo=>{const el=document.getElementById('doc-'+tipo),st=document.getElementById('dst-'+tipo);if(el)el.classList.add('ok');if(st){st.textContent='✅ Documento cargado';st.classList.add('ok');}});}catch(e){}}
-async function enviarRegistro(){const nombre=document.getElementById('rnombre').value.trim(),telefono=document.getElementById('rtelefono').value.trim(),correo=document.getElementById('rcorreo').value.trim(),cedula=document.getElementById('rcedula').value.trim(),fechanac=document.getElementById('rfechanac')?document.getElementById('rfechanac').value:'',placa=document.getElementById('rplaca').value.trim(),modelo=document.getElementById('rmodelo').value.trim(),cap=document.getElementById('rcapacidad').value.trim();if(!nombre||!telefono||!placa||!modelo||!cedula){toast('Completá todos los campos obligatorios');return;}if(!fechanac){toast('Ingresá tu fecha de nacimiento');return;}var hoy=new Date(),fn=new Date(fechanac),edad=hoy.getFullYear()-fn.getFullYear(),mm=hoy.getMonth()-fn.getMonth();if(mm<0||(mm===0&&hoy.getDate()<fn.getDate()))edad--;if(isNaN(edad)||edad<18){toast('Debés ser mayor de edad (18+) para registrarte');return;}const docsReq=['cedula','licencia','circulacion','seguro','revision','foto-ext','foto-int'];const faltantes=docsReq.filter(d=>!regDocs[d]);if(faltantes.length>0){toast('Falta subir '+faltantes.length+' documento(s)');return;}if(db){try{const{data:coincide}=await db.rpc('avs_verificar_cedula',{p_cedula:cedula,p_nombre:nombre});if(coincide===false){const seguir=confirm('La cédula y el nombre no coinciden con el registro nacional. ¿Enviar la solicitud igual para revisión manual?');if(!seguir)return;}}catch(e){}const{data:existe}=await db.from('usuarios').select('telefono').eq('telefono',telefono).single();if(existe){toast('Ya existe un registro con ese teléfono');return;}const{error}=await db.from('usuarios').insert({telefono,nombre,tipo:'conductor',placa,modelo_vehiculo:modelo,tipo_vehiculo:regVehiculo,capacidad:parseInt(cap)||4,tiene_ac:regFeatures.ac,pet_friendly:regFeatures.pet,acepta_carga:regFeatures.carga,cedula_identidad:cedula,fecha_nacimiento:fechanac,correo,estado_verificacion:'pendiente',documentos_url:regDocs});if(error){console.error(error);toast('Error al enviar. Intentá de nuevo.');return;}try{const filas=docsReq.filter(d=>typeof regDocs[d]==='string'&&regDocs[d].indexOf('/')>=0).map(d=>({cedula:cedula.replace(/[^0-9a-zA-Z]/g,''),tipo_doc:d,ruta_archivo:regDocs[d],estado:'pendiente'}));if(filas.length>0)await db.from('documentos_conductor').insert(filas);}catch(e){console.error('docs:',e);}}localStorage.removeItem('avs_reg');document.getElementById('registro').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;gap:16px"><div style="font-size:64px">⏳</div><div style="font-family:var(--font-d);font-size:22px;font-weight:700">Solicitud enviada</div><div style="font-size:14px;color:var(--mt);line-height:1.6">Tu solicitud fue recibida. El equipo AVS revisará tu documentación y te contactará al <strong style="color:var(--tx)">${telefono}</strong> en un plazo de 24-48 horas.</div><button class="btnp" onclick="go('login')" style="margin-top:20px;max-width:300px">Volver al inicio</button></div>`;}
+async function enviarRegistro(){const nombre=document.getElementById('rnombre').value.trim(),telefono=document.getElementById('rtelefono').value.trim(),correo=document.getElementById('rcorreo').value.trim(),cedula=document.getElementById('rcedula').value.trim(),fechanac=document.getElementById('rfechanac')?document.getElementById('rfechanac').value:'',placa=document.getElementById('rplaca').value.trim(),modelo=document.getElementById('rmodelo').value.trim(),cap=document.getElementById('rcapacidad').value.trim();if(!nombre||!telefono||!placa||!modelo||!cedula){toast('Completá todos los campos obligatorios');return;}if(!fechanac){toast('Ingresá tu fecha de nacimiento');return;}var hoy=new Date(),fn=new Date(fechanac),edad=hoy.getFullYear()-fn.getFullYear(),mm=hoy.getMonth()-fn.getMonth();if(mm<0||(mm===0&&hoy.getDate()<fn.getDate()))edad--;if(isNaN(edad)||edad<18){toast('Debés ser mayor de edad (18+) para registrarte');return;}const docsReq=['cedula','licencia','circulacion','seguro','revision','foto-ext','foto-int'];const faltantes=docsReq.filter(d=>!regDocs[d]);if(faltantes.length>0){toast('Falta subir '+faltantes.length+' documento(s)');return;}if(!consentimientoOK('conductor'))return;if(db){try{const{data:coincide}=await db.rpc('avs_verificar_cedula',{p_cedula:cedula,p_nombre:nombre});if(coincide===false){const seguir=confirm('La cédula y el nombre no coinciden con el registro nacional. ¿Enviar la solicitud igual para revisión manual?');if(!seguir)return;}}catch(e){}const{data:existe}=await db.from('usuarios').select('telefono').eq('telefono',telefono).single();if(existe){toast('Ya existe un registro con ese teléfono');return;}const{error}=await db.from('usuarios').insert({telefono,nombre,tipo:'conductor',placa,modelo_vehiculo:modelo,tipo_vehiculo:regVehiculo,capacidad:parseInt(cap)||4,tiene_ac:regFeatures.ac,pet_friendly:regFeatures.pet,acepta_carga:regFeatures.carga,cedula_identidad:cedula,fecha_nacimiento:fechanac,correo,estado_verificacion:'pendiente',documentos_url:regDocs,consent_version:AVS_CONSENT_VERSION,consent_fecha:new Date().toISOString()});if(error){console.error(error);toast('Error al enviar. Intentá de nuevo.');return;}try{const filas=docsReq.filter(d=>typeof regDocs[d]==='string'&&regDocs[d].indexOf('/')>=0).map(d=>({cedula:cedula.replace(/[^0-9a-zA-Z]/g,''),tipo_doc:d,ruta_archivo:regDocs[d],estado:'pendiente'}));if(filas.length>0)await db.from('documentos_conductor').insert(filas);}catch(e){console.error('docs:',e);}}localStorage.removeItem('avs_reg');document.getElementById('registro').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;gap:16px"><div style="font-size:64px">⏳</div><div style="font-family:var(--font-d);font-size:22px;font-weight:700">Solicitud enviada</div><div style="font-size:14px;color:var(--mt);line-height:1.6">Tu solicitud fue recibida. El equipo AVS revisará tu documentación y te contactará al <strong style="color:var(--tx)">${telefono}</strong> en un plazo de 24-48 horas.</div><button class="btnp" onclick="go('login')" style="margin-top:20px;max-width:300px">Volver al inicio</button></div>`;}
 function switchAdminTab(tab){
   document.querySelectorAll('[id^="admtab-"]').forEach(el=>el.classList.remove('on'));
   document.getElementById('admtab-'+tab).classList.add('on');
@@ -3781,6 +3789,7 @@ async function accionNegocio(id,estado){
 let negociosFiltro='pendiente';
 
 async function enviarRegistroNegocio(){
+  if(!consentimientoOK('comercio'))return;
   const nombre=document.getElementById('neg-nombre').value.trim();
   const tel=document.getElementById('neg-tel').value.trim();
   const dir=document.getElementById('neg-dir').value.trim();
@@ -3788,7 +3797,7 @@ async function enviarRegistroNegocio(){
   const desc=document.getElementById('neg-desc').value.trim();
   if(!nombre||!tel){toast('Ingresá nombre y teléfono');return;}
   if(db){
-    const{error}=await db.from('negocios').insert({nombre,telefono:tel,direccion:dir,correo:email,descripcion:desc,categoria:negCategoria,estado:'pendiente',fecha:new Date().toISOString()});
+    const{error}=await db.from('negocios').insert({nombre,telefono:tel,direccion:dir,correo:email,descripcion:desc,categoria:negCategoria,estado:'pendiente',fecha:new Date().toISOString(),consent_version:AVS_CONSENT_VERSION,consent_fecha:new Date().toISOString()});
     if(error){toast('Error al registrar. Intentá de nuevo.');return;}
   }
   toast('✅ Solicitud enviada — te contactaremos pronto');
@@ -3801,6 +3810,13 @@ function go(id, _fromPop){
   document.getElementById(id).classList.add('active');
   setTimeout(()=>{if(id==='usuario'||id==='pasajero')aplicarLayoutPasajeroPC();},50);
   if(id==='registro')setTimeout(()=>{loadRegProgress();},100);
+  // Insertar el bloque de consentimiento en cada registro (si el slot existe y está vacío)
+  setTimeout(()=>{
+    [['registro','conductor'],['registro-negocio','comercio'],['registro-cedula','usuario']].forEach(([pant,cid])=>{
+      const slot=document.getElementById('consent-slot-'+cid);
+      if(slot && !slot.innerHTML.trim()) slot.innerHTML=bloqueConsentimiento(cid);
+    });
+  },60);
   if(id==='pasajero')setTimeout(()=>{initCarruselGenerico('avsCarruselPasajero');},120);
   if(id==='admin')cargarAdmin();
   if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);
@@ -3827,6 +3843,53 @@ window.addEventListener('popstate', function(ev){
   }
 });
 function toast(msg){const t=document.getElementById('toastEl');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+// ===== CONSENTIMIENTO INFORMADO =====
+// Versión del texto (subir el número cuando el abogado entregue el final).
+const AVS_CONSENT_VERSION = 'borrador-v0.1';
+// Texto PROVISIONAL (pendiente de revisión legal). Cambiar cuando el abogado apruebe.
+const AVS_CONSENT_TEXTO = `AVS es una plataforma tecnológica de carácter social que facilita el contacto entre personas usuarias, conductoras y comercios del cantón de Atenas. AVS no presta directamente el servicio de transporte ni vende los productos de los comercios: el servicio o la compraventa se pacta directa y libremente entre las partes.
+
+AVS no asume responsabilidad legal, civil, penal, moral ni económica por los hechos, daños, pérdidas, accidentes, incumplimientos o controversias que puedan derivarse de los servicios o transacciones pactados entre las partes. Cualquier reclamo debe resolverse directamente entre las partes involucradas.
+
+Sobre tus datos: AVS recolecta los datos necesarios para el funcionamiento de la plataforma (nombre, cédula, fecha de nacimiento, teléfono, ubicación y, para conductores y comercios, documentación de respaldo). AVS resguarda esos datos y no los vende ni cede a terceros sin autorización, salvo requerimiento de autoridad competente.
+
+Al marcar la casilla declarás que sos mayor de edad, que tuviste la oportunidad de leer este texto, que entendés que AVS es una plataforma de contacto y acompañamiento (no la prestadora directa del servicio) y que aceptás de forma libre e informada usar la aplicación bajo estas condiciones.
+
+(Texto provisional pendiente de revisión y aprobación legal.)`;
+
+// Genera el HTML del bloque de consentimiento. 'id' identifica el registro (usuario/conductor/comercio).
+function bloqueConsentimiento(id){
+  return `<div class="consent-box">
+    <div class="consent-toggle" onclick="toggleConsent('${id}')">
+      <span id="consent-arrow-${id}">▸</span> Leer el Consentimiento Informado y Aviso de Responsabilidad
+    </div>
+    <div class="consent-text" id="consent-text-${id}" style="display:none">${AVS_CONSENT_TEXTO.replace(/\n/g,'<br>')}</div>
+    <label class="consent-check">
+      <input type="checkbox" id="consent-chk-${id}">
+      <span>He leído y acepto el Consentimiento Informado y el Aviso de Responsabilidad de AVS. Entiendo que AVS es una plataforma de contacto y acompañamiento y que no es responsable por los servicios o transacciones pactados entre las partes.</span>
+    </label>
+  </div>`;
+}
+
+function toggleConsent(id){
+  const t=document.getElementById('consent-text-'+id),a=document.getElementById('consent-arrow-'+id);
+  if(!t)return;
+  if(t.style.display==='none'){t.style.display='block';if(a)a.textContent='▾';}
+  else{t.style.display='none';if(a)a.textContent='▸';}
+}
+
+// Valida que el check esté marcado. Devuelve true/false.
+function consentimientoOK(id){
+  const c=document.getElementById('consent-chk-'+id);
+  if(!c||!c.checked){toast('Debés aceptar el Consentimiento Informado para continuar');return false;}
+  return true;
+}
+
+// Devuelve el objeto de evidencia para guardar junto al registro.
+function evidenciaConsentimiento(){
+  return { consent_version: AVS_CONSENT_VERSION, consent_fecha: new Date().toISOString() };
+}
 function volverInicio(){
   if(loadSession() && user.name && user.role){
     go(user.role==='conductor' ? 'conductor' : 'pasajero');
@@ -4242,6 +4305,7 @@ function regCambiarTipoId(tipo){
 
 async function regEnviarCedula(){
   if(!registroTemp){ go('login'); return; }
+  if(!consentimientoOK('usuario'))return;
   const input = document.getElementById('reg-ced-input');
   const tipo = input.dataset.tipoId || 'cedula_cr';
   const valor = input.value.trim();
@@ -4291,7 +4355,9 @@ async function regEnviarCedula(){
       tipo_identificacion: val.tipo,
       numero_identificacion: val.numero,
       fecha_nacimiento: fechaNac,
-      pais_identificacion: val.tipo === 'cedula_cr' ? 'CR' : (val.tipo === 'dimex' ? 'CR' : 'INT')
+      pais_identificacion: val.tipo === 'cedula_cr' ? 'CR' : (val.tipo === 'dimex' ? 'CR' : 'INT'),
+      consent_version: AVS_CONSENT_VERSION,
+      consent_fecha: new Date().toISOString()
     };
 
     if(existeTel){
