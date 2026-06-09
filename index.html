@@ -3818,6 +3818,8 @@ function go(id, _fromPop){
     });
   },60);
   if(id==='pasajero')setTimeout(()=>{initCarruselGenerico('avsCarruselPasajero');},120);
+  // Rehabilitar el botón de verificar cédula al entrar (evita que quede "pegado" en Verificando...)
+  if(id==='registro-cedula'){setTimeout(()=>{const b=document.getElementById('reg-ced-submit');if(b){b.disabled=false;b.textContent='✓ Continuar';}const e=document.getElementById('reg-ced-error');if(e)e.textContent='';},40);}
   if(id==='admin')cargarAdmin();
   if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);
   if(id==='usuario'||id==='pasajero'){setTimeout(iniciarSeguimientoConductoresActivos,1500);}else{detenerSeguimientoConductoresActivos();}
@@ -4468,6 +4470,8 @@ async function regEnviarCedula(){
     }
 
     toast('✅ Registro completado');
+    // Rehabilitar el botón antes de avanzar (por si el usuario vuelve atrás)
+    if(btn){ btn.disabled = false; btn.textContent = '✓ Continuar'; }
     // Continuar al OTP
     iniciarOTP(registroTemp.role, registroTemp.telefono, registroTemp.nombre);
   } catch(e){
