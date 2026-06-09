@@ -778,7 +778,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <input class="ifield" type="tel" placeholder="Teléfono (8888-8888)" id="rtelefono" oninput="saveRegProgress()" style="margin-top:10px">
     <input class="ifield" type="email" placeholder="Correo electrónico" id="rcorreo" oninput="saveRegProgress()" style="margin-top:10px">
     <input class="ifield" type="text" placeholder="Número de cédula" id="rcedula" oninput="saveRegProgress()" style="margin-top:10px">
+    <div style="font-size:11px;color:var(--mt);margin:8px 2px 2px">Fecha de nacimiento (debés ser mayor de edad)</div>
+    <input class="ifield" type="date" id="rfechanac" oninput="saveRegProgress()">
   </div>
+  <input type="file" id="docFileInput" accept="image/*" capture="environment" style="display:none">
   <div class="rsec"><div class="rstit">Tipo de vehículo</div>
     <div class="vchips" id="vtype-chips">
       <div class="vchip sel" onclick="selVchip(this,'sedan')">🚗 Sedán</div>
@@ -3083,10 +3086,68 @@ async function confirmarPagoSINPE(){if(!db||!sinpeMonto)return;const concepto='A
 let regVehiculo='sedan',regFeatures={ac:false,pet:false,carga:false},regDocs={},selCategoria='todos';
 function selVchip(el,tipo){document.querySelectorAll('#vtype-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');regVehiculo=tipo;saveRegProgress();}
 function togFeature(el,feat){el.classList.toggle('on');regFeatures[feat]=el.classList.contains('on');saveRegProgress();}
-function simDoc(tipo){regDocs[tipo]='subido';const el=document.getElementById('doc-'+tipo),st=document.getElementById('dst-'+tipo);if(el)el.classList.add('ok');if(st){st.textContent='✅ Documento cargado';st.classList.add('ok');}saveRegProgress();toast('Documento registrado');}
-function saveRegProgress(){const p={nombre:document.getElementById('rnombre')?.value||'',telefono:document.getElementById('rtelefono')?.value||'',correo:document.getElementById('rcorreo')?.value||'',cedula:document.getElementById('rcedula')?.value||'',placa:document.getElementById('rplaca')?.value||'',modelo:document.getElementById('rmodelo')?.value||'',capacidad:document.getElementById('rcapacidad')?.value||'',vehiculo:regVehiculo,features:regFeatures,docs:regDocs};localStorage.setItem('avs_reg',JSON.stringify(p));}
-function loadRegProgress(){try{const p=localStorage.getItem('avs_reg');if(!p)return;const prog=JSON.parse(p);['rnombre','rtelefono','rcorreo','rcedula','rplaca','rmodelo','rcapacidad'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=prog[id.replace('r','')]||'';});regVehiculo=prog.vehiculo||'sedan';regFeatures=prog.features||{ac:false,pet:false,carga:false};regDocs=prog.docs||{};document.querySelectorAll('#vtype-chips .vchip').forEach(c=>{c.classList.remove('sel');if(c.getAttribute('onclick')?.includes("'"+regVehiculo+"'"))c.classList.add('sel');});['ac','pet','carga'].forEach(f=>{const t=document.getElementById('tog-'+f);if(t&&regFeatures[f])t.classList.add('on');});Object.keys(regDocs).forEach(tipo=>{const el=document.getElementById('doc-'+tipo),st=document.getElementById('dst-'+tipo);if(el)el.classList.add('ok');if(st){st.textContent='✅ Documento cargado';st.classList.add('ok');}});}catch(e){}}
-async function enviarRegistro(){const nombre=document.getElementById('rnombre').value.trim(),telefono=document.getElementById('rtelefono').value.trim(),correo=document.getElementById('rcorreo').value.trim(),cedula=document.getElementById('rcedula').value.trim(),placa=document.getElementById('rplaca').value.trim(),modelo=document.getElementById('rmodelo').value.trim(),cap=document.getElementById('rcapacidad').value.trim();if(!nombre||!telefono||!placa||!modelo){toast('Completá todos los campos obligatorios');return;}const docsReq=['cedula','licencia','circulacion','seguro','revision','foto-ext','foto-int'];const faltantes=docsReq.filter(d=>!regDocs[d]);if(faltantes.length>0){toast('Falta subir '+faltantes.length+' documento(s)');return;}if(db){const{data:existe}=await db.from('usuarios').select('telefono').eq('telefono',telefono).single();if(existe){toast('Ya existe un registro con ese teléfono');return;}const{error}=await db.from('usuarios').insert({telefono,nombre,tipo:'conductor',placa,modelo_vehiculo:modelo,tipo_vehiculo:regVehiculo,capacidad:parseInt(cap)||4,tiene_ac:regFeatures.ac,pet_friendly:regFeatures.pet,acepta_carga:regFeatures.carga,cedula_identidad:cedula,correo,estado_verificacion:'pendiente',documentos_url:regDocs});if(error){toast('Error al enviar. Intentá de nuevo.');return;}}localStorage.removeItem('avs_reg');document.getElementById('registro').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;gap:16px"><div style="font-size:64px">⏳</div><div style="font-family:var(--font-d);font-size:22px;font-weight:700">Solicitud enviada</div><div style="font-size:14px;color:var(--mt);line-height:1.6">Tu solicitud fue recibida. El equipo AVS revisará tu documentación y te contactará al <strong style="color:var(--tx)">${telefono}</strong> en un plazo de 24-48 horas.</div><button class="btnp" onclick="go('login')" style="margin-top:20px;max-width:300px">Volver al inicio</button></div>`;}
+// Sube la foto real del documento al bucket privado de Supabase.
+// Reemplaza la versión simulada anterior.
+let _docTipoActual = null;
+function simDoc(tipo){
+  // Guardamos qué documento se está subiendo y abrimos el selector de archivos
+  _docTipoActual = tipo;
+  const input = document.getElementById('docFileInput');
+  if(!input){toast('Error al abrir selector');return;}
+  input.value = ''; // permitir volver a elegir el mismo archivo
+  input.click();
+}
+
+// Cuando el conductor elige una foto, se sube de inmediato al bucket
+async function _onDocFileSelected(ev){
+  const tipo = _docTipoActual;
+  const file = ev.target.files && ev.target.files[0];
+  if(!tipo || !file) return;
+
+  const st = document.getElementById('dst-'+tipo);
+  const el = document.getElementById('doc-'+tipo);
+
+  // Validar tamaño (máx 5 MB)
+  if(file.size > 5*1024*1024){ toast('La foto es muy pesada (máx 5MB)'); return; }
+
+  if(st){ st.textContent = '⏳ Subiendo...'; }
+
+  // Si Supabase no está listo, marcamos localmente (modo sin conexión)
+  if(!db){
+    regDocs[tipo]='subido';
+    if(el)el.classList.add('ok');
+    if(st){st.textContent='✅ Documento cargado';st.classList.add('ok');}
+    saveRegProgress();
+    toast('Documento registrado (sin conexión)');
+    return;
+  }
+
+  try{
+    // Usamos la cédula como carpeta (o 'sin-cedula' si aún no la escribió)
+    const cedula = (document.getElementById('rcedula')?.value||'sincedula').replace(/[^0-9a-zA-Z]/g,'');
+    const ext = (file.name.split('.').pop()||'jpg').toLowerCase();
+    const ruta = cedula + '/' + tipo + '_' + Date.now() + '.' + ext;
+
+    const { error: errUp } = await db.storage
+      .from('documentos-conductores')
+      .upload(ruta, file, { upsert: true });
+
+    if(errUp){ console.error(errUp); toast('Error al subir la foto. Reintentá.'); if(st)st.textContent='Toca para subir foto'; return; }
+
+    // Guardamos la RUTA del archivo (no 'subido'), para enviarla luego
+    regDocs[tipo] = ruta;
+    if(el)el.classList.add('ok');
+    if(st){st.textContent='✅ Documento cargado';st.classList.add('ok');}
+    saveRegProgress();
+    toast('Documento subido');
+  }catch(e){
+    console.error(e); toast('Error al subir. Reintentá.');
+    if(st)st.textContent='Toca para subir foto';
+  }
+}
+function saveRegProgress(){const p={nombre:document.getElementById('rnombre')?.value||'',telefono:document.getElementById('rtelefono')?.value||'',correo:document.getElementById('rcorreo')?.value||'',cedula:document.getElementById('rcedula')?.value||'',fechanac:document.getElementById('rfechanac')?.value||'',placa:document.getElementById('rplaca')?.value||'',modelo:document.getElementById('rmodelo')?.value||'',capacidad:document.getElementById('rcapacidad')?.value||'',vehiculo:regVehiculo,features:regFeatures,docs:regDocs};localStorage.setItem('avs_reg',JSON.stringify(p));}
+function loadRegProgress(){try{const p=localStorage.getItem('avs_reg');if(!p)return;const prog=JSON.parse(p);['rnombre','rtelefono','rcorreo','rcedula','rplaca','rmodelo','rcapacidad'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=prog[id.replace('r','')]||'';});const fnel=document.getElementById('rfechanac');if(fnel)fnel.value=prog.fechanac||'';regVehiculo=prog.vehiculo||'sedan';regFeatures=prog.features||{ac:false,pet:false,carga:false};regDocs=prog.docs||{};document.querySelectorAll('#vtype-chips .vchip').forEach(c=>{c.classList.remove('sel');if(c.getAttribute('onclick')?.includes("'"+regVehiculo+"'"))c.classList.add('sel');});['ac','pet','carga'].forEach(f=>{const t=document.getElementById('tog-'+f);if(t&&regFeatures[f])t.classList.add('on');});Object.keys(regDocs).forEach(tipo=>{const el=document.getElementById('doc-'+tipo),st=document.getElementById('dst-'+tipo);if(el)el.classList.add('ok');if(st){st.textContent='✅ Documento cargado';st.classList.add('ok');}});}catch(e){}}
+async function enviarRegistro(){const nombre=document.getElementById('rnombre').value.trim(),telefono=document.getElementById('rtelefono').value.trim(),correo=document.getElementById('rcorreo').value.trim(),cedula=document.getElementById('rcedula').value.trim(),fechanac=document.getElementById('rfechanac')?document.getElementById('rfechanac').value:'',placa=document.getElementById('rplaca').value.trim(),modelo=document.getElementById('rmodelo').value.trim(),cap=document.getElementById('rcapacidad').value.trim();if(!nombre||!telefono||!placa||!modelo||!cedula){toast('Completá todos los campos obligatorios');return;}if(!fechanac){toast('Ingresá tu fecha de nacimiento');return;}var hoy=new Date(),fn=new Date(fechanac),edad=hoy.getFullYear()-fn.getFullYear(),mm=hoy.getMonth()-fn.getMonth();if(mm<0||(mm===0&&hoy.getDate()<fn.getDate()))edad--;if(isNaN(edad)||edad<18){toast('Debés ser mayor de edad (18+) para registrarte');return;}const docsReq=['cedula','licencia','circulacion','seguro','revision','foto-ext','foto-int'];const faltantes=docsReq.filter(d=>!regDocs[d]);if(faltantes.length>0){toast('Falta subir '+faltantes.length+' documento(s)');return;}if(db){try{const{data:coincide}=await db.rpc('avs_verificar_cedula',{p_cedula:cedula,p_nombre:nombre});if(coincide===false){const seguir=confirm('La cédula y el nombre no coinciden con el registro nacional. ¿Enviar la solicitud igual para revisión manual?');if(!seguir)return;}}catch(e){}const{data:existe}=await db.from('usuarios').select('telefono').eq('telefono',telefono).single();if(existe){toast('Ya existe un registro con ese teléfono');return;}const{error}=await db.from('usuarios').insert({telefono,nombre,tipo:'conductor',placa,modelo_vehiculo:modelo,tipo_vehiculo:regVehiculo,capacidad:parseInt(cap)||4,tiene_ac:regFeatures.ac,pet_friendly:regFeatures.pet,acepta_carga:regFeatures.carga,cedula_identidad:cedula,fecha_nacimiento:fechanac,correo,estado_verificacion:'pendiente',documentos_url:regDocs});if(error){console.error(error);toast('Error al enviar. Intentá de nuevo.');return;}try{const filas=docsReq.filter(d=>typeof regDocs[d]==='string'&&regDocs[d].indexOf('/')>=0).map(d=>({cedula:cedula.replace(/[^0-9a-zA-Z]/g,''),tipo_doc:d,ruta_archivo:regDocs[d],estado:'pendiente'}));if(filas.length>0)await db.from('documentos_conductor').insert(filas);}catch(e){console.error('docs:',e);}}localStorage.removeItem('avs_reg');document.getElementById('registro').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;gap:16px"><div style="font-size:64px">⏳</div><div style="font-family:var(--font-d);font-size:22px;font-weight:700">Solicitud enviada</div><div style="font-size:14px;color:var(--mt);line-height:1.6">Tu solicitud fue recibida. El equipo AVS revisará tu documentación y te contactará al <strong style="color:var(--tx)">${telefono}</strong> en un plazo de 24-48 horas.</div><button class="btnp" onclick="go('login')" style="margin-top:20px;max-width:300px">Volver al inicio</button></div>`;}
 function switchAdminTab(tab){
   document.querySelectorAll('[id^="admtab-"]').forEach(el=>el.classList.remove('on'));
   document.getElementById('admtab-'+tab).classList.add('on');
@@ -5033,6 +5094,9 @@ function initCarruselComercios(){
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   initCarruselComercios();
+  // Conectar el selector de fotos de documentos del conductor
+  const _docInput = document.getElementById('docFileInput');
+  if(_docInput) _docInput.addEventListener('change', _onDocFileSelected);
 
   const urlParams = new URLSearchParams(window.location.search);
   const tokenSeguimiento = urlParams.get('seguimiento');
