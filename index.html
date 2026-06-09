@@ -3148,7 +3148,14 @@ async function _onDocFileSelected(ev){
       .from('documentos-conductores')
       .upload(ruta, file, { upsert: true });
 
-    if(errUp){ console.error(errUp); toast('Error al subir la foto. Reintentá.'); if(st)st.textContent='Toca para subir foto'; return; }
+    if(errUp){
+      console.error(errUp);
+      // DIAGNÓSTICO TEMPORAL: mostrar el error completo en pantalla
+      alert('Error al subir la foto.\n\nDetalle técnico:\n'+(errUp.message||JSON.stringify(errUp))+'\n\nRuta intentada: '+ruta);
+      toast('Error al subir la foto. Reintentá.');
+      if(st)st.textContent='Toca para subir foto';
+      return;
+    }
 
     // Guardamos la RUTA del archivo (no 'subido'), para enviarla luego
     regDocs[tipo] = ruta;
@@ -3157,7 +3164,10 @@ async function _onDocFileSelected(ev){
     saveRegProgress();
     toast('Documento subido');
   }catch(e){
-    console.error(e); toast('Error al subir. Reintentá.');
+    console.error(e);
+    // DIAGNÓSTICO TEMPORAL: mostrar el error completo en pantalla
+    alert('Error al subir (excepción).\n\nDetalle:\n'+(e.message||JSON.stringify(e)));
+    toast('Error al subir. Reintentá.');
     if(st)st.textContent='Toca para subir foto';
   }
 }
