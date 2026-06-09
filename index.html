@@ -4241,6 +4241,12 @@ function cerrarOTPModal(){
   const m = document.getElementById('otp-modal');
   if(m) m.remove();
   otpExpect = null;
+  // Rehabilitar el botón de verificar cédula (si el usuario canceló y quiere reintentar)
+  const b = document.getElementById('reg-ced-submit');
+  if(b){ b.disabled = false; b.textContent = '✓ Continuar'; }
+  // Rehabilitar también el de código de conductor, por si aplica
+  const bc = document.getElementById('cc-submit');
+  if(bc){ bc.disabled = false; bc.textContent = '✓ Validar código'; }
 }
 function verificarOTP(){
   const input = document.getElementById('otp-input');
@@ -4431,6 +4437,8 @@ async function regEnviarCedula(){
   if(!db){ toast('Sin conexión'); return; }
   const btn = document.getElementById('reg-ced-submit');
   if(btn){ btn.disabled = true; btn.textContent = 'Verificando...'; }
+  // Red de seguridad: si algo tarda demasiado, rehabilitar el botón para no dejarlo pegado
+  const _safetyTimer = setTimeout(()=>{ if(btn && btn.disabled){ btn.disabled=false; btn.textContent='✓ Continuar'; if(errEl)errEl.textContent='⏱️ La conexión tardó demasiado. Reintentá.'; } }, 10000);
 
   try {
     const existeId = await buscarUsuarioPorIdentificacion(val.numero);
@@ -4478,6 +4486,8 @@ async function regEnviarCedula(){
     console.error('regEnviarCedula error:', e);
     errEl.textContent = '❌ Error al verificar: ' + (e.message || 'reintentá');
     if(btn){ btn.disabled = false; btn.textContent = '✓ Continuar'; }
+  } finally {
+    clearTimeout(_safetyTimer);
   }
 }
 
