@@ -3897,15 +3897,19 @@ async function asegurarDatosBasicos(phone){
   if(!db) return true;
   let actual = null;
   try{
-    const { data } = await db.from('usuarios').select('numero_identificacion,fecha_nacimiento').eq('telefono',phone).maybeSingle();
+    // Traemos todas las columnas para no fallar si alguna no existe
+    const { data } = await db.from('usuarios').select('*').eq('telefono',phone).maybeSingle();
     actual = data;
-    // Si ya tiene ambos, puede continuar
-    if(data && data.numero_identificacion && data.fecha_nacimiento) return true;
   }catch(e){ return true; }
+  // La cédula puede estar en cualquiera de estas columnas
+  const cedulaActual = actual && (actual.numero_identificacion || actual.cedula || actual.cedula_identidad);
+  const fechaActual = actual && actual.fecha_nacimiento;
+  // Si ya tiene ambos, puede continuar
+  if(cedulaActual && fechaActual) return true;
 
   return new Promise((resolve)=>{
-    const faltaCedula = !actual || !actual.numero_identificacion;
-    const faltaFecha = !actual || !actual.fecha_nacimiento;
+    const faltaCedula = !cedulaActual;
+    const faltaFecha = !fechaActual;
     const ov = document.createElement('div');
     ov.id = 'datos-modal-ov';
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
@@ -3923,6 +3927,7 @@ async function asegurarDatosBasicos(phone){
         const ced = (document.getElementById('datos-cedula').value||'').trim();
         if(!ced){ toast('Ingresá tu número de cédula'); return; }
         upd.numero_identificacion = ced;
+        upd.cedula = ced; // guardar en ambas por compatibilidad
       }
       if(faltaFecha){
         const fch = (document.getElementById('datos-fecha').value||'');
@@ -3932,7 +3937,16 @@ async function asegurarDatosBasicos(phone){
         if(isNaN(edad)||edad<18){ toast('Debés ser mayor de edad (18+) para usar AVS'); return; }
         upd.fecha_nacimiento = fch;
       }
-      try{ await db.from('usuarios').update(upd).eq('telefono',phone); }catch(e){ toast('Error al guardar. Reintentá.'); return; }
+      try{ await db.from('usuarios').update(upd).eq('telefono',phone); }
+      catch(e){
+        // Si falló (quizás la columna 'cedula' no existe), reintentar solo con lo esencial
+        try{
+          const upd2={};
+          if(upd.numero_identificacion!==undefined)upd2.numero_identificacion=upd.numero_identificacion;
+          if(upd.fecha_nacimiento!==undefined)upd2.fecha_nacimiento=upd.fecha_nacimiento;
+          await db.from('usuarios').update(upd2).eq('telefono',phone);
+        }catch(e2){ toast('Error al guardar. Reintentá.'); return; }
+      }
       ov.remove();
       resolve(true);
     };
@@ -3944,7 +3958,7 @@ async function asegurarConsentimiento(phone){
   // Si no hay conexión, no bloqueamos (se pedirá cuando haya)
   if(!db) return true;
   try{
-    const { data } = await db.from('usuarios').select('consent_fecha').eq('telefono',phone).maybeSingle();
+    const { data } = await db.from('usuarios').select('*').eq('telefono',phone).maybeSingle();
     // Si ya tiene fecha de consentimiento, puede continuar
     if(data && data.consent_fecha) return true;
   }catch(e){ return true; /* si falla la consulta, no bloqueamos */ }
