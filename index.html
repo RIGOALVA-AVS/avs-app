@@ -497,7 +497,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .pac-logo:after{background-color:#1a2540!important;}
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:10px 20px;font-size:13px;opacity:0;transition:all 0.3s;z-index:999;white-space:nowrap;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-#registro{background:var(--bg);overflow-y:auto;padding:48px 24px 100px;}
+#registro{background:var(--bg);overflow-y:auto;padding:48px 24px 160px;}
 .rhdr{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
 .rbk{background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer;padding:0;}
 .rtit{font-family:var(--font-d);font-size:20px;font-weight:700;}
@@ -5429,7 +5429,14 @@ window.addEventListener('DOMContentLoaded',()=>{
     // Check territorio - show selector briefly then go to login
     const terrGuardado = localStorage.getItem('avs_territorio');
     if(!terrGuardado){ localStorage.setItem('avs_territorio','atenas'); }
-    setTimeout(()=>go('login'),2000);
+    // Si había un registro de conductor a medias (el cel recargó al usar la camara), volver al registro
+    let regAMedias = false;
+    try{ const rp = localStorage.getItem('avs_reg'); if(rp){ const pr = JSON.parse(rp); if(pr && (pr.nombre || pr.cedula || (pr.docs && Object.keys(pr.docs).length>0))) regAMedias = true; } }catch(e){}
+    if(regAMedias){
+      setTimeout(()=>{ go('registro'); toast('Continua tu registro donde quedaste'); }, 1500);
+    } else {
+      setTimeout(()=>go('login'),2000);
+    }
   }
 });
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&disponible&&user.role==='conductor')cargarSolicitudes();});
