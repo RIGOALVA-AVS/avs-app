@@ -2353,7 +2353,7 @@ async function finalizarLogin(){
     const{data}=await db.from('usuarios').select('nombre,apellidos,estado_verificacion,docs_rechazados,motivo_rechazo').eq('telefono',otpPhone).single();
     if(data){
       if(data.estado_verificacion==='pendiente'){showLoginMsg('⏳','Solicitud en revisión','Tu documentación está siendo revisada. Te contactaremos en 24-48 horas al número '+otpPhone+'.','Volver',()=>resetLoginSheet());return;}
-      if(data.estado_verificacion==='rechazado'){showLoginMsg('❌','Solicitud rechazada',textoRechazo(data.docs_rechazados,data.motivo_rechazo),'Registrarme de nuevo',()=>go('registro'));return;}
+      if(data.estado_verificacion==='rechazado'){showLoginMsg('📝','Corregí tu solicitud',textoRechazo(data.docs_rechazados,data.motivo_rechazo),'Corregir mi registro',()=>go('registro'));return;}
     } else {
       showLoginMsg('🚗','No encontramos tu registro','Para operar como conductor primero debés registrarte y esperar aprobación.','Registrarme',()=>go('registro'));return;
     }
@@ -3597,11 +3597,11 @@ async function confirmarRechazo(telefono){
   cargarAdmin();
 }
 function textoRechazo(docsStr,coment){
-  let t='Tu solicitud no fue aprobada todavía.';
+  let t='Tu solicitud está casi lista. Solo hay que corregir lo siguiente:';
   const docs=(docsStr||'').split(',').filter(Boolean).map(d=>AVS_DOC_NOMBRES[d]||d);
-  if(docs.length>0)t+='<br><br><strong>Estos documentos deben reenviarse o están equivocados:</strong><br>• '+docs.join('<br>• ');
+  if(docs.length>0)t+='<br><br><strong>Documentos a reenviar:</strong><br>• '+docs.join('<br>• ');
   if(coment)t+='<br><br><strong>Comentario del equipo AVS:</strong><br>"'+coment+'"';
-  t+='<br><br>Por favor revisá cuál fue el error y repetí el proceso de registro con los documentos corregidos.<br><br><strong>Para AVS lo más importante son sus socios.</strong> Estamos para ayudarte.';
+  t+='<br><br>Revisá cuál fue el error y repetí el proceso de registro con los documentos corregidos.<br><br><strong>Para AVS lo más importante son sus socios.</strong> Estamos para ayudarte.';
   return t;
 }
 
@@ -4531,7 +4531,7 @@ async function doLogin(role){
       return;
     }
     if(data && data.estado_verificacion === 'rechazado'){
-      showLoginMsg('❌','Solicitud rechazada',textoRechazo(data.docs_rechazados,data.motivo_rechazo),'Registrarme de nuevo',()=>go('registro'));
+      showLoginMsg('📝','Corregí tu solicitud',textoRechazo(data.docs_rechazados,data.motivo_rechazo),'Corregir mi registro',()=>go('registro'));
       return;
     }
     if(data && data.estado_verificacion === 'aprobado'){
@@ -4930,7 +4930,7 @@ window.addEventListener('load',()=>{ setTimeout(vincularDemoOculto, 500); });
 setTimeout(vincularDemoOculto, 100);
 document.addEventListener('DOMContentLoaded', vincularDemoOculto);
 
-function showLoginMsg(ico,titulo,desc,btnTxt,btnAction){document.querySelector('#login .lsheet').innerHTML=`<div style="text-align:center;padding:10px 0 20px"><div style="font-size:52px;margin-bottom:12px">${ico}</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">${titulo}</div><div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:20px">${desc}</div><button class="btnp" onclick="(${btnAction.toString()})()">${btnTxt}</button><button class="btno" onclick="resetLoginSheet()" style="margin-top:8px">← Volver al inicio</button></div>`;}
+function showLoginMsg(ico,titulo,desc,btnTxt,btnAction){document.querySelector('#login .lsheet').innerHTML=`<div style="text-align:center;padding:10px 0 20px"><div style="font-size:44px;margin-bottom:10px">${ico}</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">${titulo}</div><div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:16px;max-height:38vh;overflow-y:auto;text-align:left;padding:0 4px">${desc}</div><button class="btnp" onclick="(${btnAction.toString()})()">${btnTxt}</button><button class="btno" onclick="resetLoginSheet()" style="margin-top:8px">← Volver al inicio</button></div>`;}
 
 function mostrarRegistroRequerido(servicio) {
   const sheet = document.querySelector('#login .lsheet');
