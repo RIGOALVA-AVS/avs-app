@@ -2353,7 +2353,7 @@ async function finalizarLogin(){
     const{data}=await db.from('usuarios').select('nombre,apellidos,estado_verificacion,docs_rechazados,motivo_rechazo').eq('telefono',otpPhone).single();
     if(data){
       if(data.estado_verificacion==='pendiente'){showLoginMsg('⏳','Solicitud en revisión','Tu documentación está siendo revisada. Te contactaremos en 24-48 horas al número '+otpPhone+'.','Volver',()=>resetLoginSheet());return;}
-      if(data.estado_verificacion==='rechazado'){showLoginMsg('📝','Corregí tu solicitud',textoRechazo(data.docs_rechazados,data.motivo_rechazo),'Corregir mi registro',()=>go('registro'));return;}
+      if(data.estado_verificacion==='rechazado'){window._corrTel=otpPhone;window._corrDocs=data.docs_rechazados||'';const _hayDocs=(data.docs_rechazados||'').trim()!=='';showLoginMsg('📝','Corregí tu solicitud',textoRechazo(data.docs_rechazados,data.motivo_rechazo),_hayDocs?'🔧 Corregir documentos':'Corregir mi registro',_hayDocs?()=>iniciarCorreccion():()=>go('registro'));return;}
     } else {
       showLoginMsg('🚗','No encontramos tu registro','Para operar como conductor primero debés registrarte y esperar aprobación.','Registrarme',()=>go('registro'));return;
     }
@@ -3601,8 +3601,67 @@ function textoRechazo(docsStr,coment){
   const docs=(docsStr||'').split(',').filter(Boolean).map(d=>AVS_DOC_NOMBRES[d]||d);
   if(docs.length>0)t+='<br><br><strong>Documentos a reenviar:</strong><br>• '+docs.join('<br>• ');
   if(coment)t+='<br><br><strong>Comentario del equipo AVS:</strong><br>"'+coment+'"';
-  t+='<br><br>Revisá cuál fue el error y repetí el proceso de registro con los documentos corregidos.<br><br><strong>Para AVS lo más importante son sus socios.</strong> Estamos para ayudarte.';
+  t+='<br><br>Revisá cuál fue el error y tocá el botón de abajo para corregirlo.<br><br><strong>Para AVS lo más importante son sus socios.</strong> Estamos para ayudarte.';
   return t;
+}
+let corrDocs={};
+let _corrTipoActual=null;
+function iniciarCorreccion(){
+  const tel=window._corrTel||'';
+  const malos=(window._corrDocs||'').split(',').filter(Boolean);
+  if(!tel||malos.length===0){go('registro');return;}
+  corrDocs={};
+  const sheet=document.querySelector('#login .lsheet');
+  sheet.innerHTML=`<div style="text-align:center;padding:10px 0 20px">
+    <div style="font-size:44px;margin-bottom:10px">🔧</div>
+    <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">Corregir documentos</div>
+    <div style="font-size:13px;color:var(--mt);line-height:1.5;margin-bottom:14px">Subí una foto nueva de cada documento marcado. Los demás documentos se conservan.</div>
+    <input type="file" id="corrFileInput" accept="image/*" capture="environment" style="display:none" onchange="_onCorrFileSelected(event)">
+    ${malos.map(d=>`<div style="border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left"><div><div style="font-size:13px;font-weight:600">${AVS_DOC_NOMBRES[d]||d}</div><div id="corrst-${d}" style="font-size:11px;color:var(--mt)">Falta foto nueva</div></div><button class="btno" style="padding:8px 12px;font-size:12px;white-space:nowrap" onclick="corrSubirDoc('${d}')">📷 Subir</button></div>`).join('')}
+    <button class="btnp" id="corr-enviar" onclick="enviarCorreccion()" disabled style="opacity:0.5;margin-top:10px">Enviar corrección</button>
+    <button class="btno" onclick="resetLoginSheet()" style="margin-top:8px">← Volver al inicio</button>
+  </div>`;
+  setTimeout(()=>{sheet.scrollIntoView({behavior:'smooth',block:'start'});},150);
+}
+function corrSubirDoc(tipo){_corrTipoActual=tipo;const i=document.getElementById('corrFileInput');if(!i){toast('Error al abrir selector');return;}i.value='';i.click();}
+async function _onCorrFileSelected(ev){
+  const tipo=_corrTipoActual;const file=ev.target.files&&ev.target.files[0];
+  if(!tipo||!file)return;
+  if(file.size>5*1024*1024){toast('La foto es muy pesada (máx 5MB)');return;}
+  const st=document.getElementById('corrst-'+tipo);
+  if(st)st.textContent='⏳ Subiendo...';
+  if(!db){toast('Sin conexión');if(st)st.textContent='Falta foto nueva';return;}
+  try{
+    const tel=(window._corrTel||'sintel').replace(/[^0-9a-zA-Z]/g,'');
+    const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+    const ruta=tel+'/'+tipo+'_'+Date.now()+'.'+ext;
+    const{error:errUp}=await db.storage.from('documentos-conductores').upload(ruta,file,{upsert:true});
+    if(errUp){console.error(errUp);toast('No se pudo subir la foto. Intentá de nuevo.');if(st)st.textContent='Falta foto nueva';return;}
+    corrDocs[tipo]=ruta;
+    if(st){st.textContent='✅ Foto nueva subida';st.style.color='#00d4aa';}
+    const malos=(window._corrDocs||'').split(',').filter(Boolean);
+    if(malos.every(d=>corrDocs[d])){const b=document.getElementById('corr-enviar');if(b){b.disabled=false;b.style.opacity='1';}}
+    toast('Documento subido');
+  }catch(e){console.error(e);toast('No se pudo subir la foto.');if(st)st.textContent='Falta foto nueva';}
+}
+async function enviarCorreccion(){
+  if(!db)return;
+  const tel=window._corrTel||'';
+  const malos=(window._corrDocs||'').split(',').filter(Boolean);
+  if(!malos.every(d=>corrDocs[d])){toast('Falta subir alguna foto');return;}
+  const b=document.getElementById('corr-enviar');if(b){b.disabled=true;b.textContent='Enviando...';}
+  try{
+    const{data:u}=await db.from('usuarios').select('documentos_url,numero_identificacion,cedula_identidad').eq('telefono',tel).single();
+    const merged=Object.assign({},(u&&u.documentos_url)||{},corrDocs);
+    const{error}=await db.from('usuarios').update({documentos_url:merged,estado_verificacion:'pendiente',docs_rechazados:null,motivo_rechazo:null}).eq('telefono',tel);
+    if(error){console.error(error);toast('No se pudo enviar la corrección. Intentá de nuevo.');if(b){b.disabled=false;b.textContent='Enviar corrección';}return;}
+    try{
+      const ced=((u&&(u.numero_identificacion||u.cedula_identidad))||tel).replace(/[^0-9a-zA-Z]/g,'');
+      const filas=malos.map(d=>({cedula:ced,tipo_doc:d,ruta_archivo:corrDocs[d],estado:'pendiente'}));
+      if(filas.length>0)await db.from('documentos_conductor').insert(filas);
+    }catch(e){console.error('docs:',e);}
+    document.querySelector('#login .lsheet').innerHTML=`<div style="text-align:center;padding:30px 0"><div style="font-size:52px;margin-bottom:12px">⏳</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">Corrección enviada</div><div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:20px">El equipo AVS revisará tus documentos nuevos y te contactará al <strong style="color:var(--tx)">${tel}</strong>. ¡Gracias!</div><button class="btnp" onclick="resetLoginSheet()">← Volver al inicio</button></div>`;
+  }catch(e){console.error(e);toast('Error al enviar. Intentá de nuevo.');if(b){b.disabled=false;b.textContent='Enviar corrección';}}
 }
 
 // Abre la foto de un documento del bucket privado mediante un enlace temporal (signed URL)
@@ -4531,7 +4590,9 @@ async function doLogin(role){
       return;
     }
     if(data && data.estado_verificacion === 'rechazado'){
-      showLoginMsg('📝','Corregí tu solicitud',textoRechazo(data.docs_rechazados,data.motivo_rechazo),'Corregir mi registro',()=>go('registro'));
+      window._corrTel=phone;window._corrDocs=data.docs_rechazados||'';
+      const _hayDocs=(data.docs_rechazados||'').trim()!=='';
+      showLoginMsg('📝','Corregí tu solicitud',textoRechazo(data.docs_rechazados,data.motivo_rechazo),_hayDocs?'🔧 Corregir documentos':'Corregir mi registro',_hayDocs?()=>iniciarCorreccion():()=>go('registro'));
       return;
     }
     if(data && data.estado_verificacion === 'aprobado'){
@@ -4930,7 +4991,7 @@ window.addEventListener('load',()=>{ setTimeout(vincularDemoOculto, 500); });
 setTimeout(vincularDemoOculto, 100);
 document.addEventListener('DOMContentLoaded', vincularDemoOculto);
 
-function showLoginMsg(ico,titulo,desc,btnTxt,btnAction){document.querySelector('#login .lsheet').innerHTML=`<div style="text-align:center;padding:10px 0 20px"><div style="font-size:44px;margin-bottom:10px">${ico}</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">${titulo}</div><div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:16px;max-height:38vh;overflow-y:auto;text-align:left;padding:0 4px">${desc}</div><button class="btnp" onclick="(${btnAction.toString()})()">${btnTxt}</button><button class="btno" onclick="resetLoginSheet()" style="margin-top:8px">← Volver al inicio</button></div>`;}
+function showLoginMsg(ico,titulo,desc,btnTxt,btnAction){document.querySelector('#login .lsheet').innerHTML=`<div style="text-align:center;padding:10px 0 20px"><div style="font-size:44px;margin-bottom:10px">${ico}</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px">${titulo}</div><div style="font-size:13px;color:var(--mt);line-height:1.6;margin-bottom:16px;max-height:38vh;overflow-y:auto;text-align:left;padding:0 4px">${desc}</div><button class="btnp" onclick="(${btnAction.toString()})()">${btnTxt}</button><button class="btno" onclick="resetLoginSheet()" style="margin-top:8px">← Volver al inicio</button></div>`;setTimeout(()=>{const s=document.querySelector('#login .lsheet');if(s)s.scrollIntoView({behavior:'smooth',block:'start'});},150);}
 
 function mostrarRegistroRequerido(servicio) {
   const sheet = document.querySelector('#login .lsheet');
