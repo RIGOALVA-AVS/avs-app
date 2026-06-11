@@ -121,7 +121,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     min-height:340px !important;
     width:100% !important;
     order:1 !important;
-    background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center center/contain no-repeat !important;
+    background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center top/cover no-repeat !important;
     background-color:#080f1e !important;
     position:relative !important;
     align-items:flex-end !important;
@@ -941,8 +941,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="lsw login-pc-only" style="margin-top:3px">¿Funcionario municipal? <a onclick="doLoginFuncionario()" style="color:#60a5fa">Ingresar</a></div>
   </div>
 
-  <!-- Columna 2: Imagen con iconos superpuestos (solo PC) -->
-  <div class="login-pc-img" style="flex:1;height:100vh;position:relative;order:2;overflow:hidden;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center center/contain no-repeat;background-color:#080f1e;">
+  <!-- Columna 2: Imagen (solo PC) -->
+  <div class="login-pc-img" style="flex:1;height:100vh;position:relative;order:2;overflow:hidden;background-color:#080f1e;display:flex;align-items:center;justify-content:center;">
+    <img src="https://rigoalva-avs.github.io/avs-app/bg-login.jpg" class="login-pc-only" alt="Atenas Viaje Seguro" style="max-width:100%;max-height:100%;object-fit:contain;display:block;">
     <!-- Botón Municipalidad flotante (solo móvil) -->
     <div id="login-muni-mobile" onclick="abrirPortalMunicipal()">
       <span style="font-size:14px">🏛️</span>
@@ -951,7 +952,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
 
   <!-- Columna 3: Promociones del comercio (solo PC ancha) -->
-  <div class="login-pc-promos" style="display:none;order:3;width:330px;height:100vh;flex-shrink:0;padding:24px 18px;background:#0a1525;border-left:1px solid rgba(0,229,184,0.15);flex-direction:column;gap:10px;overflow-y:auto;">
+  <div class="login-pc-promos" style="display:none;order:0;width:330px;height:100vh;flex-shrink:0;padding:24px 18px;background:#0a1525;border-right:1px solid rgba(0,229,184,0.15);flex-direction:column;gap:10px;overflow-y:auto;">
     <div style="font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--g);letter-spacing:1.5px;text-transform:uppercase;text-align:center;">🛍️ Promos de Atenas</div>
     <div id="login-promos-list" style="display:flex;flex-direction:column;gap:8px;"></div>
     <div style="font-size:11px;color:var(--mt);line-height:1.5;text-align:center;margin-top:4px;">Registrate para ver el catálogo completo de bienes y servicios.</div>
