@@ -74,6 +74,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 #login>*{position:relative;z-index:1;}
 
+/* Imágenes: zoom suave al pasar el puntero */
+.avs-car-img{transition:transform .3s ease;}
+.avs-car-img:hover{transform:scale(1.04);}
+.avs-thumb-btn{transition:transform .2s ease;}
+.avs-thumb-btn:hover{transform:scale(2.4);z-index:60;position:relative;box-shadow:0 8px 24px rgba(0,0,0,0.6);}
+
 .lhero{height:calc(var(--real-vh, 1vh) * 44);width:100%;flex-shrink:0;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center center/contain no-repeat;background-color:#080f1e;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0;position:relative;overflow:hidden;}
 
 .avs-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;animation:fadeUp 0.9s ease both;}
@@ -846,6 +852,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="adtbtn" id="admtab-codigos" onclick="switchAdminTab('codigos')">🎫 Códigos</div>
     <div class="adtbtn" id="admtab-intentos" onclick="switchAdminTab('intentos')">🚨 Intentos</div>
     <div class="adtbtn" id="admtab-emergencias" onclick="switchAdminTab('emergencias')">🆘 Emergencias</div>
+    <div class="adtbtn" id="admtab-promos" onclick="switchAdminTab('promos')">🛍️ Promos</div>
+  </div>
+  <div id="admin-promos" style="display:none">
+    <button class="btnp" onclick="abrirFormPromo()" style="max-width:280px;margin-bottom:14px">➕ Nueva promo</button>
+    <div id="promoslist"></div>
   </div>
   <div id="admin-conductores">
     <div class="adtab" style="margin-top:8px">
@@ -952,7 +963,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
 
   <!-- Columna 3: Promociones del comercio (solo PC ancha) -->
-  <div class="login-pc-promos" style="display:none;order:1;width:330px;height:100vh;flex-shrink:0;padding:24px 18px;background:#0a1525;border-left:1px solid rgba(0,229,184,0.15);border-right:1px solid rgba(0,229,184,0.15);flex-direction:column;gap:10px;overflow-y:auto;">
+  <div class="login-pc-promos" style="display:none;order:3;width:330px;height:100vh;flex-shrink:0;padding:24px 18px;background:#0a1525;border-left:1px solid rgba(0,229,184,0.15);flex-direction:column;gap:10px;overflow-y:auto;">
     <div style="font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--g);letter-spacing:1.5px;text-transform:uppercase;text-align:center;">🛍️ Promos de Atenas</div>
     <div id="login-promos-list" style="display:flex;flex-direction:column;gap:8px;"></div>
     <div style="font-size:11px;color:var(--mt);line-height:1.5;text-align:center;margin-top:4px;">Registrate para ver el catálogo completo de bienes y servicios.</div>
@@ -3280,6 +3291,7 @@ function switchAdminTab(tab){
   const aC = document.getElementById('admin-codigos'); if(aC) aC.style.display='none';
   const aI = document.getElementById('admin-intentos'); if(aI) aI.style.display='none';
   const aE = document.getElementById('admin-emergencias'); if(aE) aE.style.display='none';
+  const aP = document.getElementById('admin-promos'); if(aP) aP.style.display='none';
   if(tab==='conductores'){document.getElementById('admin-conductores').style.display='block';cargarAdmin();}
   else if(tab==='recargas'){document.getElementById('admin-recargas').style.display='block';filtrarRecargas('pendiente');}
   else if(tab==='negocios' && aN){aN.style.display='block';if(typeof filtrarNegocios==='function')filtrarNegocios('pendiente');}
@@ -3287,6 +3299,7 @@ function switchAdminTab(tab){
   else if(tab==='codigos' && aC){aC.style.display='block';filtrarCodigos('disponible');}
   else if(tab==='intentos' && aI){aI.style.display='block';filtrarIntentos('pendiente');}
   else if(tab==='emergencias' && aE){aE.style.display='block';filtrarEmergencias('activa');}
+  else if(tab==='promos' && aP){aP.style.display='block';cargarPromosAdmin();}
 }
 
 let matchUberFiltro = 'pendiente_aprobacion';
@@ -3814,11 +3827,11 @@ async function abrirCarrito(negocioId, negocioNombre) {
         <div style="background:var(--sf);border:1px solid var(--bd);border-radius:12px;margin-bottom:8px;overflow:hidden">
           ${item.foto_url ? `
           <div id="img-wrap-${item.id}" style="display:none;position:relative">
-            <img src="${item.foto_url}" style="width:100%;height:160px;object-fit:cover;display:block" onerror="this.parentElement.style.display='none'">
+            <img src="${item.foto_url}" style="width:100%;height:160px;object-fit:contain;background:#0a1525;display:block" onerror="this.parentElement.style.display='none'">
             <button onclick="toggleFoto('${item.id}')" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);border:none;border-radius:20px;padding:4px 10px;color:white;font-size:11px;cursor:pointer">✕ Cerrar</button>
           </div>` : ''}
           <div style="padding:10px 12px;display:flex;align-items:center;gap:10px">
-            ${item.foto_url ? `<button onclick="toggleFoto('${item.id}')" style="width:44px;height:44px;border-radius:8px;overflow:hidden;flex-shrink:0;border:1px solid var(--bd);cursor:pointer;padding:0;background:var(--cd)"><img src="${item.foto_url}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='🍽️'"></button>` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--cd);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🍽️</div>`}
+            ${item.foto_url ? `<button onclick="toggleFoto('${item.id}')" class="avs-thumb-btn" style="width:44px;height:44px;border-radius:8px;overflow:hidden;flex-shrink:0;border:1px solid var(--bd);cursor:pointer;padding:0;background:var(--cd)"><img src="${item.foto_url}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='🍽️'"></button>` : `<div style="width:44px;height:44px;border-radius:8px;background:var(--cd);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🍽️</div>`}
             <div style="flex:1;min-width:0">
               <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.nombre}</div>
               <div style="font-size:11px;color:var(--mt);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.descripcion||''}</div>
@@ -5533,13 +5546,23 @@ const AVS_PROMOS=[
   {nombre:'Línea Vital',          img:'vital.jpg',  emoji:'💊', promo:'Promo en productos de salud',     detalle:'Consultá las ofertas vigentes en tienda.'},
   null,null,null,null
 ];
-function llenarPromosLogin(){
+let _promosActuales=AVS_PROMOS.slice(0,8);
+async function llenarPromosLogin(){
   const cont=document.getElementById('login-promos-list');
   if(!cont)return;
-  cont.innerHTML=AVS_PROMOS.slice(0,8).map((p,i)=>{
+  let lista=AVS_PROMOS.slice(0,8);
+  if(db){
+    try{
+      const{data}=await db.from('promos').select('*').eq('activo',true).order('orden',{ascending:true}).order('id',{ascending:true}).limit(8);
+      if(data&&data.length>0)lista=data.slice(0,8);
+    }catch(e){}
+  }
+  while(lista.length<8)lista.push(null);
+  _promosActuales=lista.slice(0,8);
+  cont.innerHTML=_promosActuales.map((p,i)=>{
     if(!p)return `<div onclick="abrirRegistro()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;border:1.5px dashed rgba(0,229,184,0.25);border-radius:10px;color:var(--mt);font-size:12px;cursor:pointer;">➕ Espacio disponible</div>`;
     return `<div onclick="verPromo(${i})" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid rgba(0,229,184,0.3);border-radius:10px;background:rgba(0,229,184,0.05);cursor:pointer;">
-      <span style="font-size:20px;flex-shrink:0">${p.emoji}</span>
+      <span style="font-size:20px;flex-shrink:0">${p.emoji||'🏪'}</span>
       <div style="flex:1;min-width:0;text-align:left">
         <div style="font-size:12px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
         <div style="font-size:11px;color:var(--g);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.promo}</div>
@@ -5549,23 +5572,83 @@ function llenarPromosLogin(){
   }).join('');
 }
 function verPromo(i){
-  const p=AVS_PROMOS[i];
+  const p=_promosActuales[i];
   if(!p)return;
   const BASE='https://rigoalva-avs.github.io/avs-app/carrusel/';
+  const src=p.img?(p.img.indexOf('http')===0?p.img:BASE+p.img):null;
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
   ov.onclick=()=>ov.remove();
   ov.innerHTML=`<div style="background:var(--sf,#0a1525);border:1px solid rgba(0,229,184,0.3);border-radius:16px;max-width:420px;width:100%;overflow:hidden;text-align:center">
-    <img src="${BASE}${p.img}" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block">
+    ${src?`<img src="${src}" style="width:100%;aspect-ratio:1/1;object-fit:contain;background:#0a1525;display:block">`:`<div style="width:100%;aspect-ratio:1.6/1;display:flex;align-items:center;justify-content:center;font-size:80px;background:linear-gradient(135deg,#0a1525,#13304a)">${p.emoji||'🏪'}</div>`}
     <div style="padding:18px 20px 22px">
       <div style="font-family:var(--font-d);font-size:16px;font-weight:700;margin-bottom:6px">${p.nombre}</div>
-      <div style="font-size:20px;font-weight:800;color:var(--g);margin-bottom:8px">${p.emoji} ${p.promo}</div>
-      <div style="font-size:12px;color:var(--mt);line-height:1.6;margin-bottom:16px">${p.detalle}</div>
+      <div style="font-size:20px;font-weight:800;color:var(--g);margin-bottom:8px">${p.emoji||'🏪'} ${p.promo}</div>
+      <div style="font-size:12px;color:var(--mt);line-height:1.6;margin-bottom:16px">${p.detalle||''}</div>
       <button style="background:#fff;color:#000;border:none;border-radius:10px;padding:10px 26px;font-weight:700;font-size:14px;cursor:pointer">Cerrar</button>
     </div>
   </div>`;
   document.body.appendChild(ov);
 }
+// ===== Gestión de promos desde el panel admin =====
+async function cargarPromosAdmin(){
+  const lista=document.getElementById('promoslist');
+  if(!lista||!db)return;
+  lista.innerHTML='<div style="color:var(--mt);font-size:13px">Cargando...</div>';
+  const{data,error}=await db.from('promos').select('*').order('orden',{ascending:true}).order('id',{ascending:true});
+  if(error){console.error(error);lista.innerHTML='<div style="color:#e24b4a;font-size:13px">No se pudo cargar. ¿Ya creaste la tabla promos en Supabase?</div>';return;}
+  window._promosAdmin=data||[];
+  if(!data||data.length===0){lista.innerHTML='<div style="color:var(--mt);font-size:13px;line-height:1.6">No hay promos guardadas todavía. Creá la primera con el botón de arriba.<br>Mientras la base esté vacía, la portada muestra las promos de ejemplo.</div>';return;}
+  lista.innerHTML=data.map(p=>`<div style="border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;${p.activo?'':'opacity:0.45'}">
+    <span style="font-size:24px;flex-shrink:0">${p.emoji||'🏪'}</span>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:700;font-size:14px">${p.nombre}${p.activo?'':' · <span style="color:#e24b4a">INACTIVA</span>'} <span style="color:var(--mt);font-size:11px">· orden ${p.orden||0}</span></div>
+      <div style="font-size:13px;color:var(--g)">${p.promo}</div>
+      <div style="font-size:11px;color:var(--mt)">${p.detalle||''}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+      <button class="addoc addoc-ver" onclick="abrirFormPromo(${p.id})">✏️ Editar</button>
+      <button class="addoc addoc-ver" onclick="togglePromo(${p.id},${p.activo?'false':'true'})">${p.activo?'⏸️ Desactivar':'▶️ Activar'}</button>
+      <button class="addoc addoc-ver" style="border-color:#e24b4a;color:#e24b4a" onclick="eliminarPromo(${p.id})">🗑️ Eliminar</button>
+    </div>
+  </div>`).join('');
+}
+function abrirFormPromo(id){
+  const p=(window._promosAdmin||[]).find(x=>x.id===id)||{};
+  const ov=document.createElement('div');
+  ov.id='promo-form-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  ov.innerHTML=`<div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:20px;max-width:440px;width:100%;max-height:88vh;overflow-y:auto">
+    <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:14px">${id?'✏️ Editar promo':'➕ Nueva promo'}</div>
+    <input class="ifield" id="pf-nombre" placeholder="Nombre del comercio" value="${p.nombre||''}" style="margin-bottom:8px">
+    <input class="ifield" id="pf-emoji" placeholder="Emoji (ej. 🍕)" value="${p.emoji||''}" style="margin-bottom:8px">
+    <input class="ifield" id="pf-promo" placeholder="Oferta corta (ej. 2x1 en pizza hawaiana)" value="${p.promo||''}" style="margin-bottom:8px">
+    <textarea class="ifield" id="pf-detalle" rows="2" placeholder="Detalle / condiciones (opcional)" style="margin-bottom:8px;resize:vertical">${p.detalle||''}</textarea>
+    <input class="ifield" id="pf-img" placeholder="Imagen (opcional): archivo del carrusel ej. finca.jpg, o URL" value="${p.img||''}" style="margin-bottom:8px">
+    <input class="ifield" id="pf-orden" type="number" placeholder="Orden (1 = primero)" value="${p.orden!=null?p.orden:''}" style="margin-bottom:14px">
+    <div style="display:flex;gap:10px">
+      <button class="btnp" style="flex:1" onclick="guardarPromo(${id||'null'})">💾 Guardar</button>
+      <button class="btno" style="flex:1" onclick="document.getElementById('promo-form-modal').remove()">Cancelar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+}
+async function guardarPromo(id){
+  if(!db)return;
+  const v=k=>document.getElementById('pf-'+k).value.trim();
+  const reg={nombre:v('nombre'),emoji:v('emoji')||'🏪',promo:v('promo'),detalle:v('detalle')||null,img:v('img')||null,orden:parseInt(v('orden'))||0};
+  if(!reg.nombre||!reg.promo){toast('Poné al menos el nombre del comercio y la oferta');return;}
+  let error;
+  if(id){({error}=await db.from('promos').update(reg).eq('id',id));}
+  else{reg.activo=true;({error}=await db.from('promos').insert(reg));}
+  if(error){console.error(error);toast('No se pudo guardar. ¿Existe la tabla promos en Supabase?');return;}
+  const m=document.getElementById('promo-form-modal');if(m)m.remove();
+  toast('✅ Promo guardada');
+  cargarPromosAdmin();
+  llenarPromosLogin();
+}
+async function togglePromo(id,act){if(!db)return;await db.from('promos').update({activo:act}).eq('id',id);toast(act?'▶️ Promo activada':'⏸️ Promo desactivada');cargarPromosAdmin();llenarPromosLogin();}
+async function eliminarPromo(id){if(!db)return;if(!confirm('¿Eliminar esta promo definitivamente?'))return;await db.from('promos').delete().eq('id',id);toast('🗑️ Promo eliminada');cargarPromosAdmin();llenarPromosLogin();}
 
 // Carrusel reutilizable. idBase = id del contenedor; debe tener dentro
 // un elemento con id (idBase+'Puntos') y otro (idBase+'Etiqueta').
@@ -5584,7 +5667,7 @@ function initCarruselGenerico(idBase){
     img.className='avs-car-img';
     img.src = BASE + s.img;
     img.alt = s.nombre;
-    img.style.cssText='width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:1;opacity:'+(i===0?'1':'0')+';transition:opacity 0.8s;';
+    img.style.cssText='width:100%;height:100%;object-fit:contain;background:#0a1525;position:absolute;inset:0;z-index:1;opacity:'+(i===0?'1':'0')+';transition:opacity 0.8s, transform 0.3s ease;';
     puntos.parentNode.insertBefore(img, puntos);
     const p = document.createElement('div');
     p.style.cssText='width:6px;height:6px;border-radius:50%;background:'+(i===0?'#00e5b8':'rgba(255,255,255,0.4)')+';';
