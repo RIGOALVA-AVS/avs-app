@@ -1015,7 +1015,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <!-- Fila 2: Municipalidad + Más -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
       <div class="dest-chip" onclick="abrirPortalMunicipal()" style="background:linear-gradient(135deg,rgba(96,165,250,0.15),rgba(96,165,250,0.05));border:1px solid rgba(96,165,250,0.4);color:#60a5fa;padding:12px;font-weight:600">🏛️ Municipalidad</div>
-      <div class="dest-chip" onclick="go('servicios')" style="padding:12px;font-weight:600">✨ Más</div>
+      <div class="dest-chip" onclick="abrirPromosMovil()" style="padding:12px;font-weight:600">🛍️ Promos</div>
     </div>
     </div><!-- /servicios-movil -->
     <div class="tinfo" id="tinfo">
@@ -5588,6 +5588,39 @@ function verPromo(i){
       <button style="background:#fff;color:#000;border:none;border-radius:10px;padding:10px 26px;font-weight:700;font-size:14px;cursor:pointer">Cerrar</button>
     </div>
   </div>`;
+  document.body.appendChild(ov);
+}
+// ===== Panel de promos en el celular (mismas 8 promos de la PC) =====
+async function abrirPromosMovil(){
+  let lista=AVS_PROMOS.slice(0,8);
+  if(db){
+    try{
+      const{data}=await db.from('promos').select('*').eq('activo',true).order('orden',{ascending:true}).order('id',{ascending:true}).limit(8);
+      if(data&&data.length>0)lista=data.slice(0,8);
+    }catch(e){}
+  }
+  while(lista.length<8)lista.push(null);
+  _promosActuales=lista.slice(0,8);
+  const ov=document.createElement('div');
+  ov.id='promos-movil-ov';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(4,10,20,0.97);z-index:9999;display:flex;flex-direction:column;padding:18px;overflow-y:auto;';
+  ov.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--g);letter-spacing:1px">🛍️ PROMOS DE ATENAS</div>
+      <button onclick="document.getElementById('promos-movil-ov').remove()" style="background:none;border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer">✕ Cerrar</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px">${_promosActuales.map((p,i)=>{
+      if(!p)return `<div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border:1.5px dashed rgba(0,229,184,0.25);border-radius:10px;color:var(--mt);font-size:12px;">➕ Espacio disponible para tu negocio</div>`;
+      return `<div onclick="verPromo(${i})" style="display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid rgba(0,229,184,0.3);border-radius:10px;background:rgba(0,229,184,0.05);cursor:pointer;">
+        <span style="font-size:22px;flex-shrink:0">${p.emoji||'🏪'}</span>
+        <div style="flex:1;min-width:0;text-align:left">
+          <div style="font-size:13px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
+          <div style="font-size:12px;color:var(--g);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.promo}</div>
+        </div>
+        <span style="color:var(--mt)">›</span>
+      </div>`;
+    }).join('')}</div>
+    <div onclick="document.getElementById('promos-movil-ov').remove();go('servicios')" style="text-align:center;margin-top:16px;padding:11px;border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-size:13px;cursor:pointer">✨ Ver todos los servicios</div>
+    <div style="font-size:11px;color:var(--mt);text-align:center;margin-top:12px;padding-bottom:20px">¿Tenés un negocio en Atenas? Sumate como comercio y aparecé aquí.</div>`;
   document.body.appendChild(ov);
 }
 // ===== Gestión de promos desde el panel admin =====
