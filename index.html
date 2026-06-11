@@ -614,6 +614,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   #login .lhero{display:none !important;width:0 !important;padding:0 !important;margin:0 !important;}
   #login .lsheet{width:360px !important;flex:none !important;height:100vh !important;overflow-y:auto !important;padding:48px 36px !important;border-top:none !important;border-right:none !important;border-radius:0 !important;background:#0a1525 !important;display:flex !important;flex-direction:column !important;justify-content:center !important;order:1 !important;}
   .pc-icons-col{display:none !important;}
+  .login-pc-promos{display:flex !important;}
   .pc-img-col{
     display:flex !important;flex:1;height:100vh;order:2;
     background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center center/contain no-repeat;
@@ -947,6 +948,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <span style="font-size:14px">🏛️</span>
       <span>Municipalidad</span>
     </div>
+  </div>
+
+  <!-- Columna 3: Promociones del comercio (solo PC ancha) -->
+  <div class="login-pc-promos" style="display:none;order:3;width:330px;height:100vh;flex-shrink:0;padding:24px 18px;background:#0a1525;border-left:1px solid rgba(0,229,184,0.15);flex-direction:column;gap:10px;overflow-y:auto;">
+    <div style="font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--g);letter-spacing:1.5px;text-transform:uppercase;text-align:center;">🛍️ Promos de Atenas</div>
+    <div id="login-promos-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div style="font-size:11px;color:var(--mt);line-height:1.5;text-align:center;margin-top:4px;">Registrate para ver el catálogo completo de bienes y servicios.</div>
+    <button class="btno" onclick="abrirRegistro()" style="border-color:rgba(0,229,184,0.4);flex-shrink:0">🏪 Sumá tu negocio aquí</button>
   </div>
 
 </div>
@@ -5515,6 +5524,47 @@ function _avsCarruselSlides(){
     {img:'vital.jpg',  nombre:'Línea Vital'}
   ];
 }
+// ===== Tablero de 8 promos en el login (PC). Editar aquí las ofertas. =====
+const AVS_PROMOS=[
+  {nombre:'La Finca Restaurante', img:'finca.jpg',  emoji:'🍕', promo:'2x1 en pizza hawaiana',           detalle:'Válido presentando la app AVS. Consultá días y condiciones en el local.'},
+  {nombre:'Óptica Centro Visual', img:'optica.jpg', emoji:'👓', promo:'Descuento en aros seleccionados', detalle:'Dale el valor que tus ojos se merecen. Tel 7184-4532 · 2446-4581.'},
+  {nombre:'Súper Coopeatenas',    img:'coope.jpg',  emoji:'🛒', promo:'Ofertas de la semana',            detalle:'Promociones en abarrotes y productos frescos. Visitá el súper de Atenas.'},
+  {nombre:'Línea Vital',          img:'vital.jpg',  emoji:'💊', promo:'Promo en productos de salud',     detalle:'Consultá las ofertas vigentes en tienda.'},
+  null,null,null,null
+];
+function llenarPromosLogin(){
+  const cont=document.getElementById('login-promos-list');
+  if(!cont)return;
+  cont.innerHTML=AVS_PROMOS.slice(0,8).map((p,i)=>{
+    if(!p)return `<div onclick="abrirRegistro()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;border:1.5px dashed rgba(0,229,184,0.25);border-radius:10px;color:var(--mt);font-size:12px;cursor:pointer;">➕ Espacio disponible</div>`;
+    return `<div onclick="verPromo(${i})" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid rgba(0,229,184,0.3);border-radius:10px;background:rgba(0,229,184,0.05);cursor:pointer;">
+      <span style="font-size:20px;flex-shrink:0">${p.emoji}</span>
+      <div style="flex:1;min-width:0;text-align:left">
+        <div style="font-size:12px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
+        <div style="font-size:11px;color:var(--g);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.promo}</div>
+      </div>
+      <span style="color:var(--mt)">›</span>
+    </div>`;
+  }).join('');
+}
+function verPromo(i){
+  const p=AVS_PROMOS[i];
+  if(!p)return;
+  const BASE='https://rigoalva-avs.github.io/avs-app/carrusel/';
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  ov.onclick=()=>ov.remove();
+  ov.innerHTML=`<div style="background:var(--sf,#0a1525);border:1px solid rgba(0,229,184,0.3);border-radius:16px;max-width:420px;width:100%;overflow:hidden;text-align:center">
+    <img src="${BASE}${p.img}" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block">
+    <div style="padding:18px 20px 22px">
+      <div style="font-family:var(--font-d);font-size:16px;font-weight:700;margin-bottom:6px">${p.nombre}</div>
+      <div style="font-size:20px;font-weight:800;color:var(--g);margin-bottom:8px">${p.emoji} ${p.promo}</div>
+      <div style="font-size:12px;color:var(--mt);line-height:1.6;margin-bottom:16px">${p.detalle}</div>
+      <button style="background:#fff;color:#000;border:none;border-radius:10px;padding:10px 26px;font-weight:700;font-size:14px;cursor:pointer">Cerrar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+}
 
 // Carrusel reutilizable. idBase = id del contenedor; debe tener dentro
 // un elemento con id (idBase+'Puntos') y otro (idBase+'Etiqueta').
@@ -5555,6 +5605,7 @@ function initCarruselGenerico(idBase){
 function initCarruselComercios(){
   // Carruseles del login (cuadrados) + carrusel del panel pasajero (banner)
   initCarruselGenerico('avsCarrusel');
+  llenarPromosLogin();
   initCarruselGenerico('avsCarruselReg');
   initCarruselGenerico('avsCarruselPasajero');
 }
