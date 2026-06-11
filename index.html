@@ -68,7 +68,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   #login{flex-direction:row !important;height:100vh !important;overflow:hidden !important;gap:0 !important;}
   #login .lhero{display:none !important;width:0 !important;height:0 !important;overflow:hidden !important;flex:none !important;padding:0 !important;margin:0 !important;min-height:0 !important;}
   #login .lsheet{order:1 !important;width:340px !important;min-width:340px !important;flex:none !important;height:100vh !important;min-height:100vh !important;overflow-y:auto !important;padding:40px 28px !important;border-top:none !important;border-right:2px solid rgba(0,229,184,0.2) !important;border-radius:0 !important;background:#0a1525 !important;display:flex !important;flex-direction:column !important;justify-content:center !important;}
-  #login .pc-img-col{order:2 !important;display:flex !important;flex:1 !important;height:100vh !important;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') left top/cover no-repeat !important;background-color:#080f1e !important;align-items:flex-start !important;justify-content:flex-start !important;}
+  #login .pc-img-col{order:2 !important;display:flex !important;flex:1 !important;height:100vh !important;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center center/contain no-repeat !important;background-color:#080f1e !important;align-items:flex-start !important;justify-content:flex-start !important;}
   #login .pc-icons-col{display:none !important;}
 }
 
@@ -121,7 +121,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     min-height:340px !important;
     width:100% !important;
     order:1 !important;
-    background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center top/cover no-repeat !important;
+    background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center center/contain no-repeat !important;
     background-color:#080f1e !important;
     position:relative !important;
     align-items:flex-end !important;
@@ -616,7 +616,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   .pc-icons-col{display:none !important;}
   .pc-img-col{
     display:flex !important;flex:1;height:100vh;order:2;
-    background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') left top/cover no-repeat;
+    background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center center/contain no-repeat;
     background-color:#080f1e;position:relative;
     align-items:flex-start;justify-content:flex-start;
     padding:0;margin-left:-1px;
@@ -941,21 +941,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
 
   <!-- Columna 2: Imagen con iconos superpuestos (solo PC) -->
-  <div class="login-pc-img" style="flex:1;height:100vh;position:relative;order:2;overflow:hidden;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') left top/auto 80% no-repeat;background-color:#080f1e;">
+  <div class="login-pc-img" style="flex:1;height:100vh;position:relative;order:2;overflow:hidden;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center center/contain no-repeat;background-color:#080f1e;">
     <!-- Botón Municipalidad flotante (solo móvil) -->
     <div id="login-muni-mobile" onclick="abrirPortalMunicipal()">
       <span style="font-size:14px">🏛️</span>
       <span>Municipalidad</span>
-    </div>
-    <!-- Iconos superpuestos -->
-    <div class="login-icons-wrap" style="position:absolute;top:0;left:0;height:100%;width:100px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;padding:20px 6px;background:rgba(6,12,24,0.70);backdrop-filter:blur(8px);z-index:2;">
-      <div style="font-size:9px;color:rgba(0,229,184,0.7);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;text-align:center;">Servicios</div>
-      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🍽️ Restaurantes')"><span>🍽️</span><span>Restaurantes</span></div>
-      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏥 Salud')"><span>🏥</span><span>Salud</span></div>
-      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏨 Hospedaje')"><span>🏨</span><span>Hospedaje</span></div>
-      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🛒 Mercado')"><span>🛒</span><span>Mercado</span></div>
-      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🏪 Negocios')"><span>🏪</span><span>Negocios</span></div>
-      <div class="login-serv-btn" onclick="mostrarRegistroRequerido('🚗 Transporte')"><span>🚗</span><span>Transporte</span></div>
     </div>
   </div>
 
@@ -5660,7 +5650,7 @@ function aplicarLayoutPC_disabled() {
     if(!existingImg){
       const imgDiv = document.createElement('div');
       imgDiv.className='pc-img-area';
-      imgDiv.style.cssText='flex:1;height:100vh;background:url(\'https://rigoalva-avs.github.io/avs-app/bg-login.jpg\') center center/65% auto no-repeat;background-color:#080f1e;';
+      imgDiv.style.cssText='flex:1;height:100vh;background:url(\'https://rigoalva-avs.github.io/avs-app/bg-login.jpg\') center center/contain no-repeat;background-color:#080f1e;';
       lhero.appendChild(imgDiv);
     }
     login.style.position='relative';
