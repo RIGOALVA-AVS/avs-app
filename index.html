@@ -1136,7 +1136,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
   <div class="scrd">
     <div class="srow">
-      <div><div class="slbl">Saldo AVS disponible</div><div class="samt">₡6.500</div></div>
+      <div><div class="slbl">Saldo AVS disponible</div><div class="samt" id="cond-saldo">₡0</div></div>
     </div>
     <div class="sbg"><div class="sfill"></div></div>
     <div class="rchips">
@@ -5112,6 +5112,13 @@ function applyUser(){
   document.getElementById('prol').textContent=(user.role==='conductor'?'Conductor':'Usuario')+' · Atenas';
   document.getElementById('chnom').textContent=user.name.split(' ')[0];
   document.getElementById('cnom').textContent=user.name;
+  if(db&&user.phone&&user.role==='conductor'){
+    db.from('usuarios').select('saldo_avs').eq('telefono',user.phone).single().then(({data})=>{
+      const s=parseInt(data?.saldo_avs||0);
+      const el=document.getElementById('cond-saldo');
+      if(el)el.textContent='₡'+s.toLocaleString('es-CR');
+    }).catch(()=>{});
+  }
   // Load saldo
   if(db&&user.phone&&user.role!=='conductor'&&user.role!=='admin'){
     db.from('usuarios').select('saldo_avs').eq('telefono',user.phone).single().then(({data})=>{
