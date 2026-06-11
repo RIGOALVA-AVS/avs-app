@@ -65,7 +65,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 /* LOGIN */
 #login{background:none;justify-content:flex-start;position:relative;overflow-y:auto;}
 @media(min-width:1024px){
-  #login{flex-direction:row !important;height:100vh !important;overflow:hidden !important;gap:0 !important;}
+  #login{flex-direction:row !important;height:100vh !important;overflow:hidden !important;gap:0 !important;position:fixed !important;top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;}
   #login .lhero{display:none !important;width:0 !important;height:0 !important;overflow:hidden !important;flex:none !important;padding:0 !important;margin:0 !important;min-height:0 !important;}
   #login .lsheet{order:1 !important;width:340px !important;min-width:340px !important;flex:none !important;height:100vh !important;min-height:100vh !important;overflow-y:auto !important;padding:40px 28px !important;border-top:none !important;border-right:2px solid rgba(0,229,184,0.2) !important;border-radius:0 !important;background:#0a1525 !important;display:flex !important;flex-direction:column !important;justify-content:center !important;}
   #login .pc-img-col{order:2 !important;display:flex !important;flex:1 !important;height:100vh !important;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center center/contain no-repeat !important;background-color:#080f1e !important;align-items:flex-start !important;justify-content:flex-start !important;}
@@ -952,7 +952,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
 
   <!-- Columna 3: Promociones del comercio (solo PC ancha) -->
-  <div class="login-pc-promos" style="display:none;order:0;width:330px;height:100vh;flex-shrink:0;padding:24px 18px;background:#0a1525;border-right:1px solid rgba(0,229,184,0.15);flex-direction:column;gap:10px;overflow-y:auto;">
+  <div class="login-pc-promos" style="display:none;order:1;width:330px;height:100vh;flex-shrink:0;padding:24px 18px;background:#0a1525;border-left:1px solid rgba(0,229,184,0.15);border-right:1px solid rgba(0,229,184,0.15);flex-direction:column;gap:10px;overflow-y:auto;">
     <div style="font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--g);letter-spacing:1.5px;text-transform:uppercase;text-align:center;">🛍️ Promos de Atenas</div>
     <div id="login-promos-list" style="display:flex;flex-direction:column;gap:8px;"></div>
     <div style="font-size:11px;color:var(--mt);line-height:1.5;text-align:center;margin-top:4px;">Registrate para ver el catálogo completo de bienes y servicios.</div>
