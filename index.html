@@ -2011,6 +2011,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 </style>
 
 <div class="toast" id="toastEl"></div>
+<div id="btn-home-avs" onclick="irInicioAVS()" title="Volver al inicio" style="display:none;position:fixed;bottom:84px;left:12px;z-index:9500;width:46px;height:46px;border-radius:50%;background:var(--sf);border:1.5px solid rgba(0,229,184,0.5);box-shadow:0 3px 12px rgba(0,0,0,0.5);font-size:21px;align-items:center;justify-content:center;cursor:pointer">🏠</div>
 
 <script>
 
@@ -4248,9 +4249,19 @@ async function enviarRegistroNegocio(){
 }
 
 
+function irInicioAVS(){
+  if(typeof negocioActual!=='undefined' && negocioActual && (!user||!user.name)){ go('panel-negocio'); return; }
+  if(!user || !user.name){ go('login'); return; }
+  if(user.role==='conductor'){ go('conductor'); return; }
+  if(user.role==='admin'){ go('admin'); return; }
+  go('pasajero');
+}
 function go(id, _fromPop){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  // Botón flotante 🏠: visible en toda pantalla que no sea una "casa" ni la portada
+  const _hb=document.getElementById('btn-home-avs');
+  if(_hb)_hb.style.display=(['login','pasajero','conductor','admin','panel-negocio','registro'].includes(id))?'none':'flex';
   setTimeout(()=>{if(id==='usuario'||id==='pasajero')aplicarLayoutPasajeroPC();},50);
   if(id==='registro')setTimeout(()=>{const cont=document.getElementById('rfechanac-cont');if(cont&&!cont.innerHTML.trim())cont.innerHTML=fechaNacHTML('r-fn');llenarMarcas();loadRegProgress();},100);
   // Insertar el bloque de consentimiento en cada registro (si el slot existe y está vacío)
