@@ -3819,10 +3819,29 @@ async function abrirCarrito(negocioId, negocioNombre) {
   menu.innerHTML = '<div class="nolist">Cargando menú...</div>';
   if (!db) { menu.innerHTML = '<div class="nolist">Sin conexión</div>'; return; }
   const { data } = await db.from('menu_items').select('*').eq('negocio_id', negocioId).eq('disponible', true).order('categoria_item');
-  if (!data || data.length === 0) { menu.innerHTML = '<div class="nolist">Sin items disponibles</div>'; return; }
+  // Promociones vinculadas a este negocio
+  let promosHTML='';
+  try{
+    const {data:promosNeg} = await db.from('promos').select('*').eq('activo',true).eq('negocio_id', String(negocioId)).order('orden',{ascending:true});
+    if(promosNeg && promosNeg.length>0){
+      _promosActuales = promosNeg;
+      promosHTML = `<div style="margin-bottom:18px">
+        <div style="font-size:11px;color:var(--g);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(0,229,184,0.3)">🛍️ Promociones</div>
+        ${promosNeg.map((p,i)=>`<div onclick="verPromo(${i})" style="display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid rgba(0,229,184,0.45);border-radius:12px;background:rgba(0,229,184,0.08);margin-bottom:8px;cursor:pointer">
+          <span style="font-size:22px;flex-shrink:0">${p.emoji||'🏪'}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:800;color:var(--g)">${p.promo}</div>
+            ${p.detalle?`<div style="font-size:11px;color:var(--mt)">${p.detalle}</div>`:''}
+          </div>
+          <span style="color:var(--mt)">›</span>
+        </div>`).join('')}
+      </div>`;
+    }
+  }catch(e){}
+  if (!data || data.length === 0) { menu.innerHTML = promosHTML + '<div class="nolist">Sin items disponibles</div>'; return; }
   const cats = {};
   data.forEach(item => { const c = item.categoria_item||'General'; if(!cats[c])cats[c]=[]; cats[c].push(item); });
-  menu.innerHTML = Object.entries(cats).map(([cat, items]) => `
+  menu.innerHTML = promosHTML + Object.entries(cats).map(([cat, items]) => `
     <div style="margin-bottom:20px">
       <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--bd)">${cat}</div>
       ${items.map(item => `
@@ -5648,8 +5667,13 @@ async function cargarPromosAdmin(){
     </div>
   </div>`).join('');
 }
-function abrirFormPromo(id){
+async function abrirFormPromo(id){
   const p=(window._promosAdmin||[]).find(x=>x.id===id)||{};
+  let opcionesNeg='<option value="">— Sin vincular a un negocio —</option>';
+  try{
+    const{data:negs}=await db.from('negocios').select('id,nombre').order('nombre');
+    if(negs)opcionesNeg+=negs.map(n=>`<option value="${n.id}" ${String(p.negocio_id)===String(n.id)?'selected':''}>${n.nombre}</option>`).join('');
+  }catch(e){}
   const ov=document.createElement('div');
   ov.id='promo-form-modal';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
@@ -5660,6 +5684,8 @@ function abrirFormPromo(id){
     <input class="ifield" id="pf-promo" placeholder="Oferta corta (ej. 2x1 en pizza hawaiana)" value="${p.promo||''}" style="margin-bottom:8px">
     <textarea class="ifield" id="pf-detalle" rows="2" placeholder="Detalle / condiciones (opcional)" style="margin-bottom:8px;resize:vertical">${p.detalle||''}</textarea>
     <input class="ifield" id="pf-img" placeholder="Imagen (opcional): archivo del carrusel ej. finca.jpg, o URL" value="${p.img||''}" style="margin-bottom:8px">
+    <div style="font-size:11px;color:var(--mt);margin-bottom:4px">Vincular al menú de un negocio (la promo aparecerá dentro de su catálogo):</div>
+    <select class="ifield" id="pf-negocio" style="margin-bottom:8px">${opcionesNeg}</select>
     <input class="ifield" id="pf-orden" type="number" placeholder="Orden (1 = primero)" value="${p.orden!=null?p.orden:''}" style="margin-bottom:14px">
     <div style="display:flex;gap:10px">
       <button class="btnp" style="flex:1" onclick="guardarPromo(${id||'null'})">💾 Guardar</button>
@@ -5671,7 +5697,7 @@ function abrirFormPromo(id){
 async function guardarPromo(id){
   if(!db)return;
   const v=k=>document.getElementById('pf-'+k).value.trim();
-  const reg={nombre:v('nombre'),emoji:v('emoji')||'🏪',promo:v('promo'),detalle:v('detalle')||null,img:v('img')||null,orden:parseInt(v('orden'))||0};
+  const reg={nombre:v('nombre'),emoji:v('emoji')||'🏪',promo:v('promo'),detalle:v('detalle')||null,img:v('img')||null,orden:parseInt(v('orden'))||0,negocio_id:v('negocio')||null};
   if(!reg.nombre||!reg.promo){toast('Poné al menos el nombre del comercio y la oferta');return;}
   let error;
   if(id){({error}=await db.from('promos').update(reg).eq('id',id));}
