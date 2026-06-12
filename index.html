@@ -3828,7 +3828,7 @@ async function abrirCarrito(negocioId, negocioNombre) {
     if(promosNeg && promosNeg.length>0){
       _promosActuales = promosNeg;
       promosHTML = `<div style="margin-bottom:18px">
-        <div style="font-size:11px;color:var(--g);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(0,229,184,0.3)">🛍️ Promociones</div>
+        <div style="font-size:11px;color:var(--g);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(0,229,184,0.3)">⭐ Promo exclusiva de AVS de la semana</div>
         ${promosNeg.map((p,i)=>`<div onclick="verPromo(${i})" style="display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid rgba(0,229,184,0.45);border-radius:12px;background:rgba(0,229,184,0.08);margin-bottom:8px;cursor:pointer">
           <span style="font-size:22px;flex-shrink:0">${p.emoji||'🏪'}</span>
           <div style="flex:1;min-width:0">
@@ -5137,7 +5137,7 @@ function abrirIngreso(role){
     ${esAdmin
       ? `<button class="btnp" onclick="doLogin('admin')" style="margin-top:6px">🛡️ Acceso admin</button>`
       : (esPromo
-      ? `<button class="btnp promo-alert-btn" onclick="doLogin('usuario')" style="margin-top:6px;background:linear-gradient(135deg,#ffb300,#ff8f00);color:#14202e;font-weight:800">🛍️ Entrar y aprovechar mi promo</button>`
+      ? `<button class="btnp promo-alert-btn" onclick="doLogin('usuario')" style="margin-top:6px;background:linear-gradient(135deg,#ffecb3,#ffd54f);color:#1a2433;font-weight:800;font-family:Arial,Helvetica,sans-serif;font-size:14px;letter-spacing:0.2px">🛍️ Entrar y aprovechar mi promo</button>`
       : `<button class="btnp" onclick="doLogin('usuario')" style="margin-top:6px">👤 Entrar como Usuario</button>
          <button class="btno" onclick="doLogin('conductor')">🚗 Entrar como Conductor</button>
          <button class="btno" onclick="doLoginNegocio()" style="margin-top:6px">🏪 Acceso negocio</button>`)}
@@ -5614,7 +5614,7 @@ function verPromo(i){
   const logueado=(typeof user!=='undefined'&&user&&user.name);
   let accion='';
   if(p.negocio_id&&logueado){
-    accion=`<button onclick="pedirPromo(${i})" style="background:linear-gradient(135deg,#ffb300,#ff8f00);color:#14202e;border:none;border-radius:10px;padding:11px 20px;font-weight:800;font-size:14px;cursor:pointer;margin-right:8px">🛒 Pedir esta promo</button>`;
+    accion=`<button onclick="pedirPromo(${i})" style="background:linear-gradient(135deg,#ffecb3,#ffd54f);color:#1a2433;border:none;border-radius:10px;padding:11px 22px;font-weight:800;font-size:14px;font-family:Arial,Helvetica,sans-serif;cursor:pointer;margin-right:8px">🛒 Ordenar</button>`;
   }else if(!logueado){
     accion=`<button onclick="promoEntrarUsuario(${i})" style="background:var(--g);color:#08131f;border:none;border-radius:10px;padding:11px 20px;font-weight:800;font-size:14px;cursor:pointer;margin-right:8px">🛍️ Aprovechala — Entrá como usuario</button>`;
   }
