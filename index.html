@@ -1466,9 +1466,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       </div>
       <!-- Cupón AVS -->
       <div style="margin-top:10px">
-        <div id="cupon-bloque-input" style="display:flex;gap:8px">
-          <input class="ifield" id="cupon-input" placeholder="🎟️ ¿Tenés un cupón? Código aquí" style="flex:1;margin:0;text-transform:uppercase">
-          <button class="btno" onclick="aplicarCuponCarrito()" style="flex-shrink:0;padding:0 16px;border-color:rgba(255,213,79,0.5);color:#ffd54f">Aplicar</button>
+        <div id="cupon-disponibles"></div>
+        <div id="cupon-bloque-input" style="display:flex;gap:8px;align-items:stretch">
+          <input class="ifield" id="cupon-input" placeholder="🎟️ Digite o pegue aquí su cupón" style="flex:1 1 auto;min-width:0;width:100%;margin:0;text-transform:uppercase;padding:12px 14px;font-size:14px">
+          <button class="btno" onclick="aplicarCuponCarrito()" style="flex:0 0 auto;padding:12px 18px;border-color:rgba(255,213,79,0.6);color:#ffd54f;font-weight:700">Aplicar</button>
         </div>
         <div id="cupon-aplicado-fila" style="display:none;justify-content:space-between;align-items:center;margin-top:6px">
           <span style="font-size:13px;color:#ffd54f" id="cupon-aplicado-txt">🎟️ Cupón</span>
@@ -2177,9 +2178,11 @@ function actualizarTotalCarrito() {
     if (mEl) mEl.textContent = '−₡' + descuento.toLocaleString('es-CR');
     if (tEl) tEl.textContent = '🎟️ Cupón ' + window._cuponAplicado.codigo;
     const inp = document.getElementById('cupon-bloque-input'); if (inp) inp.style.display = 'none';
+    const disp = document.getElementById('cupon-disponibles'); if (disp) disp.style.display = 'none';
   } else {
     const fila = document.getElementById('cupon-aplicado-fila'); if (fila) fila.style.display = 'none';
     const inp = document.getElementById('cupon-bloque-input'); if (inp) inp.style.display = 'flex';
+    const disp = document.getElementById('cupon-disponibles'); if (disp) disp.style.display = 'block';
   }
   const subEl = document.getElementById('carrito-subtotal');
   const totEl = document.getElementById('carrito-total');
@@ -2214,6 +2217,30 @@ function quitarCuponCarrito(){
   window._cuponAplicado=null;
   const inp=document.getElementById('cupon-input'); if(inp)inp.value='';
   actualizarTotalCarrito();
+}
+// Cupones disponibles del usuario, listos para aplicar con un clic
+async function cargarCuponesCarrito(){
+  const cont=document.getElementById('cupon-disponibles');
+  if(cont)cont.innerHTML='';
+  window._cuponesDisponibles=[];
+  if(!db||!user||!user.phone||!cont)return;
+  try{
+    const{data}=await db.from('cupones').select('*').eq('usuario_telefono',user.phone).eq('canjeado',false);
+    const utiles=(data||[]).filter(c=>Number(c.valor)>0 && c.plataforma!=='viajes' && (!c.negocio_id||String(c.negocio_id)===String(carritoNegocioId)));
+    window._cuponesDisponibles=utiles;
+    if(utiles.length===0)return;
+    cont.innerHTML=utiles.map((c,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;border:1.5px solid rgba(255,213,79,0.6);border-radius:10px;padding:9px 12px;margin-bottom:8px;flex-wrap:wrap">
+      <span style="font-size:13px;color:#ffd54f;font-weight:700">🎟️ Tenés un cupón: ${c.codigo} · ₡${Math.round(c.valor).toLocaleString('es-CR')}</span>
+      <button class="btno" onclick="usarCuponDisponible(${i})" style="padding:7px 16px;border-color:rgba(255,213,79,0.7);color:#ffd54f;font-weight:700">Aplicar cupón</button>
+    </div>`).join('');
+  }catch(e){}
+}
+function usarCuponDisponible(i){
+  const c=(window._cuponesDisponibles||[])[i];
+  if(!c)return;
+  window._cuponAplicado={id:c.id,codigo:c.codigo,valor:Number(c.valor)};
+  actualizarTotalCarrito();
+  toast('🎟️ Cupón aplicado: −₡'+Math.round(c.valor).toLocaleString('es-CR'));
 }
 
 
@@ -4000,6 +4027,7 @@ async function confirmarPedido() {
     setTimeout(() => window.open('https://wa.me/' + telUser + '?text=' + encodeURIComponent(txt), '_blank'), 500);
     toast('Prefactura enviada por WhatsApp');
     carritoItems = []; tipoEntrega = 'recoger'; tarifaDelivery = 0; window._cuponAplicado = null;
+    cargarCuponesCarrito();
     setTimeout(() => abrirTracking(pedidoData.id), 2000);
   }
 }
