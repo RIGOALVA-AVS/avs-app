@@ -1469,7 +1469,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
         <div id="cupon-disponibles"></div>
         <div id="cupon-bloque-input" style="display:flex;gap:8px;align-items:stretch">
           <input class="ifield" id="cupon-input" placeholder="🎟️ Digite o pegue aquí su cupón" style="flex:1 1 auto;min-width:0;width:100%;margin:0;text-transform:uppercase;padding:12px 14px;font-size:14px">
-          <button class="btno" onclick="aplicarCuponCarrito()" style="flex:0 0 auto;padding:12px 18px;border-color:rgba(255,213,79,0.6);color:#ffd54f;font-weight:700">Aplicar cupón</button>
+          <button class="btno" onclick="aplicarCuponCarrito()" style="flex:0 0 auto;width:auto;margin-top:0;padding:12px 18px;border-color:rgba(255,213,79,0.6);color:#ffd54f;font-weight:700">Aplicar cupón</button>
         </div>
         <div id="cupon-aplicado-fila" style="display:none;justify-content:space-between;align-items:center;margin-top:6px">
           <span style="font-size:13px;color:#ffd54f" id="cupon-aplicado-txt">🎟️ Cupón</span>
@@ -2234,7 +2234,7 @@ async function cargarCuponesCarrito(){
     if(utiles.length===0)return;
     cont.innerHTML=utiles.map((c,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;border:1.5px solid rgba(255,213,79,0.6);border-radius:10px;padding:9px 12px;margin-bottom:8px;flex-wrap:wrap">
       <span style="font-size:13px;color:#ffd54f;font-weight:700">🎟️ Tenés un cupón: ${c.codigo} · ₡${Math.round(c.valor).toLocaleString('es-CR')}</span>
-      <button class="btno" onclick="usarCuponDisponible(${i})" style="padding:7px 16px;border-color:rgba(255,213,79,0.7);color:#ffd54f;font-weight:700">Aplicar cupón</button>
+      <button class="btno" onclick="usarCuponDisponible(${i})" style="width:auto;margin-top:0;padding:7px 16px;border-color:rgba(255,213,79,0.7);color:#ffd54f;font-weight:700">Aplicar cupón</button>
     </div>`).join('');
   }catch(e){}
 }
@@ -3921,6 +3921,8 @@ async function abrirCarrito(negocioId, negocioNombre) {
   carritoItems = [];
   tipoEntrega = 'recoger';
   tarifaDelivery = 0;
+  window._cuponAplicado = null;
+  cargarCuponesCarrito();
   // Detectar categoría del negocio (para salud no aplica recoger/delivery)
   carritoNegocioCat = (typeof _negociosCache !== 'undefined' && _negociosCache.find(n=>n.id===negocioId)||{}).categoria || '';
   const esSalud = carritoNegocioCat === 'salud';
