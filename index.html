@@ -1469,7 +1469,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
         <div id="cupon-disponibles"></div>
         <div id="cupon-bloque-input" style="display:flex;gap:8px;align-items:stretch">
           <input class="ifield" id="cupon-input" placeholder="🎟️ Digite o pegue aquí su cupón" style="flex:1 1 auto;min-width:0;width:100%;margin:0;text-transform:uppercase;padding:12px 14px;font-size:14px">
-          <button class="btno" onclick="aplicarCuponCarrito()" style="flex:0 0 auto;padding:12px 18px;border-color:rgba(255,213,79,0.6);color:#ffd54f;font-weight:700">Aplicar</button>
+          <button class="btno" onclick="aplicarCuponCarrito()" style="flex:0 0 auto;padding:12px 18px;border-color:rgba(255,213,79,0.6);color:#ffd54f;font-weight:700">Aplicar cupón</button>
         </div>
         <div id="cupon-aplicado-fila" style="display:none;justify-content:space-between;align-items:center;margin-top:6px">
           <span style="font-size:13px;color:#ffd54f" id="cupon-aplicado-txt">🎟️ Cupón</span>
@@ -2205,6 +2205,7 @@ async function aplicarCuponCarrito(){
   const{data:c}=await db.from('cupones').select('*').eq('codigo',codigo).maybeSingle();
   if(!c){toast('❌ Cupón no encontrado');return;}
   if(c.canjeado){toast('⚠️ Este cupón ya fue utilizado');return;}
+  if(cuponVencido(c)){toast('⏰ Este cupón venció el '+c.vence);return;}
   if(c.usuario_telefono && c.usuario_telefono!==user.phone){toast('⚠️ Este cupón pertenece a otro usuario');return;}
   if(c.plataforma && c.plataforma==='viajes'){toast('⚠️ Este cupón es para viajes, no para compras');return;}
   if(c.negocio_id && String(c.negocio_id)!==String(carritoNegocioId)){toast('⚠️ Este cupón es válido solo en '+(c.negocio_nombre||'otro negocio'));return;}
@@ -2218,6 +2219,8 @@ function quitarCuponCarrito(){
   const inp=document.getElementById('cupon-input'); if(inp)inp.value='';
   actualizarTotalCarrito();
 }
+// ¿El cupón ya venció?
+function cuponVencido(c){return !!(c && c.vence && new Date(c.vence+'T23:59:59') < new Date());}
 // Cupones disponibles del usuario, listos para aplicar con un clic
 async function cargarCuponesCarrito(){
   const cont=document.getElementById('cupon-disponibles');
@@ -2226,7 +2229,7 @@ async function cargarCuponesCarrito(){
   if(!db||!user||!user.phone||!cont)return;
   try{
     const{data}=await db.from('cupones').select('*').eq('usuario_telefono',user.phone).eq('canjeado',false);
-    const utiles=(data||[]).filter(c=>Number(c.valor)>0 && c.plataforma!=='viajes' && (!c.negocio_id||String(c.negocio_id)===String(carritoNegocioId)));
+    const utiles=(data||[]).filter(c=>Number(c.valor)>0 && c.plataforma!=='viajes' && !cuponVencido(c) && (!c.negocio_id||String(c.negocio_id)===String(carritoNegocioId)));
     window._cuponesDisponibles=utiles;
     if(utiles.length===0)return;
     cont.innerHTML=utiles.map((c,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;border:1.5px solid rgba(255,213,79,0.6);border-radius:10px;padding:9px 12px;margin-bottom:8px;flex-wrap:wrap">
@@ -5971,7 +5974,8 @@ async function verificarRegaliaMensual(){
         const{data:ya}=await db.from('cupones').select('id').eq('usuario_telefono',user.phone).eq('negocio_id',String(cfg.negocio_id)).eq('mes',_mesActualAVS()).eq('tipo','regalia').limit(1);
         if(ya&&ya.length>0)continue;
         const codigo='AVS-R-'+Math.floor(1000+Math.random()*9000);
-        await db.from('cupones').insert({codigo,usuario_telefono:user.phone,usuario_nombre:user.name,negocio_id:String(cfg.negocio_id),negocio_nombre:cfg.negocio_nombre,premio:cfg.premio,tipo:'regalia',mes:_mesActualAVS()});
+        const venceR=new Date(Date.now()+8*86400000).toISOString().slice(0,10);
+        await db.from('cupones').insert({codigo,usuario_telefono:user.phone,usuario_nombre:user.name,negocio_id:String(cfg.negocio_id),negocio_nombre:cfg.negocio_nombre,premio:cfg.premio,tipo:'regalia',mes:_mesActualAVS(),vence:venceR});
         setTimeout(()=>toast(`🎉🎁 ¡GANASTE! ${cfg.premio} en ${cfg.negocio_nombre} — cupón ${codigo} (vélo en Promos → Mis cupones)`),900);
       }else if(!mejorProgreso||reg.n>mejorProgreso.n){
         mejorProgreso={n:reg.n,nombre:cfg.negocio_nombre};
@@ -5988,11 +5992,11 @@ async function verMisCupones(){
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
   ov.onclick=()=>ov.remove();
-  const items=(data&&data.length>0)?data.map(c=>`<div style="border:1.5px ${c.canjeado?'solid var(--bd)':'solid #ffd54f'};border-radius:12px;padding:12px;margin-bottom:8px;text-align:left;${c.canjeado?'opacity:0.5':''}">
-    <div style="font-weight:800;color:${c.canjeado?'var(--mt)':'#ffd54f'};font-size:15px">${c.codigo} ${c.canjeado?'· CANJEADO':''}</div>
+  const items=(data&&data.length>0)?data.map(c=>{const v=cuponVencido(c);const inact=c.canjeado||v;return `<div style="border:1.5px ${inact?'solid var(--bd)':'solid #ffd54f'};border-radius:12px;padding:12px;margin-bottom:8px;text-align:left;${inact?'opacity:0.5':''}">
+    <div style="font-weight:800;color:${inact?'var(--mt)':'#ffd54f'};font-size:15px">${c.codigo} ${c.canjeado?'· CANJEADO':(v?'· ⏰ VENCIDO':'')}</div>
     <div style="font-size:13px">🎁 ${c.premio}</div>
-    <div style="font-size:11px;color:var(--mt)">${c.negocio_nombre||''} · ${c.mes||''}</div>
-  </div>`).join(''):'<div style="color:var(--mt);font-size:13px">Aún no tenés cupones. Con 10 compras en el mes en un negocio participante, ganás tu regalía. 🎁</div>';
+    <div style="font-size:11px;color:var(--mt)">${c.negocio_nombre||''} ${c.vence?'· vence '+c.vence:''}</div>
+  </div>`;}).join(''):'<div style="color:var(--mt);font-size:13px">Aún no tenés cupones. Con 10 compras en el mes en un negocio participante, ganás tu regalía. 🎁</div>';
   ov.innerHTML=`<div style="background:var(--sf);border:1px solid rgba(255,213,79,0.5);border-radius:16px;padding:20px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;text-align:center">
     <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:12px">🎁 Mis cupones</div>
     ${items}
@@ -6007,6 +6011,7 @@ async function canjearCuponNegocio(){
   const{data:c}=await db.from('cupones').select('*').eq('codigo',codigo.trim().toUpperCase()).eq('negocio_id',String(negocioActual.id)).maybeSingle();
   if(!c){toast('❌ Cupón no encontrado para este negocio');return;}
   if(c.canjeado){toast('⚠️ Este cupón YA fue canjeado');return;}
+  if(cuponVencido(c)){toast('⏰ Este cupón venció el '+c.vence);return;}
   await db.from('cupones').update({canjeado:true}).eq('id',c.id);
   toast(`✅ Cupón válido: ${c.premio} para ${c.usuario_nombre||'el cliente'} — canjeado`);
 }
@@ -6016,11 +6021,11 @@ async function cargarCuponesAdmin(){
   if(!lista||!db)return;
   const{data}=await db.from('cupones').select('*').order('id',{ascending:false}).limit(12);
   if(!data||data.length===0){lista.innerHTML='<div style="color:var(--mt);font-size:13px">Sin cupones emitidos todavía.</div>';return;}
-  lista.innerHTML=data.map(c=>`<div style="border:1px solid var(--bd);border-radius:10px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:12px;${c.canjeado?'opacity:0.45':''}">
+  lista.innerHTML=data.map(c=>{const v=cuponVencido(c);return `<div style="border:1px solid var(--bd);border-radius:10px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:12px;${(c.canjeado||v)?'opacity:0.45':''}">
     <b style="color:#ffd54f">${c.codigo}</b>
-    <span style="flex:1">${c.valor?('₡'+Number(c.valor).toLocaleString('es-CR')):c.premio} · ${c.usuario_telefono} · ${c.plataforma||'comercio'}</span>
-    <span>${c.canjeado?'✔️ usado':'🟢 vigente'}</span>
-  </div>`).join('');
+    <span style="flex:1">${c.valor?('₡'+Number(c.valor).toLocaleString('es-CR')):c.premio} · ${c.usuario_telefono} · ${c.plataforma||'comercio'}${c.vence?' · vence '+c.vence:''}</span>
+    <span>${c.canjeado?'✔️ usado':(v?'⏰ vencido':'🟢 vigente')}</span>
+  </div>`;}).join('');
 }
 function abrirFormCupon(){
   const ov=document.createElement('div');
@@ -6030,6 +6035,8 @@ function abrirFormCupon(){
     <div style="font-family:var(--font-d);font-size:16px;font-weight:700;margin-bottom:12px">🎟️ Emitir cupón de valor</div>
     <input class="ifield" id="cf-tel" type="tel" placeholder="Teléfono del usuario (8 dígitos)" style="margin-bottom:8px">
     <input class="ifield" id="cf-valor" type="number" placeholder="Valor en ₡ (ej. 5000)" style="margin-bottom:8px">
+    <div style="font-size:11px;color:var(--mt);margin-bottom:4px">Vence el:</div>
+    <input class="ifield" id="cf-vence" type="date" style="margin-bottom:8px">
     <select class="ifield" id="cf-plat" style="margin-bottom:14px">
       <option value="comercio">🛒 Para compras en comercios</option>
       <option value="viajes">🚗 Para viajes (próximamente en la app)</option>
@@ -6041,17 +6048,20 @@ function abrirFormCupon(){
     </div>
   </div>`;
   document.body.appendChild(ov);
+  const vEl=document.getElementById('cf-vence');
+  if(vEl)vEl.value=new Date(Date.now()+8*86400000).toISOString().slice(0,10);
 }
 async function emitirCupon(){
   const tel=document.getElementById('cf-tel').value.replace(/\D/g,'');
   const valor=parseFloat(document.getElementById('cf-valor').value);
   const plat=document.getElementById('cf-plat').value;
+  const vence=document.getElementById('cf-vence').value||null;
   if(tel.length!==8||!valor||valor<=0){toast('Poné el teléfono (8 dígitos) y el valor');return;}
   const codigo='AVS-C-'+Math.floor(1000+Math.random()*9000);
-  const{error}=await db.from('cupones').insert({codigo,usuario_telefono:tel,premio:'Cupón AVS ₡'+Math.round(valor).toLocaleString('es-CR'),valor,plataforma:plat,tipo:'valor',mes:_mesActualAVS()});
-  if(error){toast('No se pudo emitir. ¿Corriste el SQL de las columnas valor y plataforma?');return;}
+  const{error}=await db.from('cupones').insert({codigo,usuario_telefono:tel,premio:'Cupón AVS ₡'+Math.round(valor).toLocaleString('es-CR'),valor,plataforma:plat,tipo:'valor',mes:_mesActualAVS(),vence});
+  if(error){toast('No se pudo emitir. ¿Corriste el SQL de la columna vence?');return;}
   document.getElementById('cupon-form-modal').remove();
-  toast(`✅ Cupón ${codigo} emitido por ₡${Math.round(valor).toLocaleString('es-CR')} — avisale al usuario`);
+  toast(`✅ Cupón ${codigo} emitido por ₡${Math.round(valor).toLocaleString('es-CR')}${vence?' — vence '+vence:''}`);
   cargarCuponesAdmin();
 }
 // ===== Tablero de rendimientos por plataforma =====
@@ -6061,6 +6071,15 @@ async function cargarRendimientos(){
   cont.innerHTML='Cargando...';
   const inicio=_mesActualAVS()+'-01';
   let pedSum=0,pedCom=0,pedN=0,viaSum=0,viaCom=0,viaN=0,cupSum=0;
+  let cEmit=0,cCanj=0,cVenc=0,cValEmit=0,cValCanj=0;
+  try{
+    const{data:cups}=await db.from('cupones').select('valor,canjeado,vence,created_at').gte('created_at',inicio);
+    (cups||[]).forEach(c=>{
+      cEmit++; cValEmit+=Number(c.valor||0);
+      if(c.canjeado){cCanj++;cValCanj+=Number(c.valor||0);}
+      else if(cuponVencido(c)){cVenc++;}
+    });
+  }catch(e){}
   try{
     const{data:peds}=await db.from('pedidos').select('total,comision_avs,descuento_cupon,estado,fecha').gte('fecha',inicio);
     (peds||[]).forEach(p=>{
@@ -6094,6 +6113,9 @@ async function cargarRendimientos(){
         <div>Movimiento: <b>${f(viaSum)}</b></div>
         <div>Comisiones AVS: <b style="color:var(--g)">${f(viaCom)}</b></div>
       </div>
+    </div>
+    <div style="border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px">
+      🎟️ <b>Cupones del mes:</b> emitidos ${cEmit} (${f(cValEmit)}) · canjeados ${cCanj} (${f(cValCanj)}) · vencidos sin usar ${cVenc}
     </div>
     <div style="border:1px solid rgba(255,213,79,0.4);border-radius:12px;padding:14px">
       <div style="font-weight:700;color:#ffd54f;margin-bottom:8px">💰 Calculadora del fondo de cupones</div>
