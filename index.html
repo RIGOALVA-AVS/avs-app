@@ -79,6 +79,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .avs-car-img:hover{transform:scale(1.04);}
 .avs-thumb-btn{transition:transform .2s ease;}
 .avs-thumb-btn:hover{transform:scale(2.4);z-index:60;position:relative;box-shadow:0 8px 24px rgba(0,0,0,0.6);}
+@keyframes avsPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,179,0,0.55);}50%{box-shadow:0 0 0 9px rgba(255,179,0,0);}}
+.promo-alert-btn{animation:avsPulse 1.6s infinite;}
 
 .lhero{height:calc(var(--real-vh, 1vh) * 44);width:100%;flex-shrink:0;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center center/contain no-repeat;background-color:#080f1e;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0;position:relative;overflow:hidden;}
 
@@ -1017,7 +1019,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <!-- Fila 2: Municipalidad + Más -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
       <div class="dest-chip" onclick="abrirPortalMunicipal()" style="background:linear-gradient(135deg,rgba(96,165,250,0.15),rgba(96,165,250,0.05));border:1px solid rgba(96,165,250,0.4);color:#60a5fa;padding:12px;font-weight:600">🏛️ Municipalidad</div>
-      <div class="dest-chip" onclick="abrirPromosMovil()" style="padding:12px;font-weight:600">🛍️ Promos</div>
+      <div class="dest-chip promo-alert-btn" onclick="abrirPromosMovil()" style="padding:12px;font-weight:800;background:linear-gradient(135deg,#ffb300,#ff8f00);color:#14202e;border:none">🚨 Promos 🚨</div>
     </div>
     </div><!-- /servicios-movil -->
     <div class="tinfo" id="tinfo">
@@ -5595,21 +5597,54 @@ async function llenarPromosLogin(){
 function verPromo(i){
   const p=_promosActuales[i];
   if(!p)return;
+  const viejo=document.getElementById('ver-promo-ov'); if(viejo)viejo.remove();
   const BASE='https://rigoalva-avs.github.io/avs-app/carrusel/';
   const src=p.img?(p.img.indexOf('http')===0?p.img:BASE+p.img):null;
+  const logueado=(typeof user!=='undefined'&&user&&user.name);
+  let accion='';
+  if(p.negocio_id&&logueado){
+    accion=`<button onclick="pedirPromo(${i})" style="background:linear-gradient(135deg,#ffb300,#ff8f00);color:#14202e;border:none;border-radius:10px;padding:11px 20px;font-weight:800;font-size:14px;cursor:pointer;margin-right:8px">🛒 Pedir esta promo</button>`;
+  }else if(!logueado){
+    accion=`<button onclick="abrirRegistro()" style="background:var(--g);color:#08131f;border:none;border-radius:10px;padding:11px 20px;font-weight:800;font-size:14px;cursor:pointer;margin-right:8px">📝 Registrate para aprovecharla</button>`;
+  }
   const ov=document.createElement('div');
+  ov.id='ver-promo-ov';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
   ov.onclick=()=>ov.remove();
   ov.innerHTML=`<div style="background:var(--sf,#0a1525);border:1px solid rgba(0,229,184,0.3);border-radius:16px;max-width:420px;width:100%;overflow:hidden;text-align:center">
     ${src?`<img src="${src}" style="width:100%;aspect-ratio:1/1;object-fit:contain;background:#0a1525;display:block">`:`<div style="width:100%;aspect-ratio:1.6/1;display:flex;align-items:center;justify-content:center;font-size:80px;background:linear-gradient(135deg,#0a1525,#13304a)">${p.emoji||'🏪'}</div>`}
-    <div style="padding:18px 20px 22px">
+    <div style="padding:16px 20px 22px">
+      <div style="display:inline-block;background:rgba(0,229,184,0.12);border:1px solid var(--g);color:var(--g);font-size:10px;font-weight:800;letter-spacing:1.5px;border-radius:20px;padding:3px 12px;margin-bottom:8px">⭐ EXCLUSIVA DE AVS</div>
       <div style="font-family:var(--font-d);font-size:16px;font-weight:700;margin-bottom:6px">${p.nombre}</div>
       <div style="font-size:20px;font-weight:800;color:var(--g);margin-bottom:8px">${p.emoji||'🏪'} ${p.promo}</div>
-      <div style="font-size:12px;color:var(--mt);line-height:1.6;margin-bottom:16px">${p.detalle||''}</div>
-      <button style="background:#fff;color:#000;border:none;border-radius:10px;padding:10px 26px;font-weight:700;font-size:14px;cursor:pointer">Cerrar</button>
+      <div style="font-size:12px;color:var(--mt);line-height:1.6;margin-bottom:6px">${p.detalle||''}</div>
+      ${p.precio?`<div style="font-size:15px;font-weight:800;color:#ffb300;margin-bottom:12px">₡${Number(p.precio).toLocaleString('es-CR')}</div>`:'<div style="margin-bottom:12px"></div>'}
+      <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px">
+        ${accion}
+        <button style="background:#fff;color:#000;border:none;border-radius:10px;padding:11px 22px;font-weight:700;font-size:14px;cursor:pointer">Cerrar</button>
+      </div>
     </div>
   </div>`;
   document.body.appendChild(ov);
+}
+async function pedirPromo(i){
+  const p=_promosActuales[i];
+  if(!p||!p.negocio_id)return;
+  const ov1=document.getElementById('ver-promo-ov'); if(ov1)ov1.remove();
+  const ov2=document.getElementById('promos-movil-ov'); if(ov2)ov2.remove();
+  let nombreNeg=p.nombre;
+  try{
+    const{data:neg}=await db.from('negocios').select('id,nombre').eq('id',p.negocio_id).maybeSingle();
+    if(neg&&neg.nombre)nombreNeg=neg.nombre;
+  }catch(e){}
+  await abrirCarrito(p.negocio_id, nombreNeg);
+  if(p.precio!=null&&p.precio!==''){
+    carritoItems.push({id:'promo-'+p.id,nombre:'🛍️ '+p.promo,precio:Number(p.precio)||0,cantidad:1});
+    if(typeof actualizarResumenCarrito==='function')actualizarResumenCarrito();
+    toast('🛍️ Promo agregada al pedido — podés añadir más productos');
+  }else{
+    toast('🛍️ Este negocio tiene la promo — pedila al ordenar');
+  }
 }
 // ===== Panel de promos en el celular (mismas 8 promos de la PC) =====
 async function abrirPromosMovil(){
@@ -5657,7 +5692,7 @@ async function cargarPromosAdmin(){
     <span style="font-size:24px;flex-shrink:0">${p.emoji||'🏪'}</span>
     <div style="flex:1;min-width:0">
       <div style="font-weight:700;font-size:14px">${p.nombre}${p.activo?'':' · <span style="color:#e24b4a">INACTIVA</span>'} <span style="color:var(--mt);font-size:11px">· orden ${p.orden||0}</span></div>
-      <div style="font-size:13px;color:var(--g)">${p.promo}</div>
+      <div style="font-size:13px;color:var(--g)">${p.promo}${p.precio?` · ₡${Number(p.precio).toLocaleString('es-CR')}`:''}</div>
       <div style="font-size:11px;color:var(--mt)">${p.detalle||''}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
@@ -5684,6 +5719,7 @@ async function abrirFormPromo(id){
     <input class="ifield" id="pf-promo" placeholder="Oferta corta (ej. 2x1 en pizza hawaiana)" value="${p.promo||''}" style="margin-bottom:8px">
     <textarea class="ifield" id="pf-detalle" rows="2" placeholder="Detalle / condiciones (opcional)" style="margin-bottom:8px;resize:vertical">${p.detalle||''}</textarea>
     <input class="ifield" id="pf-img" placeholder="Imagen (opcional): archivo del carrusel ej. finca.jpg, o URL" value="${p.img||''}" style="margin-bottom:8px">
+    <input class="ifield" id="pf-precio" type="number" placeholder="Precio de la promo en ₡ (opcional, para pedirla directo al carrito)" value="${p.precio!=null?p.precio:''}" style="margin-bottom:8px">
     <div style="font-size:11px;color:var(--mt);margin-bottom:4px">Vincular al menú de un negocio (la promo aparecerá dentro de su catálogo):</div>
     <select class="ifield" id="pf-negocio" style="margin-bottom:8px">${opcionesNeg}</select>
     <input class="ifield" id="pf-orden" type="number" placeholder="Orden (1 = primero)" value="${p.orden!=null?p.orden:''}" style="margin-bottom:14px">
@@ -5697,7 +5733,7 @@ async function abrirFormPromo(id){
 async function guardarPromo(id){
   if(!db)return;
   const v=k=>document.getElementById('pf-'+k).value.trim();
-  const reg={nombre:v('nombre'),emoji:v('emoji')||'🏪',promo:v('promo'),detalle:v('detalle')||null,img:v('img')||null,orden:parseInt(v('orden'))||0,negocio_id:v('negocio')||null};
+  const reg={nombre:v('nombre'),emoji:v('emoji')||'🏪',promo:v('promo'),detalle:v('detalle')||null,img:v('img')||null,orden:parseInt(v('orden'))||0,negocio_id:v('negocio')||null,precio:v('precio')!==''?parseFloat(v('precio')):null};
   if(!reg.nombre||!reg.promo){toast('Poné al menos el nombre del comercio y la oferta');return;}
   let error;
   if(id){({error}=await db.from('promos').update(reg).eq('id',id));}
