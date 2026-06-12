@@ -2089,10 +2089,13 @@ function selEntrega(tipo) {
 }
 
 function calcularDelivery() {
+  // Comisión AVS incluida en la tarifa mostrada (un solo número para el usuario)
+  const AVS_COMISION_DELIVERY = 0.10; // 10% — editable
+  const conComision = (base) => Math.round(base * (1 + AVS_COMISION_DELIVERY) / 50) * 50;
   // Calculate distance from user to negocio
   if (!userLoc || !db) {
-    tarifaDelivery = 1500;
-    document.getElementById('delivery-tarifa').textContent = '₡1.500 (moto hasta 2km)';
+    tarifaDelivery = conComision(1500);
+    document.getElementById('delivery-tarifa').textContent = '₡' + tarifaDelivery.toLocaleString('es-CR') + ' (moto)';
     document.getElementById('delivery-tiempo').textContent = '~15-25 min';
     actualizarTotalCarrito();
     return;
@@ -2106,18 +2109,20 @@ function calcularDelivery() {
         const dLng = (data.lng - userLoc.lng) * Math.PI/180;
         const a = Math.sin(dLat/2)**2 + Math.cos(userLoc.lat*Math.PI/180)*Math.cos(data.lat*Math.PI/180)*Math.sin(dLng/2)**2;
         const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        // Escala moto AVS: hasta 2km=1500, 2-3.5km=2000, 3.5-4km=2500, 4-5km=3000, +5km=3000+462/km extra
-        if (km <= 2) { tarifaDelivery = 1500; }
-        else if (km <= 3.5) { tarifaDelivery = 2000; }
-        else if (km <= 4) { tarifaDelivery = 2500; }
-        else if (km <= 5) { tarifaDelivery = 3000; }
-        else { tarifaDelivery = Math.round(3000 + (km - 5) * 462); }
+        // Escala moto AVS (base): hasta 2km=1500, 2-3.5km=2000, 3.5-4km=2500, 4-5km=3000, +5km=3000+462/km extra
+        let base;
+        if (km <= 2) { base = 1500; }
+        else if (km <= 3.5) { base = 2000; }
+        else if (km <= 4) { base = 2500; }
+        else if (km <= 5) { base = 3000; }
+        else { base = Math.round(3000 + (km - 5) * 462); }
+        tarifaDelivery = conComision(base);
         const mins = Math.round(km * 3 + 10);
-        document.getElementById('delivery-tarifa').textContent = '₡' + tarifaDelivery.toLocaleString('es-CR');
+        document.getElementById('delivery-tarifa').textContent = '₡' + tarifaDelivery.toLocaleString('es-CR') + ' 🛵';
         document.getElementById('delivery-tiempo').textContent = `~${mins}-${mins+10} min`;
       } else {
-        tarifaDelivery = 1500;
-        document.getElementById('delivery-tarifa').textContent = '₡1.500';
+        tarifaDelivery = conComision(1500);
+        document.getElementById('delivery-tarifa').textContent = '₡' + tarifaDelivery.toLocaleString('es-CR');
         document.getElementById('delivery-tiempo').textContent = '~15-25 min';
       }
       actualizarTotalCarrito();
@@ -2131,9 +2136,9 @@ function calcularDelivery() {
 
 function actualizarTotalCarrito() {
   const subtotal = carritoItems.reduce((s, i) => s + (i.precio * i.cantidad), 0);
-  const totalConDelivery = subtotal + tarifaDelivery;
-  const comision = Math.round(totalConDelivery * 0.10);
-  const total = totalConDelivery + comision;
+  // Política AVS: precios limpios para el cliente. La comisión va INCLUIDA
+  // en la tarifa de envío (calcularDelivery) y en el precio final de las promos.
+  const total = subtotal + tarifaDelivery;
   const subEl = document.getElementById('carrito-subtotal');
   const totEl = document.getElementById('carrito-total');
   const lblEl = document.getElementById('comision-label');
@@ -2141,7 +2146,7 @@ function actualizarTotalCarrito() {
   if (totEl) totEl.textContent = '₡' + total.toLocaleString('es-CR');
   if (lblEl) {
     if (tipoEntrega === 'delivery') {
-      lblEl.textContent = 'Total a pagar (incluye delivery ₡' + tarifaDelivery.toLocaleString('es-CR') + ')';
+      lblEl.textContent = 'Total a pagar (incluye envío en moto ₡' + tarifaDelivery.toLocaleString('es-CR') + ')';
     } else {
       lblEl.textContent = 'Total a pagar';
     }
@@ -2169,18 +2174,37 @@ async function enviarPrefactura(pedidoId, negocioNombre, negocioSinpe, items, to
   if (db) await db.from('pedidos').update({prefactura_enviada:true}).eq('id',pedidoId);
 }
 
+// ===== Comisión AVS: cobro automático del crédito del oferente =====
+function avisoSaldoBajoAVS(saldo){
+  if(saldo < 2000){
+    setTimeout(()=>toast(`⚠️ Tu saldo AVS es ₡${saldo.toLocaleString('es-CR')}. Recargá para seguir activo en la plataforma`),700);
+  }
+}
+async function cobrarComisionPedido(pedidoId){
+  if(!db) return;
+  try{
+    const {data:p} = await db.from('pedidos').select('id,negocio_id,comision_avs,comision_cobrada').eq('id',pedidoId).single();
+    if(!p || p.comision_cobrada || !p.comision_avs) return;
+    const {data:neg} = await db.from('negocios').select('saldo_avs').eq('id',p.negocio_id).single();
+    const nuevoSaldo = parseInt(neg?.saldo_avs||0) - Math.round(p.comision_avs);
+    await db.from('negocios').update({saldo_avs:nuevoSaldo}).eq('id',p.negocio_id);
+    await db.from('pedidos').update({comision_cobrada:true}).eq('id',pedidoId);
+    if(typeof negocioActual!=='undefined' && negocioActual && negocioActual.id===p.negocio_id){
+      const el=document.getElementById('neg-saldo');
+      if(el) el.textContent='₡'+nuevoSaldo.toLocaleString('es-CR');
+      toast(`💳 Comisión AVS ₡${Math.round(p.comision_avs).toLocaleString('es-CR')} descontada de tu crédito`);
+      avisoSaldoBajoAVS(nuevoSaldo);
+    }
+  }catch(e){console.error('cobrarComisionPedido',e);}
+}
 async function confirmarSinpeNegocio(pedidoId, comisionAVS) {
   if (!db || !negocioActual) return;
   if (!confirm('¿Confirmás que recibiste el pago SINPE del cliente?')) return;
   // Mark as confirmed
   await db.from('pedidos').update({sinpe_confirmado:true, estado:'confirmado'}).eq('id',pedidoId);
-  // Deduct commission from negocio saldo
-  const {data:neg} = await db.from('negocios').select('saldo_avs').eq('id',negocioActual.id).single();
-  const saldoActual = parseInt(neg?.saldo_avs||0);
-  const nuevoSaldo = saldoActual - comisionAVS;
-  await db.from('negocios').update({saldo_avs:nuevoSaldo}).eq('id',negocioActual.id);
-  document.getElementById('neg-saldo').textContent = '₡'+nuevoSaldo.toLocaleString('es-CR');
-  toast(`✅ Pedido confirmado — Comisión AVS: ₡${comisionAVS.toLocaleString('es-CR')} descontada`);
+  // Comisión automática (con candado anti-doble cobro)
+  await cobrarComisionPedido(pedidoId);
+  toast('✅ Pedido confirmado');
   cargarPedidosNegocio();
 }
 
@@ -2300,6 +2324,7 @@ async function abrirTracking(pedidoId) {
 async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
   if (!db) return;
   await db.from('pedidos').update({ estado: nuevoEstado }).eq('id', pedidoId);
+  if (nuevoEstado === 'entregado') { await cobrarComisionPedido(pedidoId); }
   toast('Estado actualizado: ' + ESTADOS_PEDIDO.find(e=>e.id===nuevoEstado)?.label);
   cargarPedidosNegocio();
 }
@@ -3876,10 +3901,11 @@ async function abrirCarrito(negocioId, negocioNombre) {
 async function confirmarPedido() {
   if (carritoItems.length === 0) { toast('Agrega items al pedido'); return; }
   const subtotal = carritoItems.reduce((s, i) => s + (i.precio * i.cantidad), 0);
-  const totalConDelivery = subtotal + tarifaDelivery;
-  const comision = Math.round(totalConDelivery * 0.10);
-  const total = totalConDelivery + comision;
-  const totalNegocio = subtotal - Math.round(subtotal * 0.10);
+  // Cliente paga precio limpio (envío ya trae la comisión incluida).
+  // La comisión AVS del negocio (10% de productos) se descuenta de SU crédito al confirmarse el pago/entrega.
+  const total = subtotal + tarifaDelivery;
+  const comision = Math.round(subtotal * 0.10);
+  const totalNegocio = subtotal - comision;
   const entregaTexto = tipoEntrega === 'delivery' ? 'Delivery AVS' : (tipoEntrega === 'contacto' ? 'Serás contactado por un asesor' : 'Recoger en local');
   if (!confirm('Confirmar pedido por \u20a1' + total.toLocaleString('es-CR') + '? ' + entregaTexto)) return;
   const notas = document.getElementById('carrito-notas') ? document.getElementById('carrito-notas').value.trim() : '';
@@ -4325,6 +4351,7 @@ async function doLoginNegocio(){
   go('panel-negocio');
   cargarMenuNegocio();
   cargarStatsNegocio();
+  if(negocioActual && negocioActual.saldo_avs!=null) avisoSaldoBajoAVS(parseInt(negocioActual.saldo_avs||0));
 }
 
 // ============== SEGURIDAD DE LOGIN ==============
@@ -5164,6 +5191,7 @@ function applyUser(){
       const s=parseInt(data?.saldo_avs||0);
       const el=document.getElementById('cond-saldo');
       if(el)el.textContent='₡'+s.toLocaleString('es-CR');
+      avisoSaldoBajoAVS(s);
     }).catch(()=>{});
   }
   // Load saldo
@@ -5737,7 +5765,7 @@ async function abrirFormPromo(id){
     <input class="ifield" id="pf-promo" placeholder="Oferta corta (ej. 2x1 en pizza hawaiana)" value="${p.promo||''}" style="margin-bottom:8px">
     <textarea class="ifield" id="pf-detalle" rows="2" placeholder="Detalle / condiciones (opcional)" style="margin-bottom:8px;resize:vertical">${p.detalle||''}</textarea>
     <input class="ifield" id="pf-img" placeholder="Imagen (opcional): archivo del carrusel ej. finca.jpg, o URL" value="${p.img||''}" style="margin-bottom:8px">
-    <input class="ifield" id="pf-precio" type="number" placeholder="Precio de la promo en ₡ (opcional, para pedirla directo al carrito)" value="${p.precio!=null?p.precio:''}" style="margin-bottom:8px">
+    <input class="ifield" id="pf-precio" type="number" placeholder="Precio FINAL de la promo en ₡ (con comisión AVS incluida)" value="${p.precio!=null?p.precio:''}" style="margin-bottom:8px">
     <div style="font-size:11px;color:var(--mt);margin-bottom:4px">Vincular al menú de un negocio (la promo aparecerá dentro de su catálogo):</div>
     <select class="ifield" id="pf-negocio" style="margin-bottom:8px">${opcionesNeg}</select>
     <input class="ifield" id="pf-orden" type="number" placeholder="Orden (1 = primero)" value="${p.orden!=null?p.orden:''}" style="margin-bottom:14px">
