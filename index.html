@@ -857,10 +857,21 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="adtbtn" id="admtab-intentos" onclick="switchAdminTab('intentos')">🚨 Intentos</div>
     <div class="adtbtn" id="admtab-emergencias" onclick="switchAdminTab('emergencias')">🆘 Emergencias</div>
     <div class="adtbtn" id="admtab-promos" onclick="switchAdminTab('promos')">🛍️ Promos</div>
+    <div class="adtbtn" id="admtab-rendimientos" onclick="switchAdminTab('rendimientos')">📊 Rendimientos</div>
+  </div>
+  <div id="admin-rendimientos" style="display:none">
+    <div style="font-family:var(--font-d);font-size:15px;font-weight:700;margin-bottom:12px">📊 Rendimientos del mes por plataforma</div>
+    <div id="rendimientos-contenido" style="font-size:13px;color:var(--mt)">Cargando...</div>
   </div>
   <div id="admin-promos" style="display:none">
     <button class="btnp" onclick="abrirFormPromo()" style="max-width:280px;margin-bottom:14px">➕ Nueva promo</button>
     <div id="promoslist"></div>
+    <div style="font-family:var(--font-d);font-size:15px;font-weight:700;margin:22px 0 10px;padding-top:14px;border-top:1px solid var(--bd)">🎁 Regalías por lealtad (10 compras en el mismo negocio)</div>
+    <button class="btno" onclick="abrirFormRegalia()" style="max-width:280px;margin-bottom:12px">➕ Nueva regalía</button>
+    <div id="regaliaslist"></div>
+    <div style="font-family:var(--font-d);font-size:15px;font-weight:700;margin:22px 0 10px;padding-top:14px;border-top:1px solid var(--bd)">🎟️ Cupones de valor (estilo Uber)</div>
+    <button class="btno" onclick="abrirFormCupon()" style="max-width:280px;margin-bottom:12px;border-color:rgba(255,213,79,0.5);color:#ffd54f">➕ Emitir cupón</button>
+    <div id="cuponeslist"></div>
   </div>
   <div id="admin-conductores">
     <div class="adtab" style="margin-top:8px">
@@ -1380,6 +1391,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <div style="background:var(--grad-card);border:1px solid var(--bd2);border-radius:20px;padding:18px;margin-bottom:16px">
     <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Saldo AVS disponible</div>
     <div style="font-family:var(--font-d);font-size:28px;font-weight:800;background:var(--grad-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" id="neg-saldo">₡0</div>
+    <button class="btno" onclick="canjearCuponNegocio()" style="margin-top:8px;border-color:rgba(255,213,79,0.5);color:#ffd54f;font-size:13px">🎁 Canjear cupón de cliente</button>
     <div style="display:flex;gap:8px;margin-top:12px">
       <div class="rchip" onclick="abrirSINPENegocio(10000)" style="flex:1">₡10.000</div>
       <div class="rchip" onclick="abrirSINPENegocio(25000)" style="flex:1">₡25.000</div>
@@ -1451,6 +1463,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:14px;color:var(--mt)">Subtotal</span>
         <span style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--tx)" id="carrito-subtotal">₡0</span>
+      </div>
+      <!-- Cupón AVS -->
+      <div style="margin-top:10px">
+        <div id="cupon-bloque-input" style="display:flex;gap:8px">
+          <input class="ifield" id="cupon-input" placeholder="🎟️ ¿Tenés un cupón? Código aquí" style="flex:1;margin:0;text-transform:uppercase">
+          <button class="btno" onclick="aplicarCuponCarrito()" style="flex-shrink:0;padding:0 16px;border-color:rgba(255,213,79,0.5);color:#ffd54f">Aplicar</button>
+        </div>
+        <div id="cupon-aplicado-fila" style="display:none;justify-content:space-between;align-items:center;margin-top:6px">
+          <span style="font-size:13px;color:#ffd54f" id="cupon-aplicado-txt">🎟️ Cupón</span>
+          <span style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:700;color:#ffd54f" id="cupon-aplicado-monto">−₡0</span><a onclick="quitarCuponCarrito()" style="font-size:11px;color:var(--mt);cursor:pointer;text-decoration:underline">quitar</a></span>
+        </div>
       </div>
       <!-- Opción entrega -->
       <div style="margin-top:12px" id="bloque-entrega">
@@ -2141,7 +2164,23 @@ function actualizarTotalCarrito() {
   const subtotal = carritoItems.reduce((s, i) => s + (i.precio * i.cantidad), 0);
   // Política AVS: precios limpios para el cliente. La comisión va INCLUIDA
   // en la tarifa de envío (calcularDelivery) y en el precio final de las promos.
-  const total = subtotal + tarifaDelivery;
+  let total = subtotal + tarifaDelivery;
+  // Cupón AVS aplicado (estilo Uber: si el pedido es menor al cupón, cubre todo; si es mayor, paga la diferencia)
+  let descuento = 0;
+  if (window._cuponAplicado && window._cuponAplicado.valor > 0) {
+    descuento = Math.min(Math.round(window._cuponAplicado.valor), total);
+    total = total - descuento;
+    const fila = document.getElementById('cupon-aplicado-fila');
+    const mEl = document.getElementById('cupon-aplicado-monto');
+    const tEl = document.getElementById('cupon-aplicado-txt');
+    if (fila) fila.style.display = 'flex';
+    if (mEl) mEl.textContent = '−₡' + descuento.toLocaleString('es-CR');
+    if (tEl) tEl.textContent = '🎟️ Cupón ' + window._cuponAplicado.codigo;
+    const inp = document.getElementById('cupon-bloque-input'); if (inp) inp.style.display = 'none';
+  } else {
+    const fila = document.getElementById('cupon-aplicado-fila'); if (fila) fila.style.display = 'none';
+    const inp = document.getElementById('cupon-bloque-input'); if (inp) inp.style.display = 'flex';
+  }
   const subEl = document.getElementById('carrito-subtotal');
   const totEl = document.getElementById('carrito-total');
   const lblEl = document.getElementById('comision-label');
@@ -2154,6 +2193,27 @@ function actualizarTotalCarrito() {
       lblEl.textContent = 'Total a pagar';
     }
   }
+}
+async function aplicarCuponCarrito(){
+  if(!db||!user||!user.phone){toast('Entrá como usuario para usar cupones');return;}
+  const inp=document.getElementById('cupon-input');
+  const codigo=(inp?inp.value:'').trim().toUpperCase();
+  if(!codigo){toast('Escribí el código del cupón');return;}
+  const{data:c}=await db.from('cupones').select('*').eq('codigo',codigo).maybeSingle();
+  if(!c){toast('❌ Cupón no encontrado');return;}
+  if(c.canjeado){toast('⚠️ Este cupón ya fue utilizado');return;}
+  if(c.usuario_telefono && c.usuario_telefono!==user.phone){toast('⚠️ Este cupón pertenece a otro usuario');return;}
+  if(c.plataforma && c.plataforma==='viajes'){toast('⚠️ Este cupón es para viajes, no para compras');return;}
+  if(c.negocio_id && String(c.negocio_id)!==String(carritoNegocioId)){toast('⚠️ Este cupón es válido solo en '+(c.negocio_nombre||'otro negocio'));return;}
+  if(!c.valor||c.valor<=0){toast('🎁 Este cupón es una regalía ('+c.premio+') — presentalo en el local para canjearlo');return;}
+  window._cuponAplicado={id:c.id,codigo:c.codigo,valor:Number(c.valor)};
+  actualizarTotalCarrito();
+  toast('🎟️ Cupón aplicado: −₡'+Math.round(c.valor).toLocaleString('es-CR'));
+}
+function quitarCuponCarrito(){
+  window._cuponAplicado=null;
+  const inp=document.getElementById('cupon-input'); if(inp)inp.value='';
+  actualizarTotalCarrito();
 }
 
 
@@ -3324,6 +3384,7 @@ function switchAdminTab(tab){
   const aI = document.getElementById('admin-intentos'); if(aI) aI.style.display='none';
   const aE = document.getElementById('admin-emergencias'); if(aE) aE.style.display='none';
   const aP = document.getElementById('admin-promos'); if(aP) aP.style.display='none';
+  const aRnd = document.getElementById('admin-rendimientos'); if(aRnd) aRnd.style.display='none';
   if(tab==='conductores'){document.getElementById('admin-conductores').style.display='block';cargarAdmin();}
   else if(tab==='recargas'){document.getElementById('admin-recargas').style.display='block';filtrarRecargas('pendiente');}
   else if(tab==='negocios' && aN){aN.style.display='block';if(typeof filtrarNegocios==='function')filtrarNegocios('pendiente');}
@@ -3331,7 +3392,8 @@ function switchAdminTab(tab){
   else if(tab==='codigos' && aC){aC.style.display='block';filtrarCodigos('disponible');}
   else if(tab==='intentos' && aI){aI.style.display='block';filtrarIntentos('pendiente');}
   else if(tab==='emergencias' && aE){aE.style.display='block';filtrarEmergencias('activa');}
-  else if(tab==='promos' && aP){aP.style.display='block';cargarPromosAdmin();}
+  else if(tab==='promos' && aP){aP.style.display='block';cargarPromosAdmin();cargarRegaliasAdmin();cargarCuponesAdmin();}
+  else if(tab==='rendimientos'){const aR=document.getElementById('admin-rendimientos');if(aR){aR.style.display='block';cargarRendimientos();}}
 }
 
 let matchUberFiltro = 'pendiente_aprobacion';
@@ -3906,9 +3968,10 @@ async function confirmarPedido() {
   const subtotal = carritoItems.reduce((s, i) => s + (i.precio * i.cantidad), 0);
   // Cliente paga precio limpio (envío ya trae la comisión incluida).
   // La comisión AVS del negocio (10% de productos) se descuenta de SU crédito al confirmarse el pago/entrega.
-  const total = subtotal + tarifaDelivery;
+  const descuentoCupon = (window._cuponAplicado && window._cuponAplicado.valor>0) ? Math.min(Math.round(window._cuponAplicado.valor), subtotal + tarifaDelivery) : 0;
+  const total = Math.max(0, subtotal + tarifaDelivery - descuentoCupon);
   const comision = Math.round(subtotal * 0.10);
-  const totalNegocio = subtotal - comision;
+  const totalNegocio = subtotal - comision; // el negocio cobra completo: el cupón lo financia AVS
   const entregaTexto = tipoEntrega === 'delivery' ? 'Delivery AVS' : (tipoEntrega === 'contacto' ? 'Serás contactado por un asesor' : 'Recoger en local');
   if (!confirm('Confirmar pedido por \u20a1' + total.toLocaleString('es-CR') + '? ' + entregaTexto)) return;
   const notas = document.getElementById('carrito-notas') ? document.getElementById('carrito-notas').value.trim() : '';
@@ -3919,9 +3982,15 @@ async function confirmarPedido() {
     items: JSON.stringify(carritoItems), subtotal,
     tarifa_delivery: tarifaDelivery, total, comision_avs: comision,
     total_negocio: totalNegocio, tipo_entrega: tipoEntrega,
-    estado: 'pendiente', notas
+    estado: 'pendiente', notas,
+    cupon_codigo: descuentoCupon>0 ? window._cuponAplicado.codigo : null,
+    descuento_cupon: descuentoCupon
   }).select().single();
   if (error) { toast('Error: ' + error.message); return; }
+  if (descuentoCupon>0 && window._cuponAplicado) {
+    await db.from('cupones').update({canjeado:true}).eq('id', window._cuponAplicado.id);
+    window._cuponAplicado=null;
+  }
   if (pedidoData) {
     const { data: negData } = await db.from('negocios').select('sinpe,nombre').eq('id', carritoNegocioId).single();
     const sinpeNeg = negData?.sinpe || '88001234';
@@ -3930,7 +3999,7 @@ async function confirmarPedido() {
     const telUser = ('506' + user.phone.replace(/[^0-9]/g,'')).replace(/^506506/,'506');
     setTimeout(() => window.open('https://wa.me/' + telUser + '?text=' + encodeURIComponent(txt), '_blank'), 500);
     toast('Prefactura enviada por WhatsApp');
-    carritoItems = []; tipoEntrega = 'recoger'; tarifaDelivery = 0;
+    carritoItems = []; tipoEntrega = 'recoger'; tarifaDelivery = 0; window._cuponAplicado = null;
     setTimeout(() => abrirTracking(pedidoData.id), 2000);
   }
 }
@@ -5196,6 +5265,8 @@ function applyUser(){
       if(_pp.negocio_id){ pedirPromo(0); } else { verPromo(0); }
     },800);
   }
+  // Regalías: revisar el contador del mes al entrar como usuario
+  if(user.role!=='conductor' && user.role!=='admin'){ setTimeout(verificarRegaliaMensual, 1600); }
   if(db&&user.phone&&user.role==='conductor'){
     db.from('usuarios').select('saldo_avs').eq('telefono',user.phone).single().then(({data})=>{
       const s=parseInt(data?.saldo_avs||0);
@@ -5731,7 +5802,8 @@ async function abrirPromosMovil(){
         <span style="color:var(--mt)">›</span>
       </div>`;
     }).join('')}</div>
-    <div onclick="document.getElementById('promos-movil-ov').remove();go('servicios')" style="text-align:center;margin-top:16px;padding:11px;border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-size:13px;cursor:pointer">✨ Ver todos los servicios</div>
+    <div onclick="verMisCupones()" style="text-align:center;margin-top:12px;padding:11px;border:1.5px solid rgba(255,213,79,0.5);border-radius:10px;color:#ffd54f;font-size:13px;font-weight:700;cursor:pointer">🎁 Mis cupones</div>
+    <div onclick="document.getElementById('promos-movil-ov').remove();go('servicios')" style="text-align:center;margin-top:10px;padding:11px;border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-size:13px;cursor:pointer">✨ Ver todos los servicios</div>
     <div style="font-size:11px;color:var(--mt);text-align:center;margin-top:12px;padding-bottom:20px">¿Tenés un negocio en Atenas? Sumate como comercio y aparecé aquí.</div>`;
   document.body.appendChild(ov);
 }
@@ -5802,6 +5874,218 @@ async function guardarPromo(id){
 }
 async function togglePromo(id,act){if(!db)return;await db.from('promos').update({activo:act}).eq('id',id);toast(act?'▶️ Promo activada':'⏸️ Promo desactivada');cargarPromosAdmin();llenarPromosLogin();}
 async function eliminarPromo(id){if(!db)return;if(!confirm('¿Eliminar esta promo definitivamente?'))return;await db.from('promos').delete().eq('id',id);toast('🗑️ Promo eliminada');cargarPromosAdmin();llenarPromosLogin();}
+// ===== Regalías por lealtad: 10 compras en el mismo negocio en el mes =====
+async function cargarRegaliasAdmin(){
+  const lista=document.getElementById('regaliaslist');
+  if(!lista||!db)return;
+  const{data,error}=await db.from('regalias_config').select('*').order('id');
+  if(error){lista.innerHTML='<div style="color:#e24b4a;font-size:13px">¿Ya creaste las tablas regalias_config y cupones?</div>';return;}
+  window._regaliasAdmin=data||[];
+  if(!data||data.length===0){lista.innerHTML='<div style="color:var(--mt);font-size:13px">Sin regalías. Agregá los negocios participantes y su premio.</div>';return;}
+  lista.innerHTML=data.map(r=>`<div style="border:1px solid var(--bd);border-radius:12px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;${r.activo?'':'opacity:0.45'}">
+    <span style="font-size:20px">🎁</span>
+    <div style="flex:1"><b>${r.negocio_nombre||r.negocio_id}</b><div style="font-size:12px;color:var(--g)">${r.premio}</div></div>
+    <button class="addoc addoc-ver" onclick="toggleRegalia(${r.id},${r.activo?'false':'true'})">${r.activo?'⏸️':'▶️'}</button>
+    <button class="addoc addoc-ver" style="border-color:#e24b4a;color:#e24b4a" onclick="eliminarRegalia(${r.id})">🗑️</button>
+  </div>`).join('');
+}
+async function abrirFormRegalia(){
+  let ops='';
+  try{
+    const{data:negs}=await db.from('negocios').select('id,nombre').order('nombre');
+    if(negs)ops=negs.map(n=>`<option value="${n.id}|${n.nombre}">${n.nombre}</option>`).join('');
+  }catch(e){}
+  const ov=document.createElement('div');
+  ov.id='regalia-form-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  ov.innerHTML=`<div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:20px;max-width:420px;width:100%">
+    <div style="font-family:var(--font-d);font-size:16px;font-weight:700;margin-bottom:12px">🎁 Nueva regalía</div>
+    <div style="font-size:11px;color:var(--mt);margin-bottom:4px">Negocio participante (de previo acuerdo):</div>
+    <select class="ifield" id="rg-negocio" style="margin-bottom:8px">${ops}</select>
+    <input class="ifield" id="rg-premio" placeholder="Premio (ej. Postre gratis / 20% en tu próxima compra)" style="margin-bottom:14px">
+    <div style="display:flex;gap:10px">
+      <button class="btnp" style="flex:1" onclick="guardarRegalia()">💾 Guardar</button>
+      <button class="btno" style="flex:1" onclick="document.getElementById('regalia-form-modal').remove()">Cancelar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+}
+async function guardarRegalia(){
+  const sel=document.getElementById('rg-negocio').value;
+  const premio=document.getElementById('rg-premio').value.trim();
+  if(!sel||!premio){toast('Elegí el negocio y escribí el premio');return;}
+  const [nid,nnombre]=sel.split('|');
+  const{error}=await db.from('regalias_config').insert({negocio_id:String(nid),negocio_nombre:nnombre,premio,activo:true});
+  if(error){toast('No se pudo guardar. ¿Existe la tabla regalias_config?');return;}
+  document.getElementById('regalia-form-modal').remove();
+  toast('✅ Regalía guardada');
+  cargarRegaliasAdmin();
+}
+async function toggleRegalia(id,act){await db.from('regalias_config').update({activo:act}).eq('id',id);cargarRegaliasAdmin();}
+async function eliminarRegalia(id){if(!confirm('¿Eliminar esta regalía?'))return;await db.from('regalias_config').delete().eq('id',id);cargarRegaliasAdmin();}
+function _mesActualAVS(){return new Date().toISOString().slice(0,7);}
+async function verificarRegaliaMensual(){
+  if(!db||!user||!user.phone)return;
+  try{
+    const inicio=_mesActualAVS()+'-01';
+    const{data:peds}=await db.from('pedidos').select('negocio_id,negocio_nombre,estado,fecha').eq('usuario_telefono',user.phone).gte('fecha',inicio);
+    if(!peds||peds.length===0)return;
+    const validos=peds.filter(p=>['confirmado','preparacion','listo','en_camino','entregado'].includes(p.estado));
+    const porNegocio={};
+    validos.forEach(p=>{const k=String(p.negocio_id);porNegocio[k]=porNegocio[k]||{n:0,nombre:p.negocio_nombre};porNegocio[k].n++;});
+    const{data:cfgs}=await db.from('regalias_config').select('*').eq('activo',true);
+    if(!cfgs||cfgs.length===0)return;
+    let mejorProgreso=null;
+    for(const cfg of cfgs){
+      const reg=porNegocio[String(cfg.negocio_id)];
+      if(!reg)continue;
+      if(reg.n>=10){
+        const{data:ya}=await db.from('cupones').select('id').eq('usuario_telefono',user.phone).eq('negocio_id',String(cfg.negocio_id)).eq('mes',_mesActualAVS()).eq('tipo','regalia').limit(1);
+        if(ya&&ya.length>0)continue;
+        const codigo='AVS-R-'+Math.floor(1000+Math.random()*9000);
+        await db.from('cupones').insert({codigo,usuario_telefono:user.phone,usuario_nombre:user.name,negocio_id:String(cfg.negocio_id),negocio_nombre:cfg.negocio_nombre,premio:cfg.premio,tipo:'regalia',mes:_mesActualAVS()});
+        setTimeout(()=>toast(`🎉🎁 ¡GANASTE! ${cfg.premio} en ${cfg.negocio_nombre} — cupón ${codigo} (vélo en Promos → Mis cupones)`),900);
+      }else if(!mejorProgreso||reg.n>mejorProgreso.n){
+        mejorProgreso={n:reg.n,nombre:cfg.negocio_nombre};
+      }
+    }
+    if(mejorProgreso&&mejorProgreso.n>=5){
+      setTimeout(()=>toast(`🎁 Llevás ${mejorProgreso.n}/10 compras del mes en ${mejorProgreso.nombre} — ¡seguí así!`),900);
+    }
+  }catch(e){console.error('verificarRegalia',e);}
+}
+async function verMisCupones(){
+  if(!db||!user||!user.phone){toast('Entrá como usuario para ver tus cupones');return;}
+  const{data}=await db.from('cupones').select('*').eq('usuario_telefono',user.phone).order('id',{ascending:false}).limit(20);
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  ov.onclick=()=>ov.remove();
+  const items=(data&&data.length>0)?data.map(c=>`<div style="border:1.5px ${c.canjeado?'solid var(--bd)':'solid #ffd54f'};border-radius:12px;padding:12px;margin-bottom:8px;text-align:left;${c.canjeado?'opacity:0.5':''}">
+    <div style="font-weight:800;color:${c.canjeado?'var(--mt)':'#ffd54f'};font-size:15px">${c.codigo} ${c.canjeado?'· CANJEADO':''}</div>
+    <div style="font-size:13px">🎁 ${c.premio}</div>
+    <div style="font-size:11px;color:var(--mt)">${c.negocio_nombre||''} · ${c.mes||''}</div>
+  </div>`).join(''):'<div style="color:var(--mt);font-size:13px">Aún no tenés cupones. Con 10 compras en el mes en un negocio participante, ganás tu regalía. 🎁</div>';
+  ov.innerHTML=`<div style="background:var(--sf);border:1px solid rgba(255,213,79,0.5);border-radius:16px;padding:20px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;text-align:center">
+    <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:12px">🎁 Mis cupones</div>
+    ${items}
+    <button style="background:#fff;color:#000;border:none;border-radius:10px;padding:10px 24px;font-weight:700;margin-top:8px;cursor:pointer">Cerrar</button>
+  </div>`;
+  document.body.appendChild(ov);
+}
+async function canjearCuponNegocio(){
+  if(!db||!negocioActual)return;
+  const codigo=prompt('Código del cupón del cliente (ej. AVS-R-1234):');
+  if(!codigo)return;
+  const{data:c}=await db.from('cupones').select('*').eq('codigo',codigo.trim().toUpperCase()).eq('negocio_id',String(negocioActual.id)).maybeSingle();
+  if(!c){toast('❌ Cupón no encontrado para este negocio');return;}
+  if(c.canjeado){toast('⚠️ Este cupón YA fue canjeado');return;}
+  await db.from('cupones').update({canjeado:true}).eq('id',c.id);
+  toast(`✅ Cupón válido: ${c.premio} para ${c.usuario_nombre||'el cliente'} — canjeado`);
+}
+// ===== Cupones de valor (estilo Uber) — emisión desde el admin =====
+async function cargarCuponesAdmin(){
+  const lista=document.getElementById('cuponeslist');
+  if(!lista||!db)return;
+  const{data}=await db.from('cupones').select('*').order('id',{ascending:false}).limit(12);
+  if(!data||data.length===0){lista.innerHTML='<div style="color:var(--mt);font-size:13px">Sin cupones emitidos todavía.</div>';return;}
+  lista.innerHTML=data.map(c=>`<div style="border:1px solid var(--bd);border-radius:10px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:12px;${c.canjeado?'opacity:0.45':''}">
+    <b style="color:#ffd54f">${c.codigo}</b>
+    <span style="flex:1">${c.valor?('₡'+Number(c.valor).toLocaleString('es-CR')):c.premio} · ${c.usuario_telefono} · ${c.plataforma||'comercio'}</span>
+    <span>${c.canjeado?'✔️ usado':'🟢 vigente'}</span>
+  </div>`).join('');
+}
+function abrirFormCupon(){
+  const ov=document.createElement('div');
+  ov.id='cupon-form-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  ov.innerHTML=`<div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:20px;max-width:420px;width:100%">
+    <div style="font-family:var(--font-d);font-size:16px;font-weight:700;margin-bottom:12px">🎟️ Emitir cupón de valor</div>
+    <input class="ifield" id="cf-tel" type="tel" placeholder="Teléfono del usuario (8 dígitos)" style="margin-bottom:8px">
+    <input class="ifield" id="cf-valor" type="number" placeholder="Valor en ₡ (ej. 5000)" style="margin-bottom:8px">
+    <select class="ifield" id="cf-plat" style="margin-bottom:14px">
+      <option value="comercio">🛒 Para compras en comercios</option>
+      <option value="viajes">🚗 Para viajes (próximamente en la app)</option>
+      <option value="ambas">🎯 Para ambas</option>
+    </select>
+    <div style="display:flex;gap:10px">
+      <button class="btnp" style="flex:1" onclick="emitirCupon()">💾 Emitir</button>
+      <button class="btno" style="flex:1" onclick="document.getElementById('cupon-form-modal').remove()">Cancelar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+}
+async function emitirCupon(){
+  const tel=document.getElementById('cf-tel').value.replace(/\D/g,'');
+  const valor=parseFloat(document.getElementById('cf-valor').value);
+  const plat=document.getElementById('cf-plat').value;
+  if(tel.length!==8||!valor||valor<=0){toast('Poné el teléfono (8 dígitos) y el valor');return;}
+  const codigo='AVS-C-'+Math.floor(1000+Math.random()*9000);
+  const{error}=await db.from('cupones').insert({codigo,usuario_telefono:tel,premio:'Cupón AVS ₡'+Math.round(valor).toLocaleString('es-CR'),valor,plataforma:plat,tipo:'valor',mes:_mesActualAVS()});
+  if(error){toast('No se pudo emitir. ¿Corriste el SQL de las columnas valor y plataforma?');return;}
+  document.getElementById('cupon-form-modal').remove();
+  toast(`✅ Cupón ${codigo} emitido por ₡${Math.round(valor).toLocaleString('es-CR')} — avisale al usuario`);
+  cargarCuponesAdmin();
+}
+// ===== Tablero de rendimientos por plataforma =====
+async function cargarRendimientos(){
+  const cont=document.getElementById('rendimientos-contenido');
+  if(!cont||!db)return;
+  cont.innerHTML='Cargando...';
+  const inicio=_mesActualAVS()+'-01';
+  let pedSum=0,pedCom=0,pedN=0,viaSum=0,viaCom=0,viaN=0,cupSum=0;
+  try{
+    const{data:peds}=await db.from('pedidos').select('total,comision_avs,descuento_cupon,estado,fecha').gte('fecha',inicio);
+    (peds||[]).forEach(p=>{
+      if(['confirmado','preparacion','listo','en_camino','entregado'].includes(p.estado)){
+        pedN++; pedSum+=Number(p.total||0); pedCom+=Number(p.comision_avs||0); cupSum+=Number(p.descuento_cupon||0);
+      }
+    });
+  }catch(e){}
+  try{
+    const{data:vias}=await db.from('viajes').select('total_pasajero,comision_avs,estado,created_at').gte('created_at',inicio);
+    (vias||[]).forEach(v=>{
+      if(v.estado&&v.estado!=='solicitado'&&v.estado!=='cancelado'){
+        viaN++; viaSum+=Number(v.total_pasajero||0); viaCom+=Number(v.comision_avs||0);
+      }
+    });
+  }catch(e){}
+  const f=(n)=>'₡'+Math.round(n).toLocaleString('es-CR');
+  const comTotal=pedCom+viaCom;
+  cont.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div style="border:1px solid var(--bd);border-radius:12px;padding:14px">
+        <div style="font-weight:700;color:var(--g);margin-bottom:8px">🛒 Comercio (mes actual)</div>
+        <div>Pedidos válidos: <b>${pedN}</b></div>
+        <div>Movimiento: <b>${f(pedSum)}</b></div>
+        <div>Comisiones AVS: <b style="color:var(--g)">${f(pedCom)}</b></div>
+        <div>Cupones financiados por AVS: <b style="color:#ffd54f">${f(cupSum)}</b></div>
+      </div>
+      <div style="border:1px solid var(--bd);border-radius:12px;padding:14px">
+        <div style="font-weight:700;color:var(--g);margin-bottom:8px">🚗 Transporte (mes actual)</div>
+        <div>Viajes válidos: <b>${viaN}</b></div>
+        <div>Movimiento: <b>${f(viaSum)}</b></div>
+        <div>Comisiones AVS: <b style="color:var(--g)">${f(viaCom)}</b></div>
+      </div>
+    </div>
+    <div style="border:1px solid rgba(255,213,79,0.4);border-radius:12px;padding:14px">
+      <div style="font-weight:700;color:#ffd54f;margin-bottom:8px">💰 Calculadora del fondo de cupones</div>
+      <div style="margin-bottom:8px">Comisiones totales del mes: <b>${f(comTotal)}</b> · menos IVA 13% sobre comisiones: <b>${f(comTotal*0.87)}</b></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span>Costos fijos del mes:</span>
+        <input class="ifield" id="rend-costos" type="number" placeholder="₡" style="width:140px;margin:0" oninput="calcFondoAVS(${comTotal})">
+        <span id="rend-fondo" style="font-weight:800;color:#ffd54f"></span>
+      </div>
+      <div style="font-size:11px;color:var(--mt);margin-top:8px">Fondo sugerido = 1% de utilidades (comisiones − IVA − costos fijos). Los cupones se emiten desde la pestaña Promos.</div>
+    </div>`;
+  calcFondoAVS(comTotal);
+}
+function calcFondoAVS(comTotal){
+  const costos=parseFloat((document.getElementById('rend-costos')||{}).value)||0;
+  const utilidad=Math.max(0, comTotal*0.87 - costos);
+  const fondo=Math.round(utilidad*0.01);
+  const el=document.getElementById('rend-fondo');
+  if(el)el.textContent=`→ Utilidad: ₡${Math.round(utilidad).toLocaleString('es-CR')} · Fondo 1%: ₡${fondo.toLocaleString('es-CR')}`;
+}
 
 // Carrusel reutilizable. idBase = id del contenedor; debe tener dentro
 // un elemento con id (idBase+'Puntos') y otro (idBase+'Etiqueta').
