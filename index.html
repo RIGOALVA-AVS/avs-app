@@ -5122,22 +5122,25 @@ function elegirRegistro(tipo){
 function abrirIngreso(role){
   const sheet = document.querySelector('#login .lsheet');
   const esAdmin = (role==='admin');
+  const esPromo = (role==='promo');
   sheet.innerHTML = `
     <div class="login-pc-only" id="avsCarruselIng" style="border-radius:12px;overflow:hidden;border:1.5px solid rgba(0,229,184,0.3);margin-bottom:14px;position:relative;aspect-ratio:1/1;">
       <div id="avsCarruselIngPuntos" style="position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:3;"></div>
       <div id="avsCarruselIngEtiqueta" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(8,15,30,0.9));color:#fff;font-size:11px;padding:16px 10px 8px;font-weight:bold;font-family:var(--font-d);z-index:2;"></div>
     </div>
-    <div class="ltit">${esAdmin?'Acceso Admin 🛡️':'Ingresar 🔑'}</div>
-    <div class="ldesc">${esAdmin?'Ingresá el teléfono autorizado.':'Ingresá con tu número de teléfono.'}</div>
+    <div class="ltit">${esAdmin?'Acceso Admin 🛡️':(esPromo?'Aprovechá tu promo 🛍️':'Ingresar 🔑')}</div>
+    <div class="ldesc">${esAdmin?'Ingresá el teléfono autorizado.':(esPromo?'Entrá (o creá tu cuenta) con tu teléfono y nombre. Tu promo te está esperando.':'Ingresá con tu número de teléfono.')}</div>
     <div class="ilabel">Teléfono</div>
     <input class="ifield" type="tel" placeholder="8888-8888" id="lphone" enterkeyhint="next" onkeydown="if(event.key==='Enter'){document.getElementById('lname').focus();}">
     <div class="ilabel" style="margin-top:4px">Nombre</div>
     <input class="ifield" type="text" placeholder="Tu nombre completo" id="lname" enterkeyhint="done" onkeydown="if(event.key==='Enter'){this.blur();}">
     ${esAdmin
       ? `<button class="btnp" onclick="doLogin('admin')" style="margin-top:6px">🛡️ Acceso admin</button>`
+      : (esPromo
+      ? `<button class="btnp promo-alert-btn" onclick="doLogin('usuario')" style="margin-top:6px;background:linear-gradient(135deg,#ffb300,#ff8f00);color:#14202e;font-weight:800">🛍️ Entrar y aprovechar mi promo</button>`
       : `<button class="btnp" onclick="doLogin('usuario')" style="margin-top:6px">👤 Entrar como Usuario</button>
          <button class="btno" onclick="doLogin('conductor')">🚗 Entrar como Conductor</button>
-         <button class="btno" onclick="doLoginNegocio()" style="margin-top:6px">🏪 Acceso negocio</button>`}
+         <button class="btno" onclick="doLoginNegocio()" style="margin-top:6px">🏪 Acceso negocio</button>`)}
     <button class="btno" onclick="resetLoginSheet()" style="margin-top:10px">← Volver</button>`;
   setTimeout(()=>initCarruselGenerico('avsCarruselIng'),60);
 }
@@ -5148,6 +5151,14 @@ function applyUser(){
   document.getElementById('prol').textContent=(user.role==='conductor'?'Conductor':'Usuario')+' · Atenas';
   document.getElementById('chnom').textContent=user.name.split(' ')[0];
   document.getElementById('cnom').textContent=user.name;
+  // Promo pendiente: el usuario entró desde una promo → llevarlo directo con la promo facturada
+  if(window._promoPendiente && user.role!=='conductor' && user.role!=='admin'){
+    const _pp=window._promoPendiente; window._promoPendiente=null;
+    setTimeout(()=>{
+      _promosActuales=[_pp];
+      if(_pp.negocio_id){ pedirPromo(0); } else { verPromo(0); }
+    },800);
+  }
   if(db&&user.phone&&user.role==='conductor'){
     db.from('usuarios').select('saldo_avs').eq('telefono',user.phone).single().then(({data})=>{
       const s=parseInt(data?.saldo_avs||0);
@@ -5605,7 +5616,7 @@ function verPromo(i){
   if(p.negocio_id&&logueado){
     accion=`<button onclick="pedirPromo(${i})" style="background:linear-gradient(135deg,#ffb300,#ff8f00);color:#14202e;border:none;border-radius:10px;padding:11px 20px;font-weight:800;font-size:14px;cursor:pointer;margin-right:8px">🛒 Pedir esta promo</button>`;
   }else if(!logueado){
-    accion=`<button onclick="abrirRegistro()" style="background:var(--g);color:#08131f;border:none;border-radius:10px;padding:11px 20px;font-weight:800;font-size:14px;cursor:pointer;margin-right:8px">📝 Registrate para aprovecharla</button>`;
+    accion=`<button onclick="promoEntrarUsuario(${i})" style="background:var(--g);color:#08131f;border:none;border-radius:10px;padding:11px 20px;font-weight:800;font-size:14px;cursor:pointer;margin-right:8px">🛍️ Aprovechala — Entrá como usuario</button>`;
   }
   const ov=document.createElement('div');
   ov.id='ver-promo-ov';
@@ -5626,6 +5637,13 @@ function verPromo(i){
     </div>
   </div>`;
   document.body.appendChild(ov);
+}
+function promoEntrarUsuario(i){
+  window._promoPendiente=_promosActuales[i];
+  const ov1=document.getElementById('ver-promo-ov'); if(ov1)ov1.remove();
+  const ov2=document.getElementById('promos-movil-ov'); if(ov2)ov2.remove();
+  abrirIngreso('promo');
+  toast('🛍️ Entrá como usuario y tu promo te estará esperando');
 }
 async function pedirPromo(i){
   const p=_promosActuales[i];
