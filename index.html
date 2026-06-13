@@ -226,6 +226,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .avs-logo-anim img{display:block;width:100%;height:auto;}
 .avs-logo-anim .alg-ondas{margin-top:-1px;transform-origin:center top;animation:algOndular 3s ease-in-out infinite;}
 @keyframes algOndular{0%,100%{transform:scaleY(1) translateY(0);}50%{transform:scaleY(1.07) translateY(0.5px);}}
+.avs-watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:62vw;max-width:320px;opacity:0.05;pointer-events:none;line-height:0;z-index:0;}
+.avs-watermark img{display:block;width:100%;height:auto;}
+.avs-watermark .wm-ondas{margin-top:-1px;transform-origin:center top;animation:algOndular 4s ease-in-out infinite;}
 .aavt{width:38px;height:38px;background:var(--grad-g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#080f1e;cursor:pointer;box-shadow:0 2px 12px rgba(0,229,184,0.2);}
 .mapc{flex:1;position:relative;overflow:hidden;}
 #gmap{width:100%;height:100%;background:#0a1a12;}
@@ -326,7 +329,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .bacp{flex:2;background:var(--grad-btn);color:#080f1e;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;font-family:var(--font-d);cursor:pointer;}
 .brec{flex:1;background:transparent;color:var(--mt);border:1px solid var(--bd2);border-radius:12px;padding:12px;font-size:13px;cursor:pointer;}
 .nolist{text-align:center;padding:40px 20px;color:var(--mt);font-size:14px;}
-#perfil{background:var(--bg);padding:48px 20px 32px;overflow-y:auto;}
+#perfil{background:transparent;padding:48px 20px 32px;overflow-y:auto;}
 .phdr{display:flex;align-items:center;gap:16px;margin-bottom:28px;}
 .pavt{width:64px;height:64px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:24px;font-weight:700;color:var(--bg);}
 .pname{font-family:var(--font-d);font-size:20px;font-weight:700;}
@@ -603,7 +606,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 
 /* ===== CALIFICACIONES ===== */
-#calificacion{background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;gap:16px;}
+#calificacion{background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;gap:16px;}
 .cal-avatar{width:72px;height:72px;background:var(--grad-g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:26px;font-weight:700;color:#080f1e;}
 .cal-tit{font-family:var(--font-d);font-size:22px;font-weight:700;text-align:center;}
 .cal-sub{font-size:13px;color:var(--mt);text-align:center;}
@@ -1223,6 +1226,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 <!-- HISTORIAL -->
 <div class="screen" id="historial">
+  <div class="avs-watermark" aria-hidden="true"><img src="https://rigoalva-avs.github.io/avs-app/avs_letras_web.png" alt=""><img class="wm-ondas" src="https://rigoalva-avs.github.io/avs-app/avs_ondas_web.png" alt=""></div>
   <div style="padding:48px 20px 0;display:flex;align-items:center;gap:12px;margin-bottom:16px">
     <button id="hist-back" onclick="go('pasajero')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
     <div style="font-family:var(--font-d);font-size:20px;font-weight:700">Mis Viajes</div>
@@ -1235,6 +1239,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 </div>
 
 <div class="screen" id="perfil">
+  <div class="avs-watermark" aria-hidden="true"><img src="https://rigoalva-avs.github.io/avs-app/avs_letras_web.png" alt=""><img class="wm-ondas" src="https://rigoalva-avs.github.io/avs-app/avs_ondas_web.png" alt=""></div>
   <div style="padding:16px 20px 0"><button onclick="volverInicio()" style="background:transparent;border:1px solid var(--bd2);border-radius:10px;color:var(--g);padding:6px 14px;font-size:13px;cursor:pointer">← Inicio</button></div>
   <div class="phdr"><div class="pavt" id="pinit">RA</div><div><div class="pname" id="pnom">Usuario</div><div class="prole" id="prol">Usuario · Atenas</div></div></div>
   <div class="psec"><div class="pstit">Mi cuenta</div>
@@ -1524,6 +1529,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
           <span style="font-size:13px;color:var(--mt)">Tiempo estimado</span>
           <span style="font-size:13px;font-weight:600" id="delivery-tiempo">~15-25 min</span>
         </div>
+        <div style="font-size:11px;color:var(--mt);margin-top:7px;line-height:1.4;border-top:1px dashed var(--bd);padding-top:7px">⏱️ El tiempo comienza a correr cuando el comercio confirma el pago (SINPE recibido o efectivo acordado), no antes.</div>
       </div>
       <!-- Total final -->
       <div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
@@ -1567,6 +1573,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 <!-- PANTALLA CALIFICACIÓN -->
 <div class="screen" id="calificacion">
+  <div class="avs-watermark" aria-hidden="true"><img src="https://rigoalva-avs.github.io/avs-app/avs_letras_web.png" alt=""><img class="wm-ondas" src="https://rigoalva-avs.github.io/avs-app/avs_ondas_web.png" alt=""></div>
   <div style="position:absolute;top:48px;right:16px">
     <button onclick="saltarCalificacion()" style="background:transparent;border:none;color:var(--mt);font-size:13px;cursor:pointer">Omitir ✕</button>
   </div>
@@ -1590,6 +1597,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 <!-- RECARGA SALDO USUARIO -->
 <div class="screen" id="saldo-usuario">
+  <div class="avs-watermark" aria-hidden="true"><img src="https://rigoalva-avs.github.io/avs-app/avs_letras_web.png" alt=""><img class="wm-ondas" src="https://rigoalva-avs.github.io/avs-app/avs_ondas_web.png" alt=""></div>
   <div style="padding:48px 24px 32px;display:flex;flex-direction:column;gap:14px;height:100%;overflow-y:auto">
     <div style="display:flex;align-items:center;gap:12px">
       <button onclick="go('pasajero')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
@@ -2148,13 +2156,13 @@ function calcularDelivery() {
         const dLng = (data.lng - userLoc.lng) * Math.PI/180;
         const a = Math.sin(dLat/2)**2 + Math.cos(userLoc.lat*Math.PI/180)*Math.cos(data.lat*Math.PI/180)*Math.sin(dLng/2)**2;
         const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        // Escala moto AVS (base): hasta 2km=1500, 2-3.5km=2000, 3.5-4km=2500, 4-5km=3000, +5km=3000+462/km extra
+        // Escala moto AVS (base, comisión 10% se suma aparte):
+        // hasta 3km=1500, 3-4.5km=2000, 4.5-6km=2500, +6km=2500+400/km extra
         let base;
-        if (km <= 2) { base = 1500; }
-        else if (km <= 3.5) { base = 2000; }
-        else if (km <= 4) { base = 2500; }
-        else if (km <= 5) { base = 3000; }
-        else { base = Math.round(3000 + (km - 5) * 462); }
+        if (km <= 3) { base = 1500; }
+        else if (km <= 4.5) { base = 2000; }
+        else if (km <= 6) { base = 2500; }
+        else { base = Math.round(2500 + (km - 6) * 400); }
         tarifaDelivery = conComision(base);
         const mins = Math.round(km * 3 + 10);
         document.getElementById('delivery-tarifa').textContent = '₡' + tarifaDelivery.toLocaleString('es-CR') + ' 🛵';
