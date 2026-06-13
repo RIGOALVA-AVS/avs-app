@@ -2023,10 +2023,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 <div class="toast" id="toastEl"></div>
 <div id="btn-home-avs" onclick="irInicioAVS()" title="Volver al inicio" style="display:none;position:fixed;top:10px;left:0;right:0;margin:0 auto;width:fit-content;z-index:9500;padding:8px 18px;border-radius:30px;background:var(--sf);border:1.5px solid rgba(0,229,184,0.5);box-shadow:0 3px 12px rgba(0,0,0,0.5);font-size:14px;font-weight:700;color:var(--g);text-align:center;cursor:pointer">🏠 Inicio</div>
-<div id="avs-sello" aria-hidden="true" style="position:fixed;bottom:8px;right:10px;z-index:100002;width:50px;pointer-events:none;line-height:0;opacity:0.92;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.55));">
-  <img src="https://rigoalva-avs.github.io/avs-app/avs_letras_web.png" alt="AVS" style="display:block;width:100%;height:auto;">
-  <img src="https://rigoalva-avs.github.io/avs-app/avs_ondas_web.png" alt="" style="display:block;width:100%;height:auto;margin-top:-1px;transform-origin:center top;animation:algOndular 3s ease-in-out infinite;">
-</div>
 
 <script>
 
@@ -4277,8 +4273,6 @@ function go(id, _fromPop){
   // Botón flotante 🏠: visible en toda pantalla que no sea una "casa" ni la portada
   const _hb=document.getElementById('btn-home-avs');
   if(_hb)_hb.style.display=(['login','pasajero','conductor','admin','panel-negocio','registro'].includes(id))?'none':'block';
-  const _sello=document.getElementById('avs-sello');
-  if(_sello)_sello.style.display=(id==='login'||id==='splash')?'none':'block';
   setTimeout(()=>{if(id==='usuario'||id==='pasajero')aplicarLayoutPasajeroPC();},50);
   if(id==='registro')setTimeout(()=>{const cont=document.getElementById('rfechanac-cont');if(cont&&!cont.innerHTML.trim())cont.innerHTML=fechaNacHTML('r-fn');llenarMarcas();loadRegProgress();},100);
   // Insertar el bloque de consentimiento en cada registro (si el slot existe y está vacío)
@@ -5848,7 +5842,8 @@ async function abrirPromosMovil(){
   const ov=document.createElement('div');
   ov.id='promos-movil-ov';
   ov.style.cssText='position:fixed;inset:0;background:rgba(4,10,20,0.97);z-index:9999;display:flex;flex-direction:column;padding:18px;overflow-y:auto;';
-  ov.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+  ov.innerHTML=`<div aria-hidden="true" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:65vw;max-width:320px;opacity:0.06;pointer-events:none;line-height:0;z-index:0"><img src="https://rigoalva-avs.github.io/avs-app/avs_letras_web.png" alt="" style="display:block;width:100%"><img src="https://rigoalva-avs.github.io/avs-app/avs_ondas_web.png" alt="" style="display:block;width:100%;margin-top:-1px;transform-origin:center top;animation:algOndular 4s ease-in-out infinite"></div>
+    <div style="position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div style="font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--g);letter-spacing:1px">🛍️ PROMOS DE ATENAS</div>
       <button onclick="document.getElementById('promos-movil-ov').remove();irInicioAVS()" style="background:var(--sf);border:1.5px solid rgba(0,229,184,0.5);color:var(--g);border-radius:20px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer">🏠 Inicio</button>
     </div>
@@ -6022,11 +6017,21 @@ async function verMisCupones(){
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
   ov.onclick=()=>ov.remove();
-  const items=(data&&data.length>0)?data.map(c=>{const v=cuponVencido(c);const inact=c.canjeado||v;return `<div style="border:1.5px ${inact?'solid var(--bd)':'solid #ffd54f'};border-radius:12px;padding:12px;margin-bottom:8px;text-align:left;${inact?'opacity:0.5':''}">
-    <div style="font-weight:800;color:${inact?'var(--mt)':'#ffd54f'};font-size:15px">${c.codigo} ${c.canjeado?'· CANJEADO':(v?'· ⏰ VENCIDO':'')}</div>
+  const vigentes=(data||[]).filter(c=>!c.canjeado && !cuponVencido(c));
+  const usados=(data||[]).filter(c=>c.canjeado || cuponVencido(c));
+  const tarjeta=(c)=>{const v=cuponVencido(c);const inact=c.canjeado||v;return `<div style="border:1.5px ${inact?'solid var(--bd)':'solid #ffd54f'};border-radius:12px;padding:12px;margin-bottom:8px;text-align:left;${inact?'opacity:0.45':''}">
+    <div style="font-weight:800;color:${inact?'var(--mt)':'#ffd54f'};font-size:15px">${c.codigo} ${c.canjeado?'· ✔️ USADO':(v?'· ⏰ VENCIDO':'')}</div>
     <div style="font-size:13px">🎁 ${c.premio}</div>
     <div style="font-size:11px;color:var(--mt)">${c.negocio_nombre||''} ${c.vence?'· vence '+c.vence:''}</div>
-  </div>`;}).join(''):'<div style="color:var(--mt);font-size:13px">Aún no tenés cupones. Con 10 compras en el mes en un negocio participante, ganás tu regalía. 🎁</div>';
+  </div>`;};
+  let items='';
+  if(vigentes.length===0 && usados.length===0){
+    items='<div style="color:var(--mt);font-size:13px">Aún no tenés cupones. Con 10 compras en el mes en un negocio participante, ganás tu regalía. 🎁</div>';
+  } else {
+    if(vigentes.length>0){items+='<div style="font-size:11px;color:#ffd54f;text-transform:uppercase;letter-spacing:1px;margin:4px 0 8px;text-align:left">🟢 Disponibles para usar</div>'+vigentes.map(tarjeta).join('');}
+    else {items+='<div style="color:var(--mt);font-size:13px;margin-bottom:10px">No tenés cupones disponibles ahora mismo. 🎁</div>';}
+    if(usados.length>0){items+='<div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;text-align:left;border-top:1px solid var(--bd);padding-top:12px">Historial (ya no se pueden usar)</div>'+usados.map(tarjeta).join('');}
+  }
   ov.innerHTML=`<div style="background:var(--sf);border:1px solid rgba(255,213,79,0.5);border-radius:16px;padding:20px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;text-align:center">
     <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:12px">🎁 Mis cupones</div>
     ${items}
