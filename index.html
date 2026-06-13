@@ -222,6 +222,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 #pasajero{background:var(--bg);}
 .ahdr{display:flex;justify-content:space-between;align-items:center;padding:48px 20px 12px;}
 .alogo{font-family:var(--font-d);font-size:20px;font-weight:800;letter-spacing:-0.5px;background:var(--grad-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.avs-logo-anim{position:relative;width:62px;flex-shrink:0;line-height:0;}
+.avs-logo-anim img{display:block;width:100%;height:auto;}
+.avs-logo-anim .alg-ondas{margin-top:-1px;transform-origin:center top;animation:algOndular 3s ease-in-out infinite;}
+@keyframes algOndular{0%,100%{transform:scaleY(1) translateY(0);}50%{transform:scaleY(1.07) translateY(0.5px);}}
 .aavt{width:38px;height:38px;background:var(--grad-g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#080f1e;cursor:pointer;box-shadow:0 2px 12px rgba(0,229,184,0.2);}
 .mapc{flex:1;position:relative;overflow:hidden;}
 #gmap{width:100%;height:100%;background:#0a1a12;}
@@ -990,7 +994,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 <!-- PASAJERO -->
 <div class="screen" id="pasajero">
   <div class="ahdr">
-      <div class="alogo">AVS</div>
+      <div class="avs-logo-anim"><img src="https://rigoalva-avs.github.io/avs-app/avs_letras_web.png" alt="AVS"><img class="alg-ondas" src="https://rigoalva-avs.github.io/avs-app/avs_ondas_web.png" alt=""></div>
       <div style="display:flex;align-items:center;gap:10px">
         <div onclick="abrirSaldoUsuario()" style="background:rgba(0,229,184,0.1);border:1px solid var(--bd2);border-radius:20px;padding:5px 12px;cursor:pointer;font-size:12px;color:var(--g);font-family:var(--font-d);font-weight:600" id="usuario-saldo-hdr">₡0</div>
         <div class="aavt" id="uinit" onclick="go('perfil')">RA</div>
@@ -1000,7 +1004,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <div class="bpanel">
     <div class="bhandle"></div>
     <div class="pc-header">
-      <div class="alogo">AVS</div>
+      <div class="avs-logo-anim"><img src="https://rigoalva-avs.github.io/avs-app/avs_letras_web.png" alt="AVS"><img class="alg-ondas" src="https://rigoalva-avs.github.io/avs-app/avs_ondas_web.png" alt=""></div>
       <div style="display:flex;align-items:center;gap:12px">
         <div style="cursor:pointer;font-size:13px;color:var(--mt)" onclick="abrirHistorial('usuario')">🗺️ Mis Viajes</div>
         <div class="aavt" id="uinit2" onclick="go('perfil')">RA</div>
@@ -1108,7 +1112,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 <div class="screen" id="casignado">
   <div class="ahdr">
-    <div class="alogo">AVS</div>
+    <div class="avs-logo-anim"><img src="https://rigoalva-avs.github.io/avs-app/avs_letras_web.png" alt="AVS"><img class="alg-ondas" src="https://rigoalva-avs.github.io/avs-app/avs_ondas_web.png" alt=""></div>
     <div style="font-size:13px;color:var(--g)">✅ En camino</div>
   </div>
   <button class="share-btn" onclick="abrirCompartirViaje()" title="Compartir viaje con contactos">🟢</button>
@@ -1137,7 +1141,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 </div>
 
 <div class="screen" id="condmap">
-  <div class="ahdr"><div class="alogo">AVS</div><div style="font-size:13px;color:var(--am)">🚗 Viaje activo</div></div>
+  <div class="ahdr"><div class="avs-logo-anim"><img src="https://rigoalva-avs.github.io/avs-app/avs_letras_web.png" alt="AVS"><img class="alg-ondas" src="https://rigoalva-avs.github.io/avs-app/avs_ondas_web.png" alt=""></div><div style="font-size:13px;color:var(--am)">🚗 Viaje activo</div></div>
   <div class="tmap"><div id="dmap"></div></div>
   <div class="dsheet">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
