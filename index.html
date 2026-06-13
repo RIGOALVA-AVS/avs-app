@@ -263,7 +263,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .bring1{position:absolute;inset:-16px;border-radius:50%;border:1px solid rgba(0,212,170,0.2);animation:exp 2s infinite;}
 .bring2{position:absolute;inset:-32px;border-radius:50%;border:1px solid rgba(0,212,170,0.1);animation:exp 2s 0.5s infinite;}
 @keyframes exp{0%{transform:scale(0.8);opacity:0.8;}100%{transform:scale(1.2);opacity:0;}}
-.bico{font-size:48px;}
+.bico{font-size:48px;position:relative;z-index:2;animation:avsVibra 0.18s linear infinite;}
+@keyframes avsVibra{0%{transform:translate(0,0)}25%{transform:translate(-1.2px,0.4px)}50%{transform:translate(0,-0.8px)}75%{transform:translate(1.2px,0.4px)}100%{transform:translate(0,0)}}
+.bhumo{position:absolute;bottom:34px;left:30px;z-index:1;}
+.bhumo span{position:absolute;width:11px;height:11px;border-radius:50%;background:rgba(210,228,222,0.45);filter:blur(2px);opacity:0;}
+.bhumo span:nth-child(1){animation:avsPuff 2.2s ease-out infinite;}
+.bhumo span:nth-child(2){animation:avsPuff 2.2s ease-out infinite 0.73s;}
+.bhumo span:nth-child(3){animation:avsPuff 2.2s ease-out infinite 1.46s;}
+@keyframes avsPuff{0%{transform:translate(0,0) scale(0.6);opacity:0}18%{opacity:0.5}100%{transform:translate(-22px,-26px) scale(2.1);opacity:0}}
 .btit{font-family:var(--font-d);font-size:22px;font-weight:600;text-align:center;}
 .bsub{font-size:14px;color:var(--mt);text-align:center;}
 .tsum{width:100%;background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:16px;}
@@ -1093,7 +1100,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <div style="position:absolute;top:48px;left:16px">
     <button onclick="cancelar()" style="background:rgba(8,15,30,0.7);border:1px solid var(--bd);border-radius:20px;padding:8px 16px;color:var(--mt);font-size:13px;cursor:pointer;backdrop-filter:blur(8px)">← Cancelar</button>
   </div>
-  <div class="banim"><div class="bring1"></div><div class="bring2"></div><div class="bico">🚗</div></div>
+  <div class="banim"><div class="bring1"></div><div class="bring2"></div><div class="bhumo"><span></span><span></span><span></span></div><div class="bico">🚗</div></div>
   <div class="btit">Buscando conductor...</div>
   <div class="bsub">Encontrando el mejor conductor cerca de vos</div>
   <div style="background:rgba(0,229,184,0.08);border:2px solid var(--g);border-radius:16px;padding:14px 20px;text-align:center;margin:0 0 4px">
@@ -2015,7 +2022,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 </style>
 
 <div class="toast" id="toastEl"></div>
-<div id="btn-home-avs" onclick="irInicioAVS()" title="Volver al inicio" style="display:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9500;padding:8px 18px;border-radius:30px;background:var(--sf);border:1.5px solid rgba(0,229,184,0.5);box-shadow:0 3px 12px rgba(0,0,0,0.5);font-size:14px;font-weight:700;color:var(--g);align-items:center;justify-content:center;gap:6px;cursor:pointer">🏠 Inicio</div>
+<div id="btn-home-avs" onclick="irInicioAVS()" title="Volver al inicio" style="display:none;position:fixed;top:10px;left:0;right:0;margin:0 auto;width:fit-content;z-index:9500;padding:8px 18px;border-radius:30px;background:var(--sf);border:1.5px solid rgba(0,229,184,0.5);box-shadow:0 3px 12px rgba(0,0,0,0.5);font-size:14px;font-weight:700;color:var(--g);text-align:center;cursor:pointer">🏠 Inicio</div>
 <div id="avs-sello" aria-hidden="true" style="position:fixed;bottom:8px;right:10px;z-index:100002;width:50px;pointer-events:none;line-height:0;opacity:0.92;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.55));">
   <img src="https://rigoalva-avs.github.io/avs-app/avs_letras_web.png" alt="AVS" style="display:block;width:100%;height:auto;">
   <img src="https://rigoalva-avs.github.io/avs-app/avs_ondas_web.png" alt="" style="display:block;width:100%;height:auto;margin-top:-1px;transform-origin:center top;animation:algOndular 3s ease-in-out infinite;">
@@ -4269,7 +4276,7 @@ function go(id, _fromPop){
   document.getElementById(id).classList.add('active');
   // Botón flotante 🏠: visible en toda pantalla que no sea una "casa" ni la portada
   const _hb=document.getElementById('btn-home-avs');
-  if(_hb)_hb.style.display=(['login','pasajero','conductor','admin','panel-negocio','registro'].includes(id))?'none':'flex';
+  if(_hb)_hb.style.display=(['login','pasajero','conductor','admin','panel-negocio','registro'].includes(id))?'none':'block';
   const _sello=document.getElementById('avs-sello');
   if(_sello)_sello.style.display=(id==='login'||id==='splash')?'none':'block';
   setTimeout(()=>{if(id==='usuario'||id==='pasajero')aplicarLayoutPasajeroPC();},50);
