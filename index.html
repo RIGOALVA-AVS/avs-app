@@ -2016,6 +2016,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 <div class="toast" id="toastEl"></div>
 <div id="btn-home-avs" onclick="irInicioAVS()" title="Volver al inicio" style="display:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9500;padding:8px 18px;border-radius:30px;background:var(--sf);border:1.5px solid rgba(0,229,184,0.5);box-shadow:0 3px 12px rgba(0,0,0,0.5);font-size:14px;font-weight:700;color:var(--g);align-items:center;justify-content:center;gap:6px;cursor:pointer">🏠 Inicio</div>
+<div id="avs-sello" aria-hidden="true" style="position:fixed;bottom:8px;right:10px;z-index:100002;width:50px;pointer-events:none;line-height:0;opacity:0.92;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.55));">
+  <img src="https://rigoalva-avs.github.io/avs-app/avs_letras_web.png" alt="AVS" style="display:block;width:100%;height:auto;">
+  <img src="https://rigoalva-avs.github.io/avs-app/avs_ondas_web.png" alt="" style="display:block;width:100%;height:auto;margin-top:-1px;transform-origin:center top;animation:algOndular 3s ease-in-out infinite;">
+</div>
 
 <script>
 
@@ -4266,6 +4270,8 @@ function go(id, _fromPop){
   // Botón flotante 🏠: visible en toda pantalla que no sea una "casa" ni la portada
   const _hb=document.getElementById('btn-home-avs');
   if(_hb)_hb.style.display=(['login','pasajero','conductor','admin','panel-negocio','registro'].includes(id))?'none':'flex';
+  const _sello=document.getElementById('avs-sello');
+  if(_sello)_sello.style.display=(id==='login'||id==='splash')?'none':'block';
   setTimeout(()=>{if(id==='usuario'||id==='pasajero')aplicarLayoutPasajeroPC();},50);
   if(id==='registro')setTimeout(()=>{const cont=document.getElementById('rfechanac-cont');if(cont&&!cont.innerHTML.trim())cont.innerHTML=fechaNacHTML('r-fn');llenarMarcas();loadRegProgress();},100);
   // Insertar el bloque de consentimiento en cada registro (si el slot existe y está vacío)
@@ -5837,7 +5843,7 @@ async function abrirPromosMovil(){
   ov.style.cssText='position:fixed;inset:0;background:rgba(4,10,20,0.97);z-index:9999;display:flex;flex-direction:column;padding:18px;overflow-y:auto;';
   ov.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div style="font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--g);letter-spacing:1px">🛍️ PROMOS DE ATENAS</div>
-      <button onclick="document.getElementById('promos-movil-ov').remove()" style="background:none;border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer">✕ Cerrar</button>
+      <button onclick="document.getElementById('promos-movil-ov').remove();irInicioAVS()" style="background:var(--sf);border:1.5px solid rgba(0,229,184,0.5);color:var(--g);border-radius:20px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer">🏠 Inicio</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:9px">${_promosActuales.map((p,i)=>{
       if(!p)return `<div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border:1.5px dashed rgba(0,229,184,0.25);border-radius:10px;color:var(--mt);font-size:12px;">➕ Espacio disponible para tu negocio</div>`;
