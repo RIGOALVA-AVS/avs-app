@@ -1521,9 +1521,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       </div>
       <!-- Info delivery -->
       <div id="delivery-info" style="display:none;background:rgba(0,229,184,0.05);border:1px solid var(--bd2);border-radius:12px;padding:12px;margin-top:10px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-size:13px;color:var(--mt)">Tarifa delivery</span>
-          <span style="font-family:var(--font-d);font-size:14px;font-weight:600;color:var(--g)" id="delivery-tarifa">Calculando...</span>
+        <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Elegí el vehículo</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div id="veh-moto" onclick="selVehiculoDelivery('moto')" style="background:rgba(0,229,184,0.08);border:2px solid var(--g);border-radius:12px;padding:10px 8px;text-align:center;cursor:pointer;transition:all 0.2s">
+            <div style="font-size:20px">🛵</div>
+            <div style="font-size:12px;font-weight:600;margin-top:2px">Moto</div>
+            <div style="font-family:var(--font-d);font-size:14px;font-weight:700;color:var(--g);margin-top:2px" id="veh-moto-precio">—</div>
+          </div>
+          <div id="veh-carro" onclick="selVehiculoDelivery('carro')" style="background:var(--cd);border:2px solid var(--bd);border-radius:12px;padding:10px 8px;text-align:center;cursor:pointer;transition:all 0.2s">
+            <div style="font-size:20px">🚗</div>
+            <div style="font-size:12px;font-weight:600;margin-top:2px">Carro</div>
+            <div style="font-family:var(--font-d);font-size:14px;font-weight:700;color:var(--g);margin-top:2px" id="veh-carro-precio">—</div>
+          </div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:13px;color:var(--mt)">Tiempo estimado</span>
@@ -2110,6 +2119,9 @@ async function cargarHistorialRecargasUsuario() {
 // ===== DELIVERY MARKETPLACE =====
 let tipoEntrega = 'recoger';
 let tarifaDelivery = 0;
+let tarifaDeliveryMoto = 0;
+let tarifaDeliveryCarro = 0;
+let tipoVehiculoDelivery = 'moto';
 
 function selEntrega(tipo) {
   tipoEntrega = tipo;
@@ -2139,46 +2151,76 @@ function calcularDelivery() {
   // Comisión AVS incluida en la tarifa mostrada (un solo número para el usuario)
   const AVS_COMISION_DELIVERY = 0.10; // 10% — editable
   const conComision = (base) => Math.round(base * (1 + AVS_COMISION_DELIVERY) / 50) * 50;
-  // Calculate distance from user to negocio
-  if (!userLoc || !db) {
-    tarifaDelivery = conComision(1500);
-    document.getElementById('delivery-tarifa').textContent = '₡' + tarifaDelivery.toLocaleString('es-CR') + ' (moto)';
-    document.getElementById('delivery-tiempo').textContent = '~15-25 min';
+  // Tarifa MOTO: escala AVS por distancia (tu tarifario corregido)
+  const motoBaseDesdeKm = (km) => {
+    if (km <= 3) return 1500;
+    if (km <= 4.5) return 2000;
+    if (km <= 6) return 2500;
+    return Math.round(2500 + (km - 6) * 400);
+  };
+  // Tarifa CARRO: anclada a la tarifa oficial ARESEP (mismo tarifario del transporte,
+  // escalón Estándar = oficial -15% -15%). ₡840/km, RE-0050-IT-2026. Editable.
+  const TARIFA_OFICIAL_KM_DELIVERY = 840;
+  const carroBaseDesdeKm = (km) => {
+    const oficial = Math.max(1000, Math.round(TARIFA_OFICIAL_KM_DELIVERY * km));
+    const top = Math.round(oficial * 0.85);   // -15% oficial
+    return Math.round(top * 0.85);             // -15% del TOP = Estándar
+  };
+  const aplicar = (km, mins) => {
+    tarifaDeliveryMoto = conComision(motoBaseDesdeKm(km));
+    tarifaDeliveryCarro = conComision(carroBaseDesdeKm(km));
+    renderVehiculosDelivery();
+    if (mins != null) document.getElementById('delivery-tiempo').textContent = `~${mins}-${mins+10} min`;
     actualizarTotalCarrito();
+  };
+  // Sin ubicación o sin negocio: estimación con tramo ≤3km
+  if (!userLoc || !db || !carritoNegocioId) {
+    aplicar(3, null);
+    document.getElementById('delivery-tiempo').textContent = '~15-25 min';
     return;
   }
-  // Use AVS tariff: base ₡1200 + ₡462/km
-  if (carritoNegocioId && db) {
-    db.from('negocios').select('lat,lng').eq('id', carritoNegocioId).single().then(({data}) => {
-      if (data && data.lat && data.lng) {
-        const R = 6371;
-        const dLat = (data.lat - userLoc.lat) * Math.PI/180;
-        const dLng = (data.lng - userLoc.lng) * Math.PI/180;
-        const a = Math.sin(dLat/2)**2 + Math.cos(userLoc.lat*Math.PI/180)*Math.cos(data.lat*Math.PI/180)*Math.sin(dLng/2)**2;
-        const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        // Escala moto AVS (base, comisión 10% se suma aparte):
-        // hasta 3km=1500, 3-4.5km=2000, 4.5-6km=2500, +6km=2500+400/km extra
-        let base;
-        if (km <= 3) { base = 1500; }
-        else if (km <= 4.5) { base = 2000; }
-        else if (km <= 6) { base = 2500; }
-        else { base = Math.round(2500 + (km - 6) * 400); }
-        tarifaDelivery = conComision(base);
-        const mins = Math.round(km * 3 + 10);
-        document.getElementById('delivery-tarifa').textContent = '₡' + tarifaDelivery.toLocaleString('es-CR') + ' 🛵';
-        document.getElementById('delivery-tiempo').textContent = `~${mins}-${mins+10} min`;
-      } else {
-        tarifaDelivery = conComision(1500);
-        document.getElementById('delivery-tarifa').textContent = '₡' + tarifaDelivery.toLocaleString('es-CR');
-        document.getElementById('delivery-tiempo').textContent = '~15-25 min';
-      }
-      actualizarTotalCarrito();
-    });
-  } else {
-    tarifaDelivery = 1500;
-    document.getElementById('delivery-tarifa').textContent = '₡1.500';
-    actualizarTotalCarrito();
-  }
+  db.from('negocios').select('lat,lng').eq('id', carritoNegocioId).single().then(({data}) => {
+    if (data && data.lat && data.lng) {
+      const R = 6371;
+      const dLat = (data.lat - userLoc.lat) * Math.PI/180;
+      const dLng = (data.lng - userLoc.lng) * Math.PI/180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(userLoc.lat*Math.PI/180)*Math.cos(data.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+      const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      aplicar(km, Math.round(km * 3 + 10));
+    } else {
+      aplicar(3, null);
+      document.getElementById('delivery-tiempo').textContent = '~15-25 min';
+    }
+  });
+}
+
+// Pinta los precios de moto/carro y mantiene la selección actual
+function renderVehiculosDelivery() {
+  const elMoto = document.getElementById('veh-moto-precio');
+  const elCarro = document.getElementById('veh-carro-precio');
+  if (elMoto) elMoto.textContent = '₡' + tarifaDeliveryMoto.toLocaleString('es-CR');
+  if (elCarro) elCarro.textContent = '₡' + tarifaDeliveryCarro.toLocaleString('es-CR');
+  tarifaDelivery = (tipoVehiculoDelivery === 'carro') ? tarifaDeliveryCarro : tarifaDeliveryMoto;
+  pintarVehiculoSel();
+}
+
+function pintarVehiculoSel() {
+  const cM = document.getElementById('veh-moto');
+  const cC = document.getElementById('veh-carro');
+  if (!cM || !cC) return;
+  const marca = (el, on) => {
+    el.style.borderColor = on ? 'var(--g)' : 'var(--bd)';
+    el.style.background = on ? 'rgba(0,229,184,0.08)' : 'var(--cd)';
+  };
+  marca(cM, tipoVehiculoDelivery === 'moto');
+  marca(cC, tipoVehiculoDelivery === 'carro');
+}
+
+function selVehiculoDelivery(tipo) {
+  tipoVehiculoDelivery = tipo;
+  tarifaDelivery = (tipo === 'carro') ? tarifaDeliveryCarro : tarifaDeliveryMoto;
+  pintarVehiculoSel();
+  actualizarTotalCarrito();
 }
 
 function actualizarTotalCarrito() {
@@ -2211,7 +2253,7 @@ function actualizarTotalCarrito() {
   if (totEl) totEl.textContent = '₡' + total.toLocaleString('es-CR');
   if (lblEl) {
     if (tipoEntrega === 'delivery') {
-      lblEl.textContent = 'Total a pagar (incluye envío en moto ₡' + tarifaDelivery.toLocaleString('es-CR') + ')';
+      lblEl.textContent = 'Total a pagar (incluye envío en ' + (tipoVehiculoDelivery==='carro'?'carro':'moto') + ' ₡' + tarifaDelivery.toLocaleString('es-CR') + ')';
     } else {
       lblEl.textContent = 'Total a pagar';
     }
@@ -4032,7 +4074,10 @@ async function confirmarPedido() {
     negocio_id: carritoNegocioId, negocio_nombre: carritoNegocioNombre,
     usuario_telefono: user.phone, usuario_nombre: user.name,
     items: JSON.stringify(carritoItems), subtotal,
-    tarifa_delivery: tarifaDelivery, total, comision_avs: comision,
+    tarifa_delivery: tarifaDelivery,
+    tipo_vehiculo: tipoEntrega==='delivery' ? tipoVehiculoDelivery : null,
+    tarifa_delivery_moto: tipoEntrega==='delivery' ? tarifaDeliveryMoto : null,
+    total, comision_avs: comision,
     total_negocio: totalNegocio, tipo_entrega: tipoEntrega,
     estado: 'pendiente', notas,
     cupon_codigo: descuentoCupon>0 ? window._cuponAplicado.codigo : null,
@@ -4051,7 +4096,7 @@ async function confirmarPedido() {
     const telUser = ('506' + user.phone.replace(/[^0-9]/g,'')).replace(/^506506/,'506');
     setTimeout(() => window.open('https://wa.me/' + telUser + '?text=' + encodeURIComponent(txt), '_blank'), 500);
     toast('Prefactura enviada por WhatsApp');
-    carritoItems = []; tipoEntrega = 'recoger'; tarifaDelivery = 0; window._cuponAplicado = null;
+    carritoItems = []; tipoEntrega = 'recoger'; tarifaDelivery = 0; tipoVehiculoDelivery = 'moto'; window._cuponAplicado = null;
     cargarCuponesCarrito();
     setTimeout(() => abrirTracking(pedidoData.id), 2000);
   }
