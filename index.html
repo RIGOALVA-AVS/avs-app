@@ -6281,6 +6281,19 @@ function initCarruselComercios(){
   initCarruselGenerico('avsCarruselPasajero');
 }
 
+function avisarRegistroPendiente(){
+  var m=document.getElementById('reg-pendiente-modal'); if(m) m.remove();
+  m=document.createElement('div'); m.id='reg-pendiente-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(8,15,30,0.92);backdrop-filter:blur(8px);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML='<div style="background:linear-gradient(135deg,#1a2540,#0d1525);border:1px solid rgba(0,229,184,0.4);border-radius:18px;padding:24px;width:min(380px,92vw);color:#fff;text-align:center">'+
+    '<div style="font-size:42px;margin-bottom:8px">📝</div>'+
+    '<div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:6px">Registro de conductor pendiente</div>'+
+    '<div style="font-size:13px;color:#aaa;margin-bottom:18px;line-height:1.5">Tenés un registro de conductor sin terminar. ¿Querés continuarlo ahora o seguir más tarde?</div>'+
+    '<button onclick="document.getElementById(\'reg-pendiente-modal\').remove();go(\'registro\');" style="width:100%;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:12px;padding:13px;font-size:15px;cursor:pointer;margin-bottom:10px">Ir a corregir</button>'+
+    '<button onclick="document.getElementById(\'reg-pendiente-modal\').remove();" style="width:100%;background:transparent;border:1px solid var(--bd);border-radius:12px;padding:12px;color:var(--tx);cursor:pointer;font-size:14px">Regresar</button>'+
+  '</div>';
+  document.body.appendChild(m);
+}
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   initCarruselComercios();
@@ -6310,7 +6323,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     let regAMedias = false;
     try{ const rp = localStorage.getItem('avs_reg'); if(rp){ const pr = JSON.parse(rp); if(pr && (pr.nombre || pr.cedula || (pr.docs && Object.keys(pr.docs).length>0))) regAMedias = true; } }catch(e){}
     if(regAMedias){
-      setTimeout(()=>{ go('registro'); toast('Continua tu registro donde quedaste'); }, 1500);
+      setTimeout(()=>{ go('login'); avisarRegistroPendiente(); }, 2000);
     } else {
       setTimeout(()=>go('login'),2000);
     }
