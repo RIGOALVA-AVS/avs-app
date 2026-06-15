@@ -519,14 +519,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .pac-logo:after{background-color:#1a2540!important;}
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:10px 20px;font-size:13px;opacity:0;transition:all 0.3s;z-index:100001;white-space:normal;max-width:90vw;text-align:center;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-#registro{background:var(--bg);overflow-y:auto;padding:48px 24px 160px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-behavior:auto;}
+#registro{background:var(--bg);overflow-y:auto;padding:48px 24px 160px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-behavior:auto;transform:translateZ(0);}
 .rhdr{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
 .rbk{background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer;padding:0;}
 .rtit{font-family:var(--font-d);font-size:20px;font-weight:700;}
 .rsec{margin-bottom:20px;}
 .rstit{font-size:11px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
 .vchips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
-.vchip{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:10px 14px;font-size:13px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+.vchip{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:10px 14px;font-size:13px;cursor:pointer;transition:border-color 0.15s,background 0.15s,color 0.15s;display:flex;align-items:center;gap:6px;}
 .vchip.sel{border-color:var(--g);background:rgba(0,212,170,0.08);color:var(--g);}
 .docitem{display:flex;align-items:center;justify-content:space-between;background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:12px 16px;margin-bottom:8px;cursor:pointer;}
 .docitem.ok{border-color:var(--g);}
@@ -840,10 +840,26 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <datalist id="modelos-list"></datalist>
     <input class="ifield" type="number" placeholder="Año del vehículo (ej: 2018)" id="ranio" min="1990" max="2026" oninput="validarAnioVehiculo();saveRegProgress()" style="margin-top:10px">
     <div id="ranio-msg" style="font-size:12px;margin-top:4px;min-height:14px"></div>
-    <select class="ifield" id="rcolor" onchange="saveRegProgress()" style="margin-top:10px">
-      <option value="">Color del vehículo...</option>
-      <option>Blanco</option><option>Negro</option><option>Gris</option><option>Plateado</option><option>Rojo</option><option>Azul</option><option>Celeste</option><option>Verde</option><option>Amarillo</option><option>Anaranjado</option><option>Café</option><option>Beige</option><option>Vino</option><option>Dorado</option><option>Morado</option><option>Otro</option>
-    </select>
+    <input type="hidden" id="rcolor">
+    <div style="font-size:11px;color:var(--mt);margin:12px 2px 6px">Color del vehículo</div>
+    <div class="vchips" id="color-chips">
+      <div class="vchip" onclick="selColor(this,'Blanco')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#ffffff;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Blanco</div>
+      <div class="vchip" onclick="selColor(this,'Negro')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#1a1a1a;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Negro</div>
+      <div class="vchip" onclick="selColor(this,'Gris')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#808080;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Gris</div>
+      <div class="vchip" onclick="selColor(this,'Plateado')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#c8c8c8;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Plateado</div>
+      <div class="vchip" onclick="selColor(this,'Rojo')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#e23b3b;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Rojo</div>
+      <div class="vchip" onclick="selColor(this,'Azul')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#2b5fd0;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Azul</div>
+      <div class="vchip" onclick="selColor(this,'Celeste')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#5bc8e0;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Celeste</div>
+      <div class="vchip" onclick="selColor(this,'Verde')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#3fae5a;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Verde</div>
+      <div class="vchip" onclick="selColor(this,'Amarillo')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f5d033;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Amarillo</div>
+      <div class="vchip" onclick="selColor(this,'Anaranjado')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f08a24;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Anaranjado</div>
+      <div class="vchip" onclick="selColor(this,'Café')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#6b4423;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Café</div>
+      <div class="vchip" onclick="selColor(this,'Beige')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#d9c9a3;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Beige</div>
+      <div class="vchip" onclick="selColor(this,'Vino')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#6e1b2e;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Vino</div>
+      <div class="vchip" onclick="selColor(this,'Dorado')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#d4af37;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Dorado</div>
+      <div class="vchip" onclick="selColor(this,'Morado')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#7a3fb0;border:1px solid rgba(255,255,255,0.35);margin-right:6px;vertical-align:middle"></span>Morado</div>
+      <div class="vchip" onclick="selColor(this,'Otro')"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:linear-gradient(45deg,#e23b3b,#2b5fd0,#3fae5a);margin-right:6px;vertical-align:middle"></span>Otro</div>
+    </div>
     <input class="ifield" type="number" placeholder="Capacidad de pasajeros" id="rcapacidad" min="1" max="15" oninput="saveRegProgress()" style="margin-top:10px">
   </div>
   <div class="rsec"><div class="rstit">Características</div>
@@ -1222,6 +1238,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div class="rchip" onclick="abrirSINPE(10000)">₡10.000</div>
       <div class="rchip" onclick="abrirSINPE(20000)">₡20.000</div>
     </div>
+  </div>
+  <div class="scrd" id="cond-stats" style="display:flex;justify-content:space-around;text-align:center;gap:8px">
+    <div><div class="slbl">Valoración</div><div class="samt" id="cond-rating" style="font-size:18px">⭐ —</div></div>
+    <div><div class="slbl">Viajes</div><div class="samt" id="cond-viajes" style="font-size:18px">—</div></div>
+    <div><div class="slbl">En AVS desde</div><div class="samt" id="cond-desde" style="font-size:14px">—</div></div>
   </div>
   <div class="ssec">
     <div class="shdr"><div class="stit">Solicitudes activas</div><div class="snew" id="snew">0</div></div>
@@ -3339,6 +3360,7 @@ async function confirmarPagoSINPE(){if(!db||!sinpeMonto)return;const concepto='A
 let regEnergia='combustion';let regVehiculo='sedan',regFeatures={ac:false,pet:false,carga:false},regDocs={},selCategoria='todos';
 function selVchip(el,tipo){document.querySelectorAll('#vtype-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');regVehiculo=tipo;aplicarFotosVehiculo();llenarMarcas();saveRegProgress();}
 function selEnergia(el,tipo){document.querySelectorAll('#energia-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');regEnergia=tipo;saveRegProgress();}
+function selColor(el,color){document.querySelectorAll('#color-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');const inp=document.getElementById('rcolor');if(inp)inp.value=color;saveRegProgress();}
 function aplicarFotosVehiculo(){const fm=document.getElementById('fotos-moto'),fc=document.getElementById('fotos-carro'),fg=document.getElementById('fotos-carga');const esMoto=(regVehiculo==='moto');const esCarga=(regVehiculo==='carga-liviana'||regVehiculo==='camion');if(fm)fm.style.display=esMoto?'block':'none';if(fg)fg.style.display=esCarga?'block':'none';if(fc)fc.style.display=(!esMoto&&!esCarga)?'block':'none';}
 function togFeature(el,feat){el.classList.toggle('on');regFeatures[feat]=el.classList.contains('on');saveRegProgress();}
 // Sube la foto real del documento al bucket privado de Supabase.
@@ -3521,8 +3543,10 @@ function validarAnioVehiculo(){
   if(antiguedad > 15){ msg.textContent='❌ El vehículo no puede tener más de 15 años (máximo permitido en AVS).'; msg.style.color='#ff6b6b'; return false; }
   msg.textContent='✅ Vehículo dentro del límite de antigüedad'; msg.style.color='#00e5b8'; return true;
 }
-function saveRegProgress(){const p={nombre:document.getElementById('rnombre')?.value||'',telefono:document.getElementById('rtelefono')?.value||'',correo:document.getElementById('rcorreo')?.value||'',cedula:document.getElementById('rcedula')?.value||'',fechanac:leerFechaNac('r-fn'),placa:document.getElementById('rplaca')?.value||'',marca:document.getElementById('rmarca')?.value||'',modelo:document.getElementById('rmodelo')?.value||'',anio:document.getElementById('ranio')?.value||'',color:document.getElementById('rcolor')?.value||'',capacidad:document.getElementById('rcapacidad')?.value||'',vehiculo:regVehiculo,energia:regEnergia,features:regFeatures,docs:regDocs};localStorage.setItem('avs_reg',JSON.stringify(p));}
-function loadRegProgress(){try{const p=localStorage.getItem('avs_reg');if(!p)return;const prog=JSON.parse(p);['rnombre','rtelefono','rcorreo','rcedula','rplaca','rmodelo','rcapacidad'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=prog[id.replace('r','')]||'';});if(prog.fechanac)ponerFechaNac('r-fn',prog.fechanac);const mkel=document.getElementById('rmarca');if(mkel&&prog.marca){mkel.value=prog.marca;onMarcaChange();}const anel=document.getElementById('ranio');if(anel){anel.value=prog.anio||'';if(prog.anio)validarAnioVehiculo();}const cyel=document.getElementById('rcolor');if(cyel)cyel.value=prog.color||'';regVehiculo=prog.vehiculo||'sedan';regEnergia=prog.energia||'combustion';regFeatures=prog.features||{ac:false,pet:false,carga:false};regDocs=prog.docs||{};document.querySelectorAll('#vtype-chips .vchip').forEach(c=>{c.classList.remove('sel');if(c.getAttribute('onclick')?.includes("'"+regVehiculo+"'"))c.classList.add('sel');});aplicarFotosVehiculo();llenarMarcas();document.querySelectorAll('#energia-chips .vchip').forEach(c=>{c.classList.remove('sel');if(c.getAttribute('onclick')?.includes("'"+regEnergia+"'"))c.classList.add('sel');});['ac','pet','carga'].forEach(f=>{const t=document.getElementById('tog-'+f);if(t&&regFeatures[f])t.classList.add('on');});Object.keys(regDocs).forEach(tipo=>{const el=document.getElementById('doc-'+tipo),st=document.getElementById('dst-'+tipo);if(el)el.classList.add('ok');if(st){st.textContent='✅ Documento cargado';st.classList.add('ok');}});}catch(e){}}
+let _regSaveTimer=null;
+function saveRegProgress(){if(_regSaveTimer)clearTimeout(_regSaveTimer);_regSaveTimer=setTimeout(_guardarRegProgress,400);}
+function _guardarRegProgress(){const p={nombre:document.getElementById('rnombre')?.value||'',telefono:document.getElementById('rtelefono')?.value||'',correo:document.getElementById('rcorreo')?.value||'',cedula:document.getElementById('rcedula')?.value||'',fechanac:leerFechaNac('r-fn'),placa:document.getElementById('rplaca')?.value||'',marca:document.getElementById('rmarca')?.value||'',modelo:document.getElementById('rmodelo')?.value||'',anio:document.getElementById('ranio')?.value||'',color:document.getElementById('rcolor')?.value||'',capacidad:document.getElementById('rcapacidad')?.value||'',vehiculo:regVehiculo,energia:regEnergia,features:regFeatures,docs:regDocs};localStorage.setItem('avs_reg',JSON.stringify(p));}
+function loadRegProgress(){try{const p=localStorage.getItem('avs_reg');if(!p)return;const prog=JSON.parse(p);['rnombre','rtelefono','rcorreo','rcedula','rplaca','rmodelo','rcapacidad'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=prog[id.replace('r','')]||'';});if(prog.fechanac)ponerFechaNac('r-fn',prog.fechanac);const mkel=document.getElementById('rmarca');if(mkel&&prog.marca){mkel.value=prog.marca;onMarcaChange();}const anel=document.getElementById('ranio');if(anel){anel.value=prog.anio||'';if(prog.anio)validarAnioVehiculo();}const cyel=document.getElementById('rcolor');if(cyel)cyel.value=prog.color||'';document.querySelectorAll('#color-chips .vchip').forEach(c=>{c.classList.remove('sel');if(prog.color&&c.getAttribute('onclick')?.includes("'"+prog.color+"'"))c.classList.add('sel');});regVehiculo=prog.vehiculo||'sedan';regEnergia=prog.energia||'combustion';regFeatures=prog.features||{ac:false,pet:false,carga:false};regDocs=prog.docs||{};document.querySelectorAll('#vtype-chips .vchip').forEach(c=>{c.classList.remove('sel');if(c.getAttribute('onclick')?.includes("'"+regVehiculo+"'"))c.classList.add('sel');});aplicarFotosVehiculo();llenarMarcas();document.querySelectorAll('#energia-chips .vchip').forEach(c=>{c.classList.remove('sel');if(c.getAttribute('onclick')?.includes("'"+regEnergia+"'"))c.classList.add('sel');});['ac','pet','carga'].forEach(f=>{const t=document.getElementById('tog-'+f);if(t&&regFeatures[f])t.classList.add('on');});Object.keys(regDocs).forEach(tipo=>{const el=document.getElementById('doc-'+tipo),st=document.getElementById('dst-'+tipo);if(el)el.classList.add('ok');if(st){st.textContent='✅ Documento cargado';st.classList.add('ok');}});}catch(e){}}
 async function enviarRegistro(){const nombre=document.getElementById('rnombre').value.trim(),telefono=document.getElementById('rtelefono').value.trim(),correo=document.getElementById('rcorreo').value.trim(),cedula=document.getElementById('rcedula').value.trim(),fechanac=leerFechaNac('r-fn'),placa=document.getElementById('rplaca').value.trim(),marca=document.getElementById('rmarca')?document.getElementById('rmarca').value.trim():'',modeloRaw=document.getElementById('rmodelo').value.trim(),anio=document.getElementById('ranio')?document.getElementById('ranio').value.trim():'',colorVeh=document.getElementById('rcolor')?document.getElementById('rcolor').value.trim():'',cap=document.getElementById('rcapacidad').value.trim();const modelo=[marca,modeloRaw,anio].filter(Boolean).join(' ');if(!nombre||!telefono||!placa||!marca||!modeloRaw||!cedula){toast('Completá todos los campos obligatorios (incluí marca y modelo)');return;}if(!anio){toast('Ingresá el año del vehículo');return;}const _anioN=parseInt(anio),_actual=new Date().getFullYear();if(isNaN(_anioN)||_anioN<1990||_anioN>_actual+1){toast('Revisá el año del vehículo');return;}if(_actual-_anioN>15){toast('El vehículo no puede tener más de 15 años');return;}if(!colorVeh){toast('Elegí el color del vehículo');return;}if(!fechanac){toast('Ingresá tu fecha de nacimiento');return;}var hoy=new Date(),fn=new Date(fechanac),edad=hoy.getFullYear()-fn.getFullYear(),mm=hoy.getMonth()-fn.getMonth();if(mm<0||(mm===0&&hoy.getDate()<fn.getDate()))edad--;if(isNaN(edad)||edad<18){toast('Debés ser mayor de edad (18+) para registrarte');return;}const _fv=regVehiculo==='moto'?['foto-moto-frente','foto-moto-lado','foto-moto-atras']:(regVehiculo==='carga-liviana'||regVehiculo==='camion')?['foto-carga-frente','foto-carga-lado','foto-carga-atras','foto-carga-cabina','foto-carga-zona']:['foto-ext-izq','foto-ext-der','foto-ext-atras','foto-int-cabina','foto-int-ocupantes'];const docsReq=['foto-conductor','cedula','licencia','circulacion','seguro','revision'].concat(_fv);const faltantes=docsReq.filter(d=>!regDocs[d]);if(faltantes.length>0){toast('Falta subir '+faltantes.length+' documento(s)');return;}if(!consentimientoOK('conductor'))return;if(db){try{const{data:coincide}=await db.rpc('avs_verificar_cedula',{p_cedula:cedula,p_nombre:nombre});if(coincide===false){const seguir=confirm('La cédula y el nombre no coinciden con el registro nacional. ¿Enviar la solicitud igual para revisión manual?');if(!seguir)return;}}catch(e){}const{data:existe}=await db.from('usuarios').select('telefono,estado_verificacion,rol_conductor').eq('telefono',telefono).single();if(existe&&existe.rol_conductor&&existe.estado_verificacion!=='rechazado'){toast('Ya tenés una solicitud de conductor (estado: '+(existe.estado_verificacion||'pendiente')+')');return;}const _partesNom=nombre.trim().split(/\s+/);const _nombreSolo=_partesNom[0]||nombre;const _apellidos=_partesNom.slice(1).join(' ')||'-';const datosReg={nombre:_nombreSolo,apellidos:_apellidos,rol_conductor:true,placa,modelo_vehiculo:modelo,color_vehiculo:colorVeh,tipo_vehiculo:regVehiculo,energia:regEnergia,capacidad:parseInt(cap)||4,tiene_ac:regFeatures.ac,pet_friendly:regFeatures.pet,acepta_carga:regFeatures.carga,cedula_identidad:cedula,fecha_nacimiento:fechanac,correo,estado_verificacion:'pendiente',documentos_url:regDocs,consent_version:AVS_CONSENT_VERSION,consent_fecha:new Date().toISOString(),docs_rechazados:null,motivo_rechazo:null,docs_corregidos:null,docs_revision:null};let error;if(existe){({error}=await db.from('usuarios').update(datosReg).eq('telefono',telefono));}else{({error}=await db.from('usuarios').insert(Object.assign({telefono,tipo:'conductor'},datosReg)));}if(error){console.error(error);toast('No se pudo enviar el registro. Intentá de nuevo.');return;}try{const filas=docsReq.filter(d=>typeof regDocs[d]==='string'&&regDocs[d].indexOf('/')>=0).map(d=>({cedula:cedula.replace(/[^0-9a-zA-Z]/g,''),tipo_doc:d,ruta_archivo:regDocs[d],estado:'pendiente'}));if(filas.length>0)await db.from('documentos_conductor').insert(filas);}catch(e){console.error('docs:',e);}}localStorage.removeItem('avs_reg');document.getElementById('registro').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;gap:16px"><div style="font-size:64px">⏳</div><div style="font-family:var(--font-d);font-size:22px;font-weight:700">Solicitud enviada</div><div style="font-size:14px;color:var(--mt);line-height:1.6">Tu solicitud fue recibida. El equipo AVS revisará tu documentación y te contactará al <strong style="color:var(--tx)">${telefono}</strong> en un plazo de 24-48 horas.</div><button class="btnp" onclick="go('login')" style="margin-top:20px;max-width:300px">Volver al inicio</button></div>`;}
 function buscarEnLista(listaId,q){q=(q||'').trim().toLowerCase();const cont=document.getElementById(listaId);if(!cont)return;cont.querySelectorAll('.adcard').forEach(card=>{const ok=!q||(card.textContent||'').toLowerCase().indexOf(q)>=0;card.style.display=ok?'':'none';});}
 function switchAdminTab(tab){
@@ -5419,6 +5443,17 @@ function abrirIngreso(role){
     <button class="btno" onclick="resetLoginSheet()" style="margin-top:10px">← Volver</button>`;
   setTimeout(()=>initCarruselGenerico('avsCarruselIng'),60);
 }
+async function cargarConteoViajesConductor(){
+  if(!db||!user||!user.phone)return;
+  try{
+    const [v,pd]=await Promise.all([
+      db.from('viajes').select('id',{count:'exact',head:true}).eq('conductor_telefono',user.phone).eq('estado','completado'),
+      db.from('pedidos').select('id',{count:'exact',head:true}).eq('conductor_telefono',user.phone).eq('estado','entregado')
+    ]);
+    const total=(v.count||0)+(pd.count||0);
+    const el=document.getElementById('cond-viajes'); if(el)el.textContent=total;
+  }catch(e){console.error('conteoViajes',e);}
+}
 function applyUser(){
   const ini=user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'U';
   ['uinit','pinit','cinit'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ini;});
@@ -5437,12 +5472,17 @@ function applyUser(){
   // Regalías: revisar el contador del mes al entrar como usuario
   if(user.role!=='conductor' && user.role!=='admin'){ setTimeout(verificarRegaliaMensual, 1600); }
   if(db&&user.phone&&user.role==='conductor'){
-    db.from('usuarios').select('saldo_avs').eq('telefono',user.phone).single().then(({data})=>{
+    db.from('usuarios').select('saldo_avs,calificacion_promedio,total_calificaciones,created_at').eq('telefono',user.phone).single().then(({data})=>{
       const s=parseInt(data?.saldo_avs||0);
       const el=document.getElementById('cond-saldo');
       if(el)el.textContent='₡'+s.toLocaleString('es-CR');
       avisoSaldoBajoAVS(s);
+      const rEl=document.getElementById('cond-rating');
+      if(rEl){const prom=parseFloat(data?.calificacion_promedio||0);const nC=parseInt(data?.total_calificaciones||0);rEl.textContent=nC>0?('⭐ '+prom.toFixed(1)):'⭐ Nuevo';}
+      const dEl=document.getElementById('cond-desde');
+      if(dEl&&data?.created_at){dEl.textContent=new Date(data.created_at).toLocaleDateString('es-CR',{month:'short',year:'numeric'});}
     }).catch(()=>{});
+    cargarConteoViajesConductor();
   }
   // Load saldo
   if(db&&user.phone&&user.role!=='conductor'&&user.role!=='admin'){
