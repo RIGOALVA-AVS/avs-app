@@ -5879,10 +5879,59 @@ async function publicarFlete(){
   toast('✅ Flete publicado — los transportistas te van a cotizar');
   go('pasajero');
 }
+async function cargarFletesConductor(){
+  const lista=document.getElementById('slist'); const snew=document.getElementById('snew');
+  const{data:fletes}=await db.from('solicitudes_carga').select('*').eq('estado','abierta').order('fecha',{ascending:false}).limit(20);
+  const ahora=Date.now();
+  const abiertos=(fletes||[]).filter(f=> f.usuario_telefono!==user.phone && (ahora - new Date(f.fecha).getTime()) < 5*60*1000 );
+  if(abiertos.length===0){ lista.innerHTML='<div class="nolist">🚚 No hay fletes abiertos ahora. Aparecen aquí cuando un cliente publique uno (la subasta dura 5 min).</div>'; if(snew)snew.textContent='0'; return; }
+  const ids=abiertos.map(f=>f.id);
+  let cots=[];
+  try{ const r=await db.from('cotizaciones_carga').select('*').in('solicitud_id',ids); cots=r.data||[]; }catch(e){}
+  const porFlete={};
+  cots.forEach(c=>{ (porFlete[c.solicitud_id]=porFlete[c.solicitud_id]||[]).push(c); });
+  if(snew)snew.textContent=abiertos.length;
+  lista.innerHTML=abiertos.map(f=>{
+    const lc=porFlete[f.id]||[];
+    const precios=lc.map(c=>parseInt(c.precio)).filter(n=>!isNaN(n));
+    const minP = precios.length? Math.min(...precios) : null;
+    const miCot = lc.find(c=>c.conductor_telefono===user.phone);
+    const minTxt = (minP!=null) ? ('₡'+minP.toLocaleString('es-CR')) : '— (sé el primero)';
+    const quedan = Math.max(0, Math.ceil((5*60*1000 - (ahora - new Date(f.fecha).getTime()))/60000));
+    const fact = f.foto_factura_url ? `<button class="addoc addoc-ver" onclick="verFacturaFlete('${f.foto_factura_url}')">🧾 Ver factura</button>` : '';
+    return `<div class="scard" id="flete-${f.id}"><div class="shd"><div class="spas">🚚 Flete · ${f.tipo_requerido||'carga'}</div><div style="font-size:12px;color:var(--mt)">⏱️ ~${quedan} min</div></div>`+
+      `<div style="font-size:13px;margin:4px 0 6px;line-height:1.4">📦 ${f.descripcion||''}${f.peso?(' · <b>'+f.peso+'</b>'):''}</div>`+
+      `<div style="font-size:12px;color:var(--mt);margin-bottom:6px">📍 ${f.origen||'—'} → ${f.destino||'—'}</div>`+
+      (fact?('<div style="margin-bottom:8px">'+fact+'</div>'):'')+
+      `<div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px"><span style="color:var(--mt)">Oferta más baja: </span><b style="color:var(--g)">${minTxt}</b>${miCot?(' · <span style="color:var(--mt)">tu oferta ₡'+(parseInt(miCot.precio)||0).toLocaleString('es-CR')+'</span>'):''}</div>`+
+      `<div style="display:flex;gap:8px"><input class="ifield" id="cot-${f.id}" type="number" inputmode="numeric" placeholder="Tu precio ₡" style="flex:1"><button class="bacp" onclick="cotizarFlete('${f.id}')">${miCot?'Bajar oferta':'Cotizar'}</button></div>`+
+    `</div>`;
+  }).join('');
+}
+async function cotizarFlete(id){
+  const inp=document.getElementById('cot-'+id); const precio=parseInt(inp&&inp.value||'0');
+  if(!precio||precio<500){toast('Ingresá un precio válido');return;}
+  if(!db||!user||!user.phone)return;
+  let placa='';
+  try{ const{data:me}=await db.from('usuarios').select('placa').eq('telefono',user.phone).single(); placa=me?(me.placa||''):''; }catch(e){}
+  try{
+    const{data:prev}=await db.from('cotizaciones_carga').select('id').eq('solicitud_id',id).eq('conductor_telefono',user.phone).maybeSingle();
+    if(prev){ await db.from('cotizaciones_carga').update({precio,fecha:new Date().toISOString()}).eq('id',prev.id); }
+    else { await db.from('cotizaciones_carga').insert({solicitud_id:id,conductor_telefono:user.phone,conductor_nombre:user.name,conductor_vehiculo:(window._vehActivoTipo||''),conductor_placa:placa,precio,estado:'ofertada'}); }
+    toast('✅ Cotización enviada: ₡'+precio.toLocaleString('es-CR'));
+  }catch(e){console.error(e);toast('No se pudo enviar la cotización');}
+  cargarFletesConductor();
+}
+function verFacturaFlete(ruta){
+  if(!db||!ruta)return;
+  db.storage.from('facturas-carga').createSignedUrl(ruta,3600).then(({data})=>{ if(data&&data.signedUrl) window.open(data.signedUrl,'_blank'); else toast('No se pudo abrir la factura'); }).catch(()=>toast('No se pudo abrir la factura'));
+}
 async function cargarSolicitudes(){
   if(!db){document.getElementById('slist').innerHTML='<div class="nolist">Sin conexión a base de datos</div>';return;}
   if(!window._vehActivoTipo && user && user.phone){ try{ const {data:_me}=await db.from('usuarios').select('tipo_vehiculo').eq('telefono',user.phone).single(); if(_me&&_me.tipo_vehiculo) window._vehActivoTipo=_me.tipo_vehiculo; }catch(e){} }
   const esMoto = (window._vehActivoTipo==='moto');
+  const esCarga = (window._vehActivoTipo==='carga-liviana' || window._vehActivoTipo==='camion');
+  if(esCarga){ return cargarFletesConductor(); }
   const [vRes,pRes,muRes] = await Promise.all([
     esMoto ? Promise.resolve({data:[]}) : db.from('viajes').select('*').eq('estado','solicitado').order('fecha_solicitud',{ascending:false}).limit(10),
     esMoto
