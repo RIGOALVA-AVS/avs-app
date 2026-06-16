@@ -1299,8 +1299,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <input type="file" id="flete-factura-file" accept="image/*,application/pdf" style="display:none" onchange="document.getElementById('flete-factura-st').textContent=(this.files&&this.files[0])?('✅ '+this.files[0].name):'Toca para adjuntar imagen o PDF (opcional)'">
   </div>
   <div style="background:rgba(0,229,184,0.06);border:1px solid var(--bd2);border-radius:12px;padding:12px;font-size:12px;color:var(--mt);line-height:1.5;margin-bottom:14px">📢 Tu solicitud se envía a todos los transportistas de carga registrados. Ellos te <b>cotizan su precio</b> y vos elegís con quién hacer el flete.</div>
-  <div style="background:rgba(226,75,74,0.06);border:1px solid rgba(226,75,74,0.3);border-radius:12px;padding:12px;font-size:11px;color:var(--mt);line-height:1.5;margin-bottom:12px">⚖️ Al publicar aceptás que <b>AVS solo conecta a las partes</b> y <b>no es responsable</b> —ni ahora ni en el futuro— por el flete, la carga, daños, pérdidas, demoras ni por lo acordado entre vos y el transportista. El precio acordado es <b>final</b> para ambas partes. <i>(Texto en borrador — pendiente de revisión legal.)</i></div>
+  <div style="background:rgba(226,75,74,0.06);border:1px solid rgba(226,75,74,0.3);border-radius:12px;padding:12px;font-size:11px;color:var(--mt);line-height:1.5;margin-bottom:12px">⚖️ Al publicar aceptás que <b>AVS solo conecta a las partes</b> y <b>no es responsable</b> —ni ahora ni en el futuro— por el flete, la carga, daños, pérdidas, demoras ni por lo acordado entre vos y el transportista. El precio acordado es <b>final</b> para ambas partes. Cualquier cambio de último momento (material extra, paradas o cambio de ruta) se acuerda <b>directamente entre las partes</b>, fuera de AVS. <i>(Texto en borrador — pendiente de revisión legal.)</i></div>
   <button class="btnp" onclick="publicarFlete()">Publicar y recibir cotizaciones</button>
+</div>
+
+<div class="screen" id="flete-ofertas" style="background:var(--bg);overflow-y:auto;padding:48px 20px 90px;display:block">
+  <div class="rhdr"><button class="rbk" onclick="go('pasajero')">←</button><div class="rtit">Cotizaciones del flete</div></div>
+  <div id="flete-ofertas-resumen" style="font-size:13px;color:var(--mt);margin-bottom:12px;line-height:1.5"></div>
+  <div id="flete-ofertas-lista"><div class="nolist">Esperando cotizaciones...</div></div>
 </div>
 
 <!-- SINPE -->
@@ -5878,8 +5884,51 @@ async function publicarFlete(){
   const{data,error}=await db.from('solicitudes_carga').insert({usuario_telefono:user.phone,usuario_nombre:user.name,descripcion:desc,origen:ori,destino:dst,tipo_requerido:'carga',foto_factura_url:fotoUrl,peso:(document.getElementById('flete-peso')?document.getElementById('flete-peso').value.trim():''),estado:'abierta'}).select().single();
   if(error){console.error(error);toast('No se pudo publicar. Intentá de nuevo.');return;}
   document.getElementById('flete-desc').value='';document.getElementById('flete-origen').value='';document.getElementById('flete-destino').value='';
-  toast('✅ Flete publicado — los transportistas te van a cotizar');
-  go('pasajero');
+  toast('✅ Flete publicado — esperá las cotizaciones');
+  window._fleteActual=data.id; go('flete-ofertas'); verOfertasFlete(data.id);
+}
+let _fleteOfertasInt=null;
+async function verOfertasFlete(id){
+  window._fleteActual=id;
+  if(_fleteOfertasInt)clearInterval(_fleteOfertasInt);
+  await _pintarOfertasFlete(id);
+  _fleteOfertasInt=setInterval(()=>{ if(window._avsPantallaActual==='flete-ofertas')_pintarOfertasFlete(id); else {clearInterval(_fleteOfertasInt);} },5000);
+}
+async function _pintarOfertasFlete(id){
+  if(!db)return;
+  const{data:s}=await db.from('solicitudes_carga').select('*').eq('id',id).single();
+  if(!s)return;
+  const res=document.getElementById('flete-ofertas-resumen');
+  if(res) res.innerHTML=`📦 ${s.descripcion||''}${s.peso?(' · <b>'+s.peso+'</b>'):''}<br>📍 ${s.origen||''} → ${s.destino||''}`;
+  const lista=document.getElementById('flete-ofertas-lista'); if(!lista)return;
+  if(s.estado==='asignada'){
+    if(_fleteOfertasInt)clearInterval(_fleteOfertasInt);
+    lista.innerHTML=`<div class="scard"><div class="spas">✅ Flete asignado</div><div style="font-size:13px;color:var(--mt);margin-top:6px;line-height:1.5">Elegiste a <b>${s.conductor_ganador_telefono||''}</b> por <b style="color:var(--g)">₡${(parseInt(s.precio_ganador)||0).toLocaleString('es-CR')}</b>.<br>El precio es <b>final</b> para ambas partes.</div></div>`;
+    return;
+  }
+  const{data:cots}=await db.from('cotizaciones_carga').select('*').eq('solicitud_id',id).neq('estado','rechazada').order('precio',{ascending:true});
+  if(!cots||cots.length===0){ lista.innerHTML='<div class="nolist">⏳ Esperando cotizaciones de los transportistas (subasta de 5 min)...</div>'; return; }
+  let rats={};
+  try{ const{data:us}=await db.from('usuarios').select('telefono,calificacion_promedio,total_calificaciones').in('telefono',cots.map(c=>c.conductor_telefono)); (us||[]).forEach(u=>rats[u.telefono]=u); }catch(e){}
+  lista.innerHTML='<div style="font-size:12px;color:var(--mt);margin-bottom:8px">Ordenadas de menor a mayor precio. Elegí con quién hacer el flete:</div>'+cots.map(c=>{
+    const u=rats[c.conductor_telefono]||{}; const nc=parseInt(u.total_calificaciones||0); const cal=nc>0?('⭐ '+parseFloat(u.calificacion_promedio||0).toFixed(1)):'⭐ Nuevo';
+    return `<div class="scard"><div class="shd"><div class="spas">🚚 ${c.conductor_nombre||'Transportista'}</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--g)">₡${(parseInt(c.precio)||0).toLocaleString('es-CR')}</div></div>`+
+      `<div style="font-size:12px;color:var(--mt);margin-bottom:8px">${cal} · ${c.conductor_vehiculo||''} · Placa: ${c.conductor_placa||'—'}</div>`+
+      `<button class="bacp" onclick="elegirTransportista('${c.id}','${id}','${c.conductor_telefono}',${parseInt(c.precio)||0})">Elegir este transportista</button>`+
+    `</div>`;
+  }).join('');
+}
+async function elegirTransportista(cotId,solId,condTel,precio){
+  if(!db)return;
+  if(!confirm('¿Elegir este transportista por ₡'+precio.toLocaleString('es-CR')+'? El precio es FINAL para ambas partes.'))return;
+  const comision=Math.round(precio*0.10);
+  try{
+    await db.from('cotizaciones_carga').update({estado:'rechazada'}).eq('solicitud_id',solId);
+    await db.from('cotizaciones_carga').update({estado:'aceptada'}).eq('id',cotId);
+    await db.from('solicitudes_carga').update({estado:'asignada',conductor_ganador_telefono:condTel,precio_ganador:precio,comision_avs:comision}).eq('id',solId);
+    toast('✅ Transportista elegido');
+  }catch(e){console.error(e);toast('No se pudo asignar');}
+  _pintarOfertasFlete(solId);
 }
 async function cargarFletesConductor(){
   const lista=document.getElementById('slist'); const snew=document.getElementById('snew');
