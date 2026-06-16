@@ -5927,7 +5927,7 @@ async function publicarFlete(){
     try{ const f=_ff.files[0]; const ext=(f.name.split('.').pop()||'jpg').toLowerCase(); const ruta=user.phone.replace(/[^0-9]/g,'')+'/factura_'+Date.now()+'.'+ext; const{error:upErr}=await db.storage.from('facturas-carga').upload(ruta,f,{upsert:true}); if(!upErr){fotoUrl=ruta;} else {console.error(upErr); toast('No se pudo subir la factura — publico el flete sin ella');} }catch(e){console.error(e);}
   }
   if(!window._fleteKm){ try{ window._fleteKm=await _rutaKm(ori,dst); }catch(e){} }
-  const{data,error}=await db.from('solicitudes_carga').insert({usuario_telefono:user.phone,usuario_nombre:user.name,descripcion:desc,origen:ori,destino:dst,tipo_requerido:'carga',foto_factura_url:fotoUrl,distancia_km:(window._fleteKm||null),peso:(document.getElementById('flete-peso')?document.getElementById('flete-peso').value.trim():''),estado:'abierta'}).select().single();
+  const{data,error}=await db.from('solicitudes_carga').insert({usuario_telefono:user.phone,usuario_nombre:user.name,descripcion:desc,origen:ori,destino:dst,tipo_requerido:'carga',foto_factura_url:fotoUrl,distancia_km:(window._fleteKm||null),origen_lat:(window._fleteOriLoc?window._fleteOriLoc.lat:null),origen_lng:(window._fleteOriLoc?window._fleteOriLoc.lng:null),destino_lat:(window._fleteDstLoc?window._fleteDstLoc.lat:null),destino_lng:(window._fleteDstLoc?window._fleteDstLoc.lng:null),peso:(document.getElementById('flete-peso')?document.getElementById('flete-peso').value.trim():''),estado:'abierta'}).select().single();
   if(error){console.error(error);toast('No se pudo publicar. Intentá de nuevo.');return;}
   document.getElementById('flete-desc').value='';document.getElementById('flete-origen').value='';document.getElementById('flete-destino').value='';window._fleteKm=null;window._fleteOriLoc=null;window._fleteDstLoc=null;{const _k=document.getElementById('flete-km');if(_k)_k.textContent='';}
   toast('✅ Flete publicado — esperá las cotizaciones');
@@ -5951,7 +5951,7 @@ function _tickFleteCountdown(){
   const el=document.getElementById('flete-countdown'); if(!el)return;
   if(window._avsPantallaActual!=='flete-ofertas'){ if(window._fleteCountdownInt)clearInterval(window._fleteCountdownInt); return; }
   if(!window._fleteFecha){ el.textContent=''; return; }
-  const fin=new Date(window._fleteFecha).getTime()+5*60*1000; const rem=fin-Date.now();
+  const fin=new Date(window._fleteFecha).getTime()+10*60*1000; const rem=fin-Date.now();
   if(rem<=0){ el.innerHTML='⏱️ <b>Subasta cerrada</b>'; if(window._fleteCountdownInt)clearInterval(window._fleteCountdownInt); return; }
   const m=Math.floor(rem/60000), sg=Math.floor((rem%60000)/1000);
   el.innerHTML='⏱️ Subasta abierta · quedan <b>'+m+':'+(sg<10?'0':'')+sg+'</b>';
@@ -5964,17 +5964,23 @@ async function _pintarOfertasFlete(id){
   const res=document.getElementById('flete-ofertas-resumen');
   if(res) res.innerHTML=`📦 ${s.descripcion||''}${s.peso?(' · <b>'+s.peso+'</b>'):''}<br>📍 ${s.origen||''} → ${s.destino||''}${s.distancia_km?(' · 📏 '+s.distancia_km+' km'):''}`;
   const lista=document.getElementById('flete-ofertas-lista'); if(!lista)return;
+  if(s.estado==='completada'){
+    if(_fleteOfertasInt)clearInterval(_fleteOfertasInt);
+    if(window._fleteCountdownInt)clearInterval(window._fleteCountdownInt); const _cd0=document.getElementById('flete-countdown'); if(_cd0)_cd0.textContent='';
+    lista.innerHTML=`<div class="scard" style="border:1px solid var(--g)"><div class="spas">🏁 Flete finalizado</div><div style="font-size:13px;color:var(--mt);margin-top:6px;line-height:1.5">Entrega completada con <b>${s.conductor_ganador_telefono||''}</b> por <b style="color:var(--g)">₡${(parseInt(s.precio_ganador)||0).toLocaleString('es-CR')}</b>.<br>Gracias por usar AVS.</div></div>`;
+    return;
+  }
   if(s.estado==='asignada'){
     if(_fleteOfertasInt)clearInterval(_fleteOfertasInt);
     if(window._fleteCountdownInt)clearInterval(window._fleteCountdownInt); const _cd=document.getElementById('flete-countdown'); if(_cd)_cd.textContent='';
-    lista.innerHTML=`<div class="scard"><div class="spas">✅ Flete asignado</div><div style="font-size:13px;color:var(--mt);margin-top:6px;line-height:1.5">Elegiste a <b>${s.conductor_ganador_telefono||''}</b> por <b style="color:var(--g)">₡${(parseInt(s.precio_ganador)||0).toLocaleString('es-CR')}</b>.<br>El precio es <b>final</b> para ambas partes.</div></div>`;
+    lista.innerHTML=`<div class="scard"><div class="spas">✅ Flete asignado</div><div style="font-size:13px;color:var(--mt);margin-top:6px;line-height:1.5">Elegiste a <b>${s.conductor_ganador_telefono||''}</b> por <b style="color:var(--g)">₡${(parseInt(s.precio_ganador)||0).toLocaleString('es-CR')}</b>.<br>El precio es <b>final</b> para ambas partes.</div><div style="font-size:12px;color:var(--mt);margin-top:10px">Cuando recibás la carga en destino, confirmá la entrega:</div><button class="bacp" style="margin-top:8px" onclick="finalizarFlete('${id}','cliente')">✅ Confirmar entrega recibida</button></div>`;
     return;
   }
   const{data:cots}=await db.from('cotizaciones_carga').select('*').eq('solicitud_id',id).neq('estado','rechazada').order('precio',{ascending:true});
   if(!cots||cots.length===0){
-    const expirada=(Date.now()-new Date(s.fecha).getTime())>=5*60*1000;
-    if(expirada){ lista.innerHTML='<div class="nolist">⏱️ La subasta cerró y <b>ningún transportista cotizó</b>. Podés volver a publicarla para que la vean de nuevo.</div><button class="btnp" onclick="reabrirFlete(\''+id+'\')">🔄 Volver a publicar (otros 5 min)</button>'; }
-    else { lista.innerHTML='<div class="nolist">⏳ Esperando cotizaciones de los transportistas (subasta de 5 min)...</div>'; }
+    const expirada=(Date.now()-new Date(s.fecha).getTime())>=10*60*1000;
+    if(expirada){ lista.innerHTML='<div class="nolist">⏱️ La subasta cerró y <b>ningún transportista cotizó</b>. Podés volver a publicarla para que la vean de nuevo.</div><button class="btnp" onclick="reabrirFlete(\''+id+'\')">🔄 Volver a publicar (otros 10 min)</button>'; }
+    else { lista.innerHTML='<div class="nolist">⏳ Esperando cotizaciones de los transportistas (subasta de 10 min)...</div>'; }
     return;
   }
   let rats={};
@@ -6051,12 +6057,15 @@ async function cargarFletesConductor(){
     ganadosHtml=(gn||[]).map(g=>`<div class="scard" style="border:1px solid var(--g)"><div class="shd"><div class="spas">✅ Ganaste este flete</div><div style="font-family:var(--font-d);font-size:17px;font-weight:700;color:var(--g)">₡${(parseInt(g.precio_ganador)||0).toLocaleString('es-CR')}</div></div>`+
       `<div style="font-size:13px;margin:4px 0 6px;line-height:1.4">📦 ${g.descripcion||''}${g.peso?(' · <b>'+g.peso+'</b>'):''}</div>`+
       `<div style="font-size:12px;color:var(--mt);margin-bottom:8px">📍 ${g.origen||'—'} → ${g.destino||'—'}${g.distancia_km?(' · 📏 '+g.distancia_km+' km'):''}</div>`+
-      `<button class="brec" onclick="cancelarFleteConductor('${g.id}',${parseInt(g.precio_ganador)||0},'${g.fecha_asignacion||''}')">No puedo continuar (cancelar)</button>`+
+      `<div style="font-size:12px;color:var(--mt);margin-bottom:8px">Al cerrar, AVS cobra la comisión: <b style="color:var(--rd)">₡${(parseInt(g.comision_avs)||Math.round((parseInt(g.precio_ganador)||0)*0.10)).toLocaleString('es-CR')}</b> de tu crédito.</div>`+
+      `<button class="bacp" onclick="confirmarLlegadaFlete('${g.id}')">📍 Confirmar llegada (GPS)</button>`+
+      `<button class="bacp" style="margin-top:6px" onclick="finalizarFlete('${g.id}','conductor')">🏁 Cerrar como entregado (Finalizado)</button>`+
+      `<button class="brec" style="margin-top:6px" onclick="cancelarFleteConductor('${g.id}',${parseInt(g.precio_ganador)||0},'${g.fecha_asignacion||''}')">No puedo continuar (cancelar)</button>`+
     `</div>`).join('');
   }catch(e){}
   const{data:fletes}=await db.from('solicitudes_carga').select('*').eq('estado','abierta').order('fecha',{ascending:false}).limit(20);
   const ahora=Date.now();
-  const abiertos=(fletes||[]).filter(f=> f.usuario_telefono!==user.phone && (ahora - new Date(f.fecha).getTime()) < 5*60*1000 );
+  const abiertos=(fletes||[]).filter(f=> f.usuario_telefono!==user.phone && (ahora - new Date(f.fecha).getTime()) < 10*60*1000 );
   let abiertosHtml='';
   if(abiertos.length>0){
     const ids=abiertos.map(f=>f.id);
@@ -6068,7 +6077,7 @@ async function cargarFletesConductor(){
       const minP = precios.length? Math.min(...precios) : null;
       const miCot = lc.find(c=>c.conductor_telefono===user.phone && c.estado!=='cancelada');
       const minTxt = (minP!=null) ? ('₡'+minP.toLocaleString('es-CR')) : '— (sé el primero)';
-      const quedan = Math.max(0, Math.ceil((5*60*1000 - (ahora - new Date(f.fecha).getTime()))/60000));
+      const quedan = Math.max(0, Math.ceil((10*60*1000 - (ahora - new Date(f.fecha).getTime()))/60000));
       const fact = f.foto_factura_url ? `<button class="addoc addoc-ver" onclick="verFacturaFlete('${f.foto_factura_url}')">🧾 Ver factura</button>` : '';
       return `<div class="scard" id="flete-${f.id}"><div class="shd"><div class="spas">🚚 Flete · ${f.tipo_requerido||'carga'}</div><div style="font-size:12px;color:var(--mt)">⏱️ ~${quedan} min</div></div>`+
         `<div style="font-size:13px;margin:4px 0 6px;line-height:1.4">📦 ${f.descripcion||''}${f.peso?(' · <b>'+f.peso+'</b>'):''}</div>`+
@@ -6080,7 +6089,7 @@ async function cargarFletesConductor(){
     }).join('');
   }
   if(snew)snew.textContent=String(ganadosN+abiertos.length);
-  if(!ganadosHtml && abiertos.length===0){ lista.innerHTML='<div class="nolist">🚚 No hay fletes abiertos ahora. Aparecen aquí cuando un cliente publique uno (la subasta dura 5 min).</div>'; return; }
+  if(!ganadosHtml && abiertos.length===0){ lista.innerHTML='<div class="nolist">🚚 No hay fletes abiertos ahora. Aparecen aquí cuando un cliente publique uno (la subasta dura 10 min).</div>'; return; }
   lista.innerHTML = ganadosHtml + abiertosHtml;
 }
 async function cotizarFlete(id){
@@ -6096,6 +6105,43 @@ async function cotizarFlete(id){
     toast('✅ Cotización enviada: ₡'+precio.toLocaleString('es-CR'));
   }catch(e){console.error(e);toast('No se pudo enviar la cotización');}
   cargarFletesConductor();
+}
+function _distMflete(la1,lo1,la2,lo2){ const R=6371000,t=Math.PI/180; const dLa=(la2-la1)*t,dLo=(lo2-lo1)*t; const a=Math.sin(dLa/2)**2+Math.cos(la1*t)*Math.cos(la2*t)*Math.sin(dLo/2)**2; return 2*R*Math.asin(Math.sqrt(a)); }
+async function finalizarFlete(solId, via){
+  if(!db)return;
+  if(via!=='gps'){ const q=(via==='cliente')?'¿Confirmás que ya recibiste la carga? El flete se cierra y es definitivo.':'¿Cerrar este flete como ENTREGADO? Se cobrará la comisión AVS de tu crédito.'; if(!confirm(q))return; }
+  try{
+    const {data:s}=await db.from('solicitudes_carga').select('id,estado,comision_avs,comision_cobrada,precio_ganador,conductor_ganador_telefono').eq('id',solId).single();
+    if(!s){toast('Flete no encontrado');return;}
+    if(s.comision_cobrada||s.estado==='completada'){ toast('Este flete ya estaba finalizado'); if(via==='cliente')_pintarOfertasFlete(solId); else cargarFletesConductor(); return; }
+    const tel=s.conductor_ganador_telefono;
+    const com=Math.round(parseInt(s.comision_avs)|| ((parseInt(s.precio_ganador)||0)*0.10));
+    // candado anti-doble: marcar cobrada primero
+    await db.from('solicitudes_carga').update({estado:'completada',comision_cobrada:true,confirmada_por:via,fecha_completada:new Date().toISOString()}).eq('id',solId).eq('comision_cobrada',false);
+    const {data:chk}=await db.from('solicitudes_carga').select('confirmada_por').eq('id',solId).single();
+    if(chk&&chk.confirmada_por!==via){ /* otra parte ganó la carrera */ if(via==='cliente')_pintarOfertasFlete(solId); else cargarFletesConductor(); return; }
+    if(tel){
+      const {data:u}=await db.from('usuarios').select('saldo_avs').eq('telefono',tel).single();
+      const nuevo=Math.max(0,(parseInt(u&&u.saldo_avs)||0)-com);
+      await db.from('usuarios').update({saldo_avs:nuevo}).eq('telefono',tel);
+    }
+    const quien=via==='gps'?'GPS (llegada a destino)':(via==='cliente'?'el cliente':'el transportista');
+    toast('🏁 Flete finalizado por '+quien+' · comisión AVS ₡'+com.toLocaleString('es-CR')+' descontada al transportista');
+    if(via==='cliente')_pintarOfertasFlete(solId); else cargarFletesConductor();
+  }catch(e){console.error('finalizarFlete',e);toast('No se pudo finalizar');}
+}
+async function confirmarLlegadaFlete(solId){
+  if(!navigator.geolocation){ toast('Tu equipo no permite GPS. Cerralo con el botón Finalizado.'); return; }
+  toast('📍 Leyendo tu ubicación...');
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    try{
+      const {data:s}=await db.from('solicitudes_carga').select('destino_lat,destino_lng').eq('id',solId).single();
+      if(!s||s.destino_lat==null||s.destino_lng==null){ toast('Este flete no tiene destino GPS guardado. Cerralo con el botón Finalizado.'); return; }
+      const d=_distMflete(pos.coords.latitude,pos.coords.longitude,parseFloat(s.destino_lat),parseFloat(s.destino_lng));
+      if(d<=250){ finalizarFlete(solId,'gps'); }
+      else { toast('Estás a ~'+Math.round(d)+' m del destino. Acercate para confirmar por GPS, o usá el botón Finalizado.'); }
+    }catch(e){console.error(e);toast('No se pudo verificar la llegada');}
+  }, err=>{ toast('No se pudo leer el GPS. Cerralo con el botón Finalizado.'); }, {enableHighAccuracy:true,timeout:10000,maximumAge:0});
 }
 function verFacturaFlete(ruta){
   if(!db||!ruta)return;
