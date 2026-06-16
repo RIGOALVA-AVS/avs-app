@@ -440,6 +440,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
   /* Columna intermedia de servicios (solo PC) */
   .servicios-movil { display: none; }
+  .catrow { flex-wrap: wrap; overflow-x: visible; }
   #pasajero .servcol {
     display: flex;
     flex-direction: column;
@@ -1283,12 +1284,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="rstit">¿Qué necesitás transportar?</div>
     <textarea class="ifield" id="flete-desc" rows="3" placeholder="Describí la carga: qué es, tamaño, peso aprox., cantidad..." style="resize:vertical;width:100%"></textarea>
     <input class="ifield" id="flete-origen" placeholder="Origen (dónde se recoge)" style="margin-top:10px">
+    <button onclick="fleteUsarUbicacion()" type="button" style="margin-top:6px;background:transparent;border:1px solid var(--bd2);border-radius:10px;padding:8px 12px;color:var(--g);font-size:12px;cursor:pointer">📍 Usar mi ubicación actual</button>
     <input class="ifield" id="flete-destino" placeholder="Destino (dónde se entrega)" style="margin-top:10px">
   </div>
   <div class="rsec">
     <div class="rstit">Peso aproximado de la mercadería</div>
     <input class="ifield" id="flete-peso" placeholder="Ej: 300 kg · 1.5 toneladas">
     <div style="font-size:11px;color:var(--mt);margin-top:8px;line-height:1.5">📦 Tu solicitud llega a <b>Pickup (carga liviana) y Camión</b> a la vez. Indicá bien el <b>peso y la descripción</b>: cada transportista verá si la carga le calza y se descarta solo si supera su capacidad.<br>Referencia: <b>Pickup</b> cargas pequeñas/medianas · <b>Camión</b> hasta <b>3.5 toneladas</b>.</div>
+  </div>
+  <div class="rsec">
+    <div class="rstit">Factura o proforma (opcional)</div>
+    <div class="docitem" id="doc-flete-factura" onclick="document.getElementById('flete-factura-file').click()"><div style="display:flex;align-items:center;gap:12px"><span class="docico">🧾</span><div><div class="docnm">Subir factura / proforma</div><div class="docst" id="flete-factura-st">Toca para adjuntar imagen o PDF (opcional)</div></div></div><span>›</span></div>
+    <input type="file" id="flete-factura-file" accept="image/*,application/pdf" style="display:none" onchange="document.getElementById('flete-factura-st').textContent=(this.files&&this.files[0])?('✅ '+this.files[0].name):'Toca para adjuntar imagen o PDF (opcional)'">
   </div>
   <div style="background:rgba(0,229,184,0.06);border:1px solid var(--bd2);border-radius:12px;padding:12px;font-size:12px;color:var(--mt);line-height:1.5;margin-bottom:14px">📢 Tu solicitud se envía a todos los transportistas de carga registrados. Ellos te <b>cotizan su precio</b> y vos elegís con quién hacer el flete.</div>
   <button class="btnp" onclick="publicarFlete()">Publicar y recibir cotizaciones</button>
@@ -5846,6 +5853,13 @@ async function toggleDisp(el){
 }
 let fleteTipo='cualquiera';
 function selFleteTipo(el,t){document.querySelectorAll('#flete-tipo-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');fleteTipo=t;}
+function fleteUsarUbicacion(){
+  const inp=document.getElementById('flete-origen'); if(!inp)return;
+  const _geo=(loc)=>{ if(window.google&&google.maps){ new google.maps.Geocoder().geocode({location:loc},(r,s)=>{ if(s==='OK'&&r[0]) inp.value=r[0].formatted_address; else inp.value=loc.lat.toFixed(5)+','+loc.lng.toFixed(5); }); } else { inp.value=loc.lat.toFixed(5)+','+loc.lng.toFixed(5); } };
+  if(typeof gpsLoc!=='undefined' && gpsLoc){ _geo(gpsLoc); return; }
+  if(navigator.geolocation){ toast('Detectando ubicación...'); navigator.geolocation.getCurrentPosition(pos=>_geo({lat:pos.coords.latitude,lng:pos.coords.longitude}),()=>toast('No se pudo obtener tu ubicación')); }
+  else { toast('Ubicación no disponible'); }
+}
 async function publicarFlete(){
   const desc=(document.getElementById('flete-desc').value||'').trim();
   const ori=(document.getElementById('flete-origen').value||'').trim();
@@ -5854,7 +5868,12 @@ async function publicarFlete(){
   if(!ori||!dst){toast('Indicá origen y destino');return;}
   if(!db){toast('Sin conexión');return;}
   if(!user||!user.phone){toast('Entrá con tu cuenta primero');return;}
-  const{data,error}=await db.from('solicitudes_carga').insert({usuario_telefono:user.phone,usuario_nombre:user.name,descripcion:desc,origen:ori,destino:dst,tipo_requerido:'carga',peso:(document.getElementById('flete-peso')?document.getElementById('flete-peso').value.trim():''),estado:'abierta'}).select().single();
+  let fotoUrl=null;
+  const _ff=document.getElementById('flete-factura-file');
+  if(_ff&&_ff.files&&_ff.files[0]){
+    try{ const f=_ff.files[0]; const ext=(f.name.split('.').pop()||'jpg').toLowerCase(); const ruta=user.phone.replace(/[^0-9]/g,'')+'/factura_'+Date.now()+'.'+ext; const{error:upErr}=await db.storage.from('facturas-carga').upload(ruta,f,{upsert:true}); if(!upErr){fotoUrl=ruta;} else {console.error(upErr); toast('No se pudo subir la factura — publico el flete sin ella');} }catch(e){console.error(e);}
+  }
+  const{data,error}=await db.from('solicitudes_carga').insert({usuario_telefono:user.phone,usuario_nombre:user.name,descripcion:desc,origen:ori,destino:dst,tipo_requerido:'carga',foto_factura_url:fotoUrl,peso:(document.getElementById('flete-peso')?document.getElementById('flete-peso').value.trim():''),estado:'abierta'}).select().single();
   if(error){console.error(error);toast('No se pudo publicar. Intentá de nuevo.');return;}
   document.getElementById('flete-desc').value='';document.getElementById('flete-origen').value='';document.getElementById('flete-destino').value='';
   toast('✅ Flete publicado — los transportistas te van a cotizar');
