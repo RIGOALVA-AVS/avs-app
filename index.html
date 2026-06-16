@@ -1306,6 +1306,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 <div class="screen" id="flete-ofertas" style="background:var(--bg);overflow-y:auto;padding:48px 20px 90px;display:block">
   <div class="rhdr"><button class="rbk" onclick="go('pasajero')">←</button><div class="rtit">Cotizaciones del flete</div></div>
   <div id="flete-ofertas-resumen" style="font-size:13px;color:var(--mt);margin-bottom:12px;line-height:1.5"></div>
+  <div id="flete-countdown" style="text-align:center;font-size:14px;color:var(--g);margin-bottom:12px"></div>
   <div id="flete-ofertas-lista"><div class="nolist">Esperando cotizaciones...</div></div>
 </div>
 
@@ -5893,16 +5894,29 @@ async function verOfertasFlete(id){
   if(_fleteOfertasInt)clearInterval(_fleteOfertasInt);
   await _pintarOfertasFlete(id);
   _fleteOfertasInt=setInterval(()=>{ if(window._avsPantallaActual==='flete-ofertas')_pintarOfertasFlete(id); else {clearInterval(_fleteOfertasInt);} },5000);
+  if(window._fleteCountdownInt)clearInterval(window._fleteCountdownInt);
+  window._fleteCountdownInt=setInterval(_tickFleteCountdown,1000); _tickFleteCountdown();
+}
+function _tickFleteCountdown(){
+  const el=document.getElementById('flete-countdown'); if(!el)return;
+  if(window._avsPantallaActual!=='flete-ofertas'){ if(window._fleteCountdownInt)clearInterval(window._fleteCountdownInt); return; }
+  if(!window._fleteFecha){ el.textContent=''; return; }
+  const fin=new Date(window._fleteFecha).getTime()+5*60*1000; const rem=fin-Date.now();
+  if(rem<=0){ el.innerHTML='⏱️ <b>Subasta cerrada</b> — elegí tu transportista'; if(window._fleteCountdownInt)clearInterval(window._fleteCountdownInt); return; }
+  const m=Math.floor(rem/60000), sg=Math.floor((rem%60000)/1000);
+  el.innerHTML='⏱️ Subasta abierta · quedan <b>'+m+':'+(sg<10?'0':'')+sg+'</b>';
 }
 async function _pintarOfertasFlete(id){
   if(!db)return;
   const{data:s}=await db.from('solicitudes_carga').select('*').eq('id',id).single();
   if(!s)return;
+  window._fleteFecha=s.fecha;
   const res=document.getElementById('flete-ofertas-resumen');
   if(res) res.innerHTML=`📦 ${s.descripcion||''}${s.peso?(' · <b>'+s.peso+'</b>'):''}<br>📍 ${s.origen||''} → ${s.destino||''}`;
   const lista=document.getElementById('flete-ofertas-lista'); if(!lista)return;
   if(s.estado==='asignada'){
     if(_fleteOfertasInt)clearInterval(_fleteOfertasInt);
+    if(window._fleteCountdownInt)clearInterval(window._fleteCountdownInt); const _cd=document.getElementById('flete-countdown'); if(_cd)_cd.textContent='';
     lista.innerHTML=`<div class="scard"><div class="spas">✅ Flete asignado</div><div style="font-size:13px;color:var(--mt);margin-top:6px;line-height:1.5">Elegiste a <b>${s.conductor_ganador_telefono||''}</b> por <b style="color:var(--g)">₡${(parseInt(s.precio_ganador)||0).toLocaleString('es-CR')}</b>.<br>El precio es <b>final</b> para ambas partes.</div></div>`;
     return;
   }
