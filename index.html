@@ -540,7 +540,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 .toggle.on{background:var(--g);}
 .toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left 0.3s;}
 .toggle.on::after{left:23px;}
-#admin{background:var(--bg);overflow-y:auto;padding:48px 20px 32px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-behavior:auto;}
+#admin{background:var(--bg);overflow-y:auto;padding:48px 20px 32px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-behavior:auto;display:block;}
+#admin>div[id^="admin-"]{overscroll-behavior:contain;transform:translateZ(0);}
 .adhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
 .adtit{font-family:var(--font-d);font-size:20px;font-weight:700;}
 .adtab{display:flex;gap:8px;margin-bottom:16px;}
@@ -938,7 +939,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <input class="ifield" id="buscar-conductor" type="text" placeholder="🔍 Buscar por nombre o cédula" oninput="buscarEnLista('adminlist',this.value)" style="margin:8px 0 4px">
     <div id="adminlist"><div class="nolist">Cargando conductores...</div></div>
   </div>
-  <div id="admin-vehiculos" style="display:none;padding:0 0 20px;overflow-y:auto;flex:1">
+  <div id="admin-vehiculos" style="display:none;padding:0 0 20px">
     <div class="adtab" style="margin-top:8px">
       <div class="adtbtn on" id="vehbtn-pendiente" onclick="filtrarVehiculos('pendiente')">⏳ Pendientes</div>
       <div class="adtbtn" id="vehbtn-aprobado" onclick="filtrarVehiculos('aprobado')">✅ Aprobados</div>
@@ -947,7 +948,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <input class="ifield" id="buscar-vehiculo" type="text" placeholder="🔍 Buscar por conductor, placa o vehículo" oninput="buscarEnLista('vehiculoslist',this.value)" style="margin:8px 20px 4px;width:calc(100% - 40px)">
     <div id="vehiculoslist"><div class="nolist">Cargando vehículos...</div></div>
   </div>
-  <div id="admin-recargas" style="display:none;padding:0 0 20px;overflow-y:auto;flex:1">
+  <div id="admin-recargas" style="display:none;padding:0 0 20px">
     <div class="adtab" style="margin-top:8px">
       <div class="adtbtn on" id="recbtn-pendiente" onclick="filtrarRecargas('pendiente')">⏳ Pendientes</div>
       <div class="adtbtn" id="recbtn-acreditado" onclick="filtrarRecargas('acreditado')">✅ Acreditadas</div>
@@ -955,7 +956,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     </div>
     <div id="recargaslist"><div class="nolist">Cargando recargas...</div></div>
   </div>
-  <div id="admin-negocios" style="display:none;padding:0 0 20px;overflow-y:auto;flex:1">
+  <div id="admin-negocios" style="display:none;padding:0 0 20px">
     <div class="adtab" style="margin-top:8px">
       <div class="adtbtn on" id="negbtn-pendiente" onclick="filtrarNegocios('pendiente')">⏳ Pendientes</div>
       <div class="adtbtn" id="negbtn-aprobado" onclick="filtrarNegocios('aprobado')">✅ Aprobados</div>
@@ -964,7 +965,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <input class="ifield" id="buscar-negocio" type="text" placeholder="🔍 Buscar comercio por nombre" oninput="buscarEnLista('negocioslist',this.value)" style="margin:8px 20px 4px;width:calc(100% - 40px)">
     <div id="negocioslist"><div class="nolist">Cargando comercios...</div></div>
   </div>
-  <div id="admin-matchuber" style="display:none;padding:0 0 20px;overflow-y:auto;flex:1">
+  <div id="admin-matchuber" style="display:none;padding:0 0 20px">
     <div class="adtab" style="margin-top:8px">
       <div class="adtbtn on" id="mubtn-pendiente_aprobacion" onclick="filtrarMatchUber('pendiente_aprobacion')">⏳ Por aprobar</div>
       <div class="adtbtn" id="mubtn-buscando_conductor" onclick="filtrarMatchUber('buscando_conductor')">🔍 Buscando</div>
@@ -975,7 +976,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
 
   <!-- ============== TAB: CÓDIGOS DE CONDUCTOR ============== -->
-  <div id="admin-codigos" style="display:none;padding:0 0 20px;overflow-y:auto;flex:1">
+  <div id="admin-codigos" style="display:none;padding:0 0 20px">
     <div style="padding:14px 20px;background:linear-gradient(135deg,rgba(0,212,170,0.1),transparent);border-bottom:1px solid var(--bd);margin-bottom:10px">
       <div style="font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--g);margin-bottom:4px">🎫 Generador de códigos</div>
       <div style="font-size:11px;color:var(--mt);line-height:1.4;margin-bottom:10px">Generá códigos pre-aprobados para que conductores nuevos puedan registrarse. Solo conductores con código pueden activarse en AVS.</div>
@@ -995,7 +996,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
 
   <!-- ============== TAB: INTENTOS DE ACCESO ADMIN ============== -->
-  <div id="admin-intentos" style="display:none;padding:0 0 20px;overflow-y:auto;flex:1">
+  <div id="admin-intentos" style="display:none;padding:0 0 20px">
     <div style="padding:14px 20px;background:linear-gradient(135deg,rgba(255,80,80,0.1),transparent);border-bottom:1px solid var(--bd);margin-bottom:10px">
       <div style="font-family:var(--font-d);font-size:15px;font-weight:700;color:#ff6666;margin-bottom:4px">🚨 Intentos de acceso admin</div>
       <div style="font-size:11px;color:var(--mt);line-height:1.4">Personas que intentaron entrar al panel admin sin permiso. Revisalos uno por uno y decidí si darles acceso o mantenerlos bloqueados.</div>
@@ -1009,7 +1010,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   </div>
 
   <!-- ============== TAB: EMERGENCIAS ============== -->
-  <div id="admin-emergencias" style="display:none;padding:0 0 20px;overflow-y:auto;flex:1">
+  <div id="admin-emergencias" style="display:none;padding:0 0 20px">
     <div style="padding:14px 20px;background:linear-gradient(135deg,rgba(255,50,50,0.1),transparent);border-bottom:1px solid var(--bd);margin-bottom:10px">
       <div style="font-family:var(--font-d);font-size:15px;font-weight:700;color:#ff6666;margin-bottom:4px">🆘 Emergencias activadas</div>
       <div style="font-size:11px;color:var(--mt);line-height:1.4">Usuarios que activaron el botón SOS durante un viaje. Actuá rápido en las pendientes.</div>
@@ -6400,17 +6401,24 @@ function initCarruselComercios(){
 }
 
 function avisarRegistroPendiente(){
-  var m=document.getElementById('reg-pendiente-modal'); if(m) m.remove();
-  m=document.createElement('div'); m.id='reg-pendiente-modal';
-  m.style.cssText='position:fixed;inset:0;background:rgba(8,15,30,0.92);backdrop-filter:blur(8px);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px';
-  m.innerHTML='<div style="background:linear-gradient(135deg,#1a2540,#0d1525);border:1px solid rgba(0,229,184,0.4);border-radius:18px;padding:24px;width:min(380px,92vw);color:#fff;text-align:center">'+
-    '<div style="font-size:42px;margin-bottom:8px">📝</div>'+
-    '<div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:6px">Registro de conductor pendiente</div>'+
-    '<div style="font-size:13px;color:#aaa;margin-bottom:18px;line-height:1.5">Tenés un registro de conductor sin terminar. ¿Querés continuarlo ahora o seguir más tarde?</div>'+
-    '<button onclick="document.getElementById(\'reg-pendiente-modal\').remove();go(\'registro\');" style="width:100%;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:12px;padding:13px;font-size:15px;cursor:pointer;margin-bottom:10px">Ir a corregir</button>'+
-    '<button onclick="document.getElementById(\'reg-pendiente-modal\').remove();" style="width:100%;background:transparent;border:1px solid var(--bd);border-radius:12px;padding:12px;color:var(--tx);cursor:pointer;font-size:14px">Regresar</button>'+
-  '</div>';
-  document.body.appendChild(m);
+  let draft=null; try{draft=JSON.parse(localStorage.getItem('avs_reg')||'null');}catch(e){}
+  const tel=(draft&&draft.telefono)?draft.telefono:null;
+  const caja='background:linear-gradient(135deg,#1a2540,#0d1525);border:1px solid rgba(0,229,184,0.4);border-radius:18px;padding:24px;width:min(380px,92vw);color:#fff;text-align:center';
+  const mostrar=(pendiente)=>{
+    var m=document.getElementById('reg-pendiente-modal'); if(m) m.remove();
+    m=document.createElement('div'); m.id='reg-pendiente-modal';
+    m.style.cssText='position:fixed;inset:0;background:rgba(8,15,30,0.92);backdrop-filter:blur(8px);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px';
+    if(pendiente){
+      const tv=(pendiente.tipo_vehiculo||'vehículo');
+      m.innerHTML=`<div style="${caja}"><div style="font-size:42px;margin-bottom:8px">⏳</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:6px">Solicitud en revisión</div><div style="font-size:13px;color:#aaa;margin-bottom:18px;line-height:1.5">Tu solicitud de <b>${tv}</b> ya fue enviada y está <b>pendiente de revisión por el equipo AVS</b>. Te avisaremos cuando sea aprobada — no hay nada que corregir.</div><button onclick="localStorage.removeItem('avs_reg');document.getElementById('reg-pendiente-modal').remove();" style="width:100%;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:12px;padding:13px;font-size:15px;cursor:pointer">Entendido</button></div>`;
+    } else {
+      m.innerHTML=`<div style="${caja}"><div style="font-size:42px;margin-bottom:8px">📝</div><div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:6px">Registro sin terminar</div><div style="font-size:13px;color:#aaa;margin-bottom:18px;line-height:1.5">Dejaste un registro de conductor a medias. ¿Querés continuarlo ahora o seguir más tarde?</div><button onclick="document.getElementById('reg-pendiente-modal').remove();go('registro');" style="width:100%;background:linear-gradient(135deg,#00d4aa,#00b894);border:none;color:#000;font-weight:700;border-radius:12px;padding:13px;font-size:15px;cursor:pointer;margin-bottom:10px">Continuar registro</button><button onclick="document.getElementById('reg-pendiente-modal').remove();" style="width:100%;background:transparent;border:1px solid var(--bd);border-radius:12px;padding:12px;color:var(--tx);cursor:pointer;font-size:14px">Regresar</button></div>`;
+    }
+    document.body.appendChild(m);
+  };
+  if(db&&tel){
+    db.from('vehiculos').select('tipo_vehiculo').eq('conductor_telefono',tel).eq('estado_verificacion','pendiente').limit(1).then(({data})=>{ mostrar(data&&data.length?data[0]:null); }).catch(()=>mostrar(null));
+  } else { mostrar(null); }
 }
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
