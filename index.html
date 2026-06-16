@@ -492,6 +492,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   .chdr { width: 100%; padding: 20px 24px 12px; }
   .scrd { margin: 0 24px 16px; width: auto; }
   .ssec { padding: 0 24px; }
+  #conductor .bnav { left: 50%; right: auto; transform: translateX(-50%); width: min(820px, 100%); }
 
   /* Perfil PC */
   #perfil { max-width: 500px; margin: 40px auto; border-radius: 20px; }
@@ -5498,7 +5499,7 @@ async function verificarVehiculoActivo(forzar){
   mostrarPickerVehiculo(data);
 }
 async function activarVehiculo(v,silencioso){
-  _vehElegidoSesion=true;
+  _vehElegidoSesion=true; window._vehActivoTipo=v.tipo_vehiculo;
   try{
     await db.from('vehiculos').update({activo:false}).eq('conductor_telefono',user.phone);
     await db.from('vehiculos').update({activo:true}).eq('id',v.id);
@@ -5822,10 +5823,13 @@ async function toggleDisp(el){
 }
 async function cargarSolicitudes(){
   if(!db){document.getElementById('slist').innerHTML='<div class="nolist">Sin conexión a base de datos</div>';return;}
+  const esMoto = (window._vehActivoTipo==='moto');
   const [vRes,pRes,muRes] = await Promise.all([
-    db.from('viajes').select('*').eq('estado','solicitado').order('fecha_solicitud',{ascending:false}).limit(10),
-    db.from('pedidos').select('*').eq('estado','listo').eq('tipo_entrega','delivery').order('fecha',{ascending:false}).limit(10),
-    db.from('solicitudes_match_uber').select('*').eq('estado','buscando_conductor').order('fecha_solicitud',{ascending:false}).limit(10)
+    esMoto ? Promise.resolve({data:[]}) : db.from('viajes').select('*').eq('estado','solicitado').order('fecha_solicitud',{ascending:false}).limit(10),
+    esMoto
+      ? db.from('pedidos').select('*').eq('estado','listo').eq('tipo_entrega','delivery').eq('tipo_vehiculo','moto').order('fecha',{ascending:false}).limit(10)
+      : db.from('pedidos').select('*').eq('estado','listo').eq('tipo_entrega','delivery').or('tipo_vehiculo.eq.carro,tipo_vehiculo.is.null').order('fecha',{ascending:false}).limit(10),
+    esMoto ? Promise.resolve({data:[]}) : db.from('solicitudes_match_uber').select('*').eq('estado','buscando_conductor').order('fecha_solicitud',{ascending:false}).limit(10)
   ]);
   const viajes = vRes.data || [];
   const pedidos = pRes.data || [];
