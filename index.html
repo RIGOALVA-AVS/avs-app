@@ -1287,6 +1287,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <input class="ifield" id="flete-origen" placeholder="Origen (dónde se recoge)" style="margin-top:10px">
     <button onclick="fleteUsarUbicacion()" type="button" style="margin-top:6px;background:transparent;border:1px solid var(--bd2);border-radius:10px;padding:8px 12px;color:var(--g);font-size:12px;cursor:pointer">📍 Usar mi ubicación actual</button>
     <input class="ifield" id="flete-destino" placeholder="Destino (dónde se entrega)" style="margin-top:10px">
+    <button onclick="calcularKmFlete()" type="button" style="margin-top:6px;background:transparent;border:1px solid var(--bd2);border-radius:10px;padding:8px 12px;color:var(--g);font-size:12px;cursor:pointer">📏 Calcular distancia aprox</button>
+    <div id="flete-km" style="font-size:12px;color:var(--mt);margin-top:6px"></div>
   </div>
   <div class="rsec">
     <div class="rstit">Peso aproximado de la mercadería</div>
@@ -5871,6 +5873,28 @@ function fleteUsarUbicacion(){
   if(navigator.geolocation){ toast('Detectando ubicación...'); navigator.geolocation.getCurrentPosition(pos=>_geo({lat:pos.coords.latitude,lng:pos.coords.longitude}),()=>toast('No se pudo obtener tu ubicación')); }
   else { toast('Ubicación no disponible'); }
 }
+function _rutaKm(ori,dst){
+  return new Promise((resolve)=>{
+    if(!(window.google&&google.maps)){ resolve(null); return; }
+    try{
+      const ds=new google.maps.DirectionsService();
+      ds.route({origin:ori+', Costa Rica', destination:dst+', Costa Rica', travelMode:google.maps.TravelMode.DRIVING},(r,s)=>{
+        if(s==='OK'&&r.routes&&r.routes[0]&&r.routes[0].legs&&r.routes[0].legs[0]) resolve((r.routes[0].legs[0].distance.value/1000).toFixed(1));
+        else resolve(null);
+      });
+    }catch(e){ resolve(null); }
+  });
+}
+async function calcularKmFlete(){
+  const ori=(document.getElementById('flete-origen').value||'').trim();
+  const dst=(document.getElementById('flete-destino').value||'').trim();
+  const out=document.getElementById('flete-km');
+  if(!ori||!dst){ toast('Escribí origen y destino primero'); return; }
+  if(out)out.textContent='Calculando distancia...';
+  const km=await _rutaKm(ori,dst);
+  if(km){ window._fleteKm=km; if(out)out.innerHTML='📏 Distancia aprox: <b>'+km+' km</b> (por carretera)'; }
+  else { window._fleteKm=null; if(out)out.textContent='No se pudo calcular — revisá que las direcciones sean claras'; }
+}
 async function publicarFlete(){
   const desc=(document.getElementById('flete-desc').value||'').trim();
   const ori=(document.getElementById('flete-origen').value||'').trim();
@@ -5884,9 +5908,10 @@ async function publicarFlete(){
   if(_ff&&_ff.files&&_ff.files[0]){
     try{ const f=_ff.files[0]; const ext=(f.name.split('.').pop()||'jpg').toLowerCase(); const ruta=user.phone.replace(/[^0-9]/g,'')+'/factura_'+Date.now()+'.'+ext; const{error:upErr}=await db.storage.from('facturas-carga').upload(ruta,f,{upsert:true}); if(!upErr){fotoUrl=ruta;} else {console.error(upErr); toast('No se pudo subir la factura — publico el flete sin ella');} }catch(e){console.error(e);}
   }
-  const{data,error}=await db.from('solicitudes_carga').insert({usuario_telefono:user.phone,usuario_nombre:user.name,descripcion:desc,origen:ori,destino:dst,tipo_requerido:'carga',foto_factura_url:fotoUrl,peso:(document.getElementById('flete-peso')?document.getElementById('flete-peso').value.trim():''),estado:'abierta'}).select().single();
+  if(!window._fleteKm){ try{ window._fleteKm=await _rutaKm(ori,dst); }catch(e){} }
+  const{data,error}=await db.from('solicitudes_carga').insert({usuario_telefono:user.phone,usuario_nombre:user.name,descripcion:desc,origen:ori,destino:dst,tipo_requerido:'carga',foto_factura_url:fotoUrl,distancia_km:(window._fleteKm||null),peso:(document.getElementById('flete-peso')?document.getElementById('flete-peso').value.trim():''),estado:'abierta'}).select().single();
   if(error){console.error(error);toast('No se pudo publicar. Intentá de nuevo.');return;}
-  document.getElementById('flete-desc').value='';document.getElementById('flete-origen').value='';document.getElementById('flete-destino').value='';
+  document.getElementById('flete-desc').value='';document.getElementById('flete-origen').value='';document.getElementById('flete-destino').value='';window._fleteKm=null;{const _k=document.getElementById('flete-km');if(_k)_k.textContent='';}
   toast('✅ Flete publicado — esperá las cotizaciones');
   window._fleteActual=data.id; go('flete-ofertas'); verOfertasFlete(data.id);
 }
@@ -5914,7 +5939,7 @@ async function _pintarOfertasFlete(id){
   if(!s)return;
   window._fleteFecha=s.fecha;
   const res=document.getElementById('flete-ofertas-resumen');
-  if(res) res.innerHTML=`📦 ${s.descripcion||''}${s.peso?(' · <b>'+s.peso+'</b>'):''}<br>📍 ${s.origen||''} → ${s.destino||''}`;
+  if(res) res.innerHTML=`📦 ${s.descripcion||''}${s.peso?(' · <b>'+s.peso+'</b>'):''}<br>📍 ${s.origen||''} → ${s.destino||''}${s.distancia_km?(' · 📏 '+s.distancia_km+' km'):''}`;
   const lista=document.getElementById('flete-ofertas-lista'); if(!lista)return;
   if(s.estado==='asignada'){
     if(_fleteOfertasInt)clearInterval(_fleteOfertasInt);
@@ -5997,7 +6022,7 @@ async function cargarFletesConductor(){
     ganadosN=(gn||[]).length;
     ganadosHtml=(gn||[]).map(g=>`<div class="scard" style="border:1px solid var(--g)"><div class="shd"><div class="spas">✅ Ganaste este flete</div><div style="font-family:var(--font-d);font-size:17px;font-weight:700;color:var(--g)">₡${(parseInt(g.precio_ganador)||0).toLocaleString('es-CR')}</div></div>`+
       `<div style="font-size:13px;margin:4px 0 6px;line-height:1.4">📦 ${g.descripcion||''}${g.peso?(' · <b>'+g.peso+'</b>'):''}</div>`+
-      `<div style="font-size:12px;color:var(--mt);margin-bottom:8px">📍 ${g.origen||'—'} → ${g.destino||'—'}</div>`+
+      `<div style="font-size:12px;color:var(--mt);margin-bottom:8px">📍 ${g.origen||'—'} → ${g.destino||'—'}${g.distancia_km?(' · 📏 '+g.distancia_km+' km'):''}</div>`+
       `<button class="brec" onclick="cancelarFleteConductor('${g.id}',${parseInt(g.precio_ganador)||0},'${g.fecha_asignacion||''}')">No puedo continuar (cancelar)</button>`+
     `</div>`).join('');
   }catch(e){}
@@ -6019,7 +6044,7 @@ async function cargarFletesConductor(){
       const fact = f.foto_factura_url ? `<button class="addoc addoc-ver" onclick="verFacturaFlete('${f.foto_factura_url}')">🧾 Ver factura</button>` : '';
       return `<div class="scard" id="flete-${f.id}"><div class="shd"><div class="spas">🚚 Flete · ${f.tipo_requerido||'carga'}</div><div style="font-size:12px;color:var(--mt)">⏱️ ~${quedan} min</div></div>`+
         `<div style="font-size:13px;margin:4px 0 6px;line-height:1.4">📦 ${f.descripcion||''}${f.peso?(' · <b>'+f.peso+'</b>'):''}</div>`+
-        `<div style="font-size:12px;color:var(--mt);margin-bottom:6px">📍 ${f.origen||'—'} → ${f.destino||'—'}</div>`+
+        `<div style="font-size:12px;color:var(--mt);margin-bottom:6px">📍 ${f.origen||'—'} → ${f.destino||'—'}${f.distancia_km?(' · 📏 '+f.distancia_km+' km'):''}</div>`+
         (fact?('<div style="margin-bottom:8px">'+fact+'</div>'):'')+
         `<div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px"><span style="color:var(--mt)">Oferta más baja: </span><b style="color:var(--g)">${minTxt}</b>${miCot?(' · <span style="color:var(--mt)">tu oferta ₡'+(parseInt(miCot.precio)||0).toLocaleString('es-CR')+'</span>'):''}</div>`+
         `<div style="display:flex;gap:8px"><input class="ifield" id="cot-${f.id}" type="number" inputmode="numeric" placeholder="Tu precio ₡" style="flex:1"><button class="bacp" onclick="cotizarFlete('${f.id}')">${miCot?'Bajar oferta':'Cotizar'}</button></div>`+
