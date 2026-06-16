@@ -4498,6 +4498,7 @@ function go(id, _fromPop){
   if(id==='registro-cedula'){setTimeout(()=>{const b=document.getElementById('reg-ced-submit');if(b){b.disabled=false;b.textContent='✓ Continuar';}const e=document.getElementById('reg-ced-error');if(e)e.textContent='';const fc=document.getElementById('reg-fecha-nac-cont');if(fc&&!fc.innerHTML.trim())fc.innerHTML=fechaNacHTML('u-fn');},40);}
   if(id==='admin')switchAdminTab('vehiculos');
   if(id==='conductor')setTimeout(verificarVehiculoActivo,300);
+  if(id==='flete')setTimeout(initFleteAutocomplete,150);
   if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);
   if(id==='usuario'||id==='pasajero'){setTimeout(iniciarSeguimientoConductoresActivos,1500);}else{detenerSeguimientoConductoresActivos();}
   // Registrar en el historial del navegador (para que el botón "atrás" navegue entre pantallas, no salga al login)
@@ -5868,17 +5869,34 @@ let fleteTipo='cualquiera';
 function selFleteTipo(el,t){document.querySelectorAll('#flete-tipo-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');fleteTipo=t;}
 function fleteUsarUbicacion(){
   const inp=document.getElementById('flete-origen'); if(!inp)return;
-  const _geo=(loc)=>{ if(window.google&&google.maps){ new google.maps.Geocoder().geocode({location:loc},(r,s)=>{ if(s==='OK'&&r[0]) inp.value=r[0].formatted_address; else inp.value=loc.lat.toFixed(5)+','+loc.lng.toFixed(5); }); } else { inp.value=loc.lat.toFixed(5)+','+loc.lng.toFixed(5); } };
+  const _geo=(loc)=>{ window._fleteOriLoc=loc; if(window.google&&google.maps){ new google.maps.Geocoder().geocode({location:loc},(r,s)=>{ if(s==='OK'&&r[0]) inp.value=r[0].formatted_address; else inp.value=loc.lat.toFixed(5)+','+loc.lng.toFixed(5); }); } else { inp.value=loc.lat.toFixed(5)+','+loc.lng.toFixed(5); } };
   if(typeof gpsLoc!=='undefined' && gpsLoc){ _geo(gpsLoc); return; }
   if(navigator.geolocation){ toast('Detectando ubicación...'); navigator.geolocation.getCurrentPosition(pos=>_geo({lat:pos.coords.latitude,lng:pos.coords.longitude}),()=>toast('No se pudo obtener tu ubicación')); }
   else { toast('Ubicación no disponible'); }
+}
+let _fleteAcDone=false;
+function initFleteAutocomplete(){
+  if(_fleteAcDone || !(window.google&&google.maps&&google.maps.places))return;
+  const oi=document.getElementById('flete-origen'), di=document.getElementById('flete-destino');
+  if(!oi||!di)return;
+  const opts={componentRestrictions:{country:'cr'},fields:['geometry','name','formatted_address']};
+  if(typeof atenasBounds!=='undefined'&&atenasBounds){opts.bounds=atenasBounds;opts.strictBounds=false;}
+  try{
+    const acO=new google.maps.places.Autocomplete(oi,opts);
+    acO.addListener('place_changed',()=>{const pp=acO.getPlace();if(pp&&pp.geometry){window._fleteOriLoc={lat:pp.geometry.location.lat(),lng:pp.geometry.location.lng()};}});
+    oi.addEventListener('input',()=>{window._fleteOriLoc=null;});
+    const acD=new google.maps.places.Autocomplete(di,opts);
+    acD.addListener('place_changed',()=>{const pp=acD.getPlace();if(pp&&pp.geometry){window._fleteDstLoc={lat:pp.geometry.location.lat(),lng:pp.geometry.location.lng()};}});
+    di.addEventListener('input',()=>{window._fleteDstLoc=null;});
+    _fleteAcDone=true;
+  }catch(e){console.error('initFleteAutocomplete',e);}
 }
 function _rutaKm(ori,dst){
   return new Promise((resolve)=>{
     if(!(window.google&&google.maps)){ resolve(null); return; }
     try{
       const ds=new google.maps.DirectionsService();
-      ds.route({origin:ori+', Costa Rica', destination:dst+', Costa Rica', travelMode:google.maps.TravelMode.DRIVING},(r,s)=>{
+      ds.route({origin:(window._fleteOriLoc||(ori+', Costa Rica')), destination:(window._fleteDstLoc||(dst+', Costa Rica')), travelMode:google.maps.TravelMode.DRIVING},(r,s)=>{
         if(s==='OK'&&r.routes&&r.routes[0]&&r.routes[0].legs&&r.routes[0].legs[0]) resolve((r.routes[0].legs[0].distance.value/1000).toFixed(1));
         else resolve(null);
       });
@@ -5911,7 +5929,7 @@ async function publicarFlete(){
   if(!window._fleteKm){ try{ window._fleteKm=await _rutaKm(ori,dst); }catch(e){} }
   const{data,error}=await db.from('solicitudes_carga').insert({usuario_telefono:user.phone,usuario_nombre:user.name,descripcion:desc,origen:ori,destino:dst,tipo_requerido:'carga',foto_factura_url:fotoUrl,distancia_km:(window._fleteKm||null),peso:(document.getElementById('flete-peso')?document.getElementById('flete-peso').value.trim():''),estado:'abierta'}).select().single();
   if(error){console.error(error);toast('No se pudo publicar. Intentá de nuevo.');return;}
-  document.getElementById('flete-desc').value='';document.getElementById('flete-origen').value='';document.getElementById('flete-destino').value='';window._fleteKm=null;{const _k=document.getElementById('flete-km');if(_k)_k.textContent='';}
+  document.getElementById('flete-desc').value='';document.getElementById('flete-origen').value='';document.getElementById('flete-destino').value='';window._fleteKm=null;window._fleteOriLoc=null;window._fleteDstLoc=null;{const _k=document.getElementById('flete-km');if(_k)_k.textContent='';}
   toast('✅ Flete publicado — esperá las cotizaciones');
   window._fleteActual=data.id; go('flete-ofertas'); verOfertasFlete(data.id);
 }
