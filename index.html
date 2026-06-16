@@ -5934,6 +5934,11 @@ async function publicarFlete(){
   window._fleteActual=data.id; go('flete-ofertas'); verOfertasFlete(data.id);
 }
 let _fleteOfertasInt=null;
+async function reabrirFlete(id){
+  if(!db)return;
+  try{ await db.from('solicitudes_carga').update({fecha:new Date().toISOString(),estado:'abierta'}).eq('id',id); toast('🔄 Flete republicado — otros 5 minutos'); }catch(e){console.error('reabrirFlete',e);}
+  verOfertasFlete(id);
+}
 async function verOfertasFlete(id){
   window._fleteActual=id;
   if(_fleteOfertasInt)clearInterval(_fleteOfertasInt);
@@ -5947,7 +5952,7 @@ function _tickFleteCountdown(){
   if(window._avsPantallaActual!=='flete-ofertas'){ if(window._fleteCountdownInt)clearInterval(window._fleteCountdownInt); return; }
   if(!window._fleteFecha){ el.textContent=''; return; }
   const fin=new Date(window._fleteFecha).getTime()+5*60*1000; const rem=fin-Date.now();
-  if(rem<=0){ el.innerHTML='⏱️ <b>Subasta cerrada</b> — elegí tu transportista'; if(window._fleteCountdownInt)clearInterval(window._fleteCountdownInt); return; }
+  if(rem<=0){ el.innerHTML='⏱️ <b>Subasta cerrada</b>'; if(window._fleteCountdownInt)clearInterval(window._fleteCountdownInt); return; }
   const m=Math.floor(rem/60000), sg=Math.floor((rem%60000)/1000);
   el.innerHTML='⏱️ Subasta abierta · quedan <b>'+m+':'+(sg<10?'0':'')+sg+'</b>';
 }
@@ -5966,7 +5971,12 @@ async function _pintarOfertasFlete(id){
     return;
   }
   const{data:cots}=await db.from('cotizaciones_carga').select('*').eq('solicitud_id',id).neq('estado','rechazada').order('precio',{ascending:true});
-  if(!cots||cots.length===0){ lista.innerHTML='<div class="nolist">⏳ Esperando cotizaciones de los transportistas (subasta de 5 min)...</div>'; return; }
+  if(!cots||cots.length===0){
+    const expirada=(Date.now()-new Date(s.fecha).getTime())>=5*60*1000;
+    if(expirada){ lista.innerHTML='<div class="nolist">⏱️ La subasta cerró y <b>ningún transportista cotizó</b>. Podés volver a publicarla para que la vean de nuevo.</div><button class="btnp" onclick="reabrirFlete(\''+id+'\')">🔄 Volver a publicar (otros 5 min)</button>'; }
+    else { lista.innerHTML='<div class="nolist">⏳ Esperando cotizaciones de los transportistas (subasta de 5 min)...</div>'; }
+    return;
+  }
   let rats={};
   try{ const{data:us}=await db.from('usuarios').select('telefono,calificacion_promedio,total_calificaciones').in('telefono',cots.map(c=>c.conductor_telefono)); (us||[]).forEach(u=>rats[u.telefono]=u); }catch(e){}
   lista.innerHTML='<div style="font-size:12px;color:var(--mt);margin-bottom:8px">Ordenadas de menor a mayor precio. Elegí con quién hacer el flete:</div>'+cots.map(c=>{
