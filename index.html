@@ -1120,7 +1120,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div class="tiitem"><div class="tilbl">Tiempo</div><div class="tival" id="tdur">—</div></div>
       <div class="tiitem"><div class="tilbl">Total</div><div class="tival" id="tfare">—</div></div>
     </div>
-    <div id="fareSection" style="display:none"><div class="plabel">Seleccioná tu tarifa</div><div class="fchips" id="fchips"></div><div style="margin-top:8px;font-size:11px;line-height:1.45;color:var(--mt);background:rgba(0,229,184,0.06);border:1px solid var(--bd2);border-radius:10px;padding:8px 10px">🏷️ <b>Tarifas de referencia</b> basadas en las tarifas oficiales del ente regulador (ARESEP), como guía de transparencia. El precio final lo <b>eligen y acuerdan libremente las partes</b>; AVS es una plataforma de conexión —no un servicio de transporte público— y no fija ni cobra la tarifa.</div></div>
+    <div id="fareSection" style="display:none"><div class="plabel">Seleccioná tu tarifa</div><div class="fchips" id="fchips"></div><div style="margin-top:8px;font-size:11px;line-height:1.45;color:var(--mt);background:rgba(0,229,184,0.06);border:1px solid var(--bd2);border-radius:10px;padding:8px 10px">🏷️ Vos y el conductor <b>eligen la opción de precio que mejor les convenga</b>. El precio final se <b>acuerda libremente entre las partes</b>; AVS es una plataforma de conexión —no un servicio de transporte público— y no fija ni cobra la tarifa.</div></div>
     <!-- Botón Match Uber (visible cuando hay tarifas calculadas) -->
     <div id="matchUberBtn" style="display:none;text-align:center;margin-top:10px">
       <button onclick="abrirMatchUber()" style="background:linear-gradient(135deg,rgba(245,166,35,0.15),rgba(245,166,35,0.05));border:1.5px dashed #f5a623;border-radius:12px;padding:11px 14px;font-size:13px;color:#f5a623;cursor:pointer;width:100%;font-weight:600;transition:all 0.2s" onmouseover="this.style.background='rgba(245,166,35,0.2)'" onmouseout="this.style.background='linear-gradient(135deg,rgba(245,166,35,0.15),rgba(245,166,35,0.05))'">
@@ -2268,8 +2268,8 @@ function calcularDelivery() {
     if (km <= 6) return 2500;
     return Math.round(2500 + (km - 6) * 400);
   };
-  // Tarifa CARRO: anclada a la tarifa oficial ARESEP (mismo tarifario del transporte,
-  // escalón Estándar = oficial -15% -15%). ₡840/km, RE-0050-IT-2026. Editable.
+  // Tarifa CARRO: tarifa de referencia interna por km (mismo cálculo del transporte,
+  // escalón Estándar = referencia -15% -15%). ₡840/km. Editable.
   const TARIFA_OFICIAL_KM_DELIVERY = 840;
   const carroBaseDesdeKm = (km) => {
     const oficial = Math.max(1000, Math.round(TARIFA_OFICIAL_KM_DELIVERY * km));
@@ -3328,13 +3328,13 @@ function initMap(){
 }
 // === ALGORITMO DE TARIFAS AVS (basado en lógica de Uber) ===
 // Tarifa = Base + (min × tarifa_min) + (km × tarifa_km) + Booking fee
-// === Cálculo de tarifa basado en tarifa oficial ARESEP (ver calcularTarifaAVS abajo) ===
-// === TARIFA AVS basada en tarifa oficial ARESEP (taxi sedán) ===
-// Base oficial: ₡840/km (resolución RE-0050-IT-2026). Cálculo por kilómetro.
+// === Cálculo de tarifa de referencia por km (ver calcularTarifaAVS abajo) ===
+// === TARIFA AVS: referencia interna por km ===
+// Referencia interna: ₡840/km. Cálculo por kilómetro.
 // 3 escalones en cascada, cada uno -15% del anterior:
 //   TOP = oficial -15%  |  Estándar = TOP -15%  |  Económica = Estándar -15%
 // Promo "chofer cerca": -10% adicional sobre la Económica.
-const TARIFA_OFICIAL_KM = 840;   // colones por km (ARESEP)
+const TARIFA_OFICIAL_KM = 840;   // colones por km (referencia interna)
 const TARIFA_MIN_FARE = 1000;    // tarifa mínima
 function calcularTarifaOficial(km){
   return Math.max(TARIFA_MIN_FARE, Math.round(TARIFA_OFICIAL_KM * km));
@@ -8359,20 +8359,4 @@ function mostrarPendienteMatchUber(solicitudId){
       </div>
 
       <!-- Footer -->
-      <div style="text-align:center;padding:14px;color:#666;font-size:11px;border-top:1px solid var(--bd);margin-top:20px">
-        Powered by <span style="color:#00d4aa;font-weight:700">AVS</span> — Atenas Viaje Seguro
-      </div>
-    </div>
-
-    <!-- Vista cuando el viaje terminó -->
-    <div id="seg-fin-view" style="display:none;padding:60px 20px;text-align:center">
-      <div style="font-size:64px;margin-bottom:12px">✅</div>
-      <div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:#00d4aa;margin-bottom:8px">Viaje terminado</div>
-      <div id="seg-fin-mensaje" style="font-size:14px;color:#aaa;line-height:1.5">El pasajero llegó al destino seguro.</div>
-      <div style="margin-top:30px;font-size:11px;color:#666">Este link ya no está activo</div>
-    </div>
-  </div>
-</div>
-
-</body>
-</html>
+      <div style="text-align:center;padding:14px;color:#666;font-size:11px;border-top:1px solid var(--bd);
