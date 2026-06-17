@@ -8075,7 +8075,6 @@ function actualizarMatchUberCalculo(){
 }
 
 async function enviarMatchUber(){
-  if(!matchUberFotoFile){ toast('Falta la captura'); return; }
   const montoUber = parseInt(document.getElementById('matchUberMonto').value) || 0;
   if(montoUber < 1000){ toast('Ingresá el precio de Uber'); return; }
   if(!destLoc){ toast('Necesito el destino primero'); return; }
@@ -8086,13 +8085,21 @@ async function enviarMatchUber(){
   submit.textContent = 'Subiendo...';
 
   try {
-    // 1. Subir foto a Supabase Storage
-    const ext = matchUberFotoFile.name.split('.').pop() || 'jpg';
-    const fileName = 'match-' + Date.now() + '-' + Math.random().toString(36).substring(2,8) + '.' + ext;
-    const { data: upData, error: upErr } = await db.storage.from('capturas-uber').upload(fileName, matchUberFotoFile);
-    if(upErr){ throw upErr; }
-    const { data: urlData } = db.storage.from('capturas-uber').getPublicUrl(fileName);
-    const fotoUrl = urlData.publicUrl;
+    // 1. Subir foto (OPCIONAL) — si falla, seguimos sin botar la gestión
+    let fotoUrl = null;
+    if(matchUberFotoFile){
+      try{
+        const ext = matchUberFotoFile.name.split('.').pop() || 'jpg';
+        const fileName = 'match-' + Date.now() + '-' + Math.random().toString(36).substring(2,8) + '.' + ext;
+        const { error: upErr } = await db.storage.from('capturas-uber').upload(fileName, matchUberFotoFile);
+        if(upErr){ throw upErr; }
+        const { data: urlData } = db.storage.from('capturas-uber').getPublicUrl(fileName);
+        fotoUrl = urlData.publicUrl;
+      }catch(imgErr){
+        console.warn('[MatchUber] captura no subida:', imgErr && imgErr.message);
+        toast('⚠️ No se pudo subir la captura; sigo con tu solicitud');
+      }
+    }
 
     // 2. Calcular datos del viaje
     const precioAVS = Math.round(montoUber * 0.97);
