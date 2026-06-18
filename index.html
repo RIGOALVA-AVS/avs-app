@@ -1571,10 +1571,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
         <div class="vchip" onclick="selItemCat(this,'Salsas')">🥫 Salsas</div>
       </div>
       <input class="ifield" type="text" placeholder="O escribí categoría personalizada" id="item-cat" style="margin-bottom:8px">
-      <div style="font-size:11px;color:var(--mt);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Foto del plato (URL)</div>
+      <div style="font-size:11px;color:var(--mt);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">📷 Foto del plato (subir o pegar enlace)</div>
       <input type="file" accept="image/*" id="item-foto-file" onchange="subirFotoItem(this)" class="ifield" style="margin-bottom:6px">
       <input class="ifield" type="url" placeholder="(opcional) o pegá un enlace de la foto" id="item-foto" style="margin-bottom:8px">
-      <div style="font-size:10px;color:var(--mt);margin-bottom:12px">Tip: subí la foto a Google Drive o WhatsApp y copiá el enlace</div>
+      
       <div style="display:flex;gap:8px">
         <button class="btnp" onclick="guardarItem()" style="margin-top:0;flex:2">Guardar</button>
         <button class="btno" onclick="document.getElementById('form-item').style.display='none'" style="margin-top:0;flex:1">Cancelar</button>
@@ -2566,8 +2566,36 @@ async function cargarMenuNegocio(){
     var r=await db.from('menu_items').select('*').eq('negocio_id',negocioActual.id).order('categoria_item');
     var data=r.data;
     if(!data||data.length===0){cont.innerHTML='<div class="nolist">Sin items en el menú</div>';return;}
-    cont.innerHTML=data.map(function(it){return '<div class="scard" style="display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-weight:600">'+(it.nombre||'')+(it.disponible===false?' <span style=\"color:var(--rd);font-size:11px\">(oculto)</span>':'')+'</div><div style="font-size:12px;color:var(--mt)">'+(it.categoria_item||'')+' · ₡'+((parseInt(it.precio)||0).toLocaleString('es-CR'))+'</div></div><button class="brec" style="width:auto;padding:6px 10px;margin:0" onclick="eliminarItem(\''+it.id+'\')">Quitar</button></div>';}).join('');
+    cont.innerHTML=data.map(function(it){
+      var foto = it.foto_url ? '<img src="'+it.foto_url+'" style="width:58px;height:58px;border-radius:10px;object-fit:cover;flex-shrink:0;border:1px solid var(--bd)" onerror="this.outerHTML=\'<div style=&quot;width:58px;height:58px;border-radius:10px;background:var(--cd);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0&quot;>🍽️</div>\'">' : '<div style="width:58px;height:58px;border-radius:10px;background:var(--cd);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🍽️</div>';
+      var oculto = it.disponible===false ? ' <span style="color:var(--rd);font-size:11px">(oculto)</span>' : '';
+      return '<div class="scard" style="display:flex;align-items:center;gap:10px;padding:10px">'+foto+
+        '<div style="flex:1;min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.nombre||'')+oculto+'</div>'+
+        '<div style="font-size:12px;color:var(--mt)">'+(it.categoria_item||'')+' · ₡'+((parseInt(it.precio)||0).toLocaleString('es-CR'))+'</div></div>'+
+        '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">'+
+          '<button class="btno" style="width:auto;margin:0;padding:6px 10px;font-size:12px" onclick="cambiarFotoItem(\''+it.id+'\')">📷 Foto</button>'+
+          '<button class="brec" style="width:auto;margin:0;padding:6px 10px;font-size:12px" onclick="eliminarItem(\''+it.id+'\')">Quitar</button>'+
+        '</div></div>';
+    }).join('');
   }catch(e){cont.innerHTML='<div class="nolist">Error al cargar el menú</div>';}
+}
+function cambiarFotoItem(id){
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=async function(){
+    var file=inp.files&&inp.files[0]; if(!file)return;
+    if(!db){toast('Sin conexión');return;}
+    toast('Subiendo foto...');
+    try{
+      var ext=(file.name.split('.').pop()||'jpg');
+      var fn='item-'+id+'-'+Date.now()+'.'+ext;
+      var up=await db.storage.from('fotos-menu').upload(fn,file);
+      if(up.error) throw up.error;
+      var u=db.storage.from('fotos-menu').getPublicUrl(fn);
+      await db.from('menu_items').update({foto_url:(u.data&&u.data.publicUrl)||null}).eq('id',id);
+      toast('✅ Foto actualizada'); cargarMenuNegocio();
+    }catch(e){console.error('cambiarFotoItem',e);toast('No se pudo subir la foto (¿bucket fotos-menu creado?)');}
+  };
+  inp.click();
 }
 async function eliminarItem(id){
   if(!db)return; if(!confirm('¿Quitar este item del menú?'))return;
