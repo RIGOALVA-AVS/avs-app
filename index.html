@@ -1516,7 +1516,24 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     </div>
     <button onclick="logout()" style="margin-left:auto;background:transparent;border:none;color:var(--mt);font-size:12px;cursor:pointer">Salir</button>
   </div>
-  <!-- Saldo -->
+  <div id="neg-estado-bar" style="background:var(--sf);border:1px solid var(--bd2);border-radius:14px;padding:12px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span id="neg-estado-chip" style="font-weight:700;color:var(--g)">🟢 Recibiendo pedidos</span>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btno" id="neg-pausar-btn" onclick="pausarPedidos()" style="width:auto;margin:0;padding:8px 12px;font-size:13px">⏸ Pausar (saturación)</button>
+        <button class="btno" onclick="toggleEmergencias()" style="width:auto;margin:0;padding:8px 12px;font-size:13px;border-color:rgba(226,75,74,0.5);color:var(--rd)">🆘 Emergencia</button>
+      </div>
+    </div>
+    <div id="neg-emergencias" style="display:none;margin-top:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">
+      <button class="btno" onclick="reportarEmergencia('sin_agua')" style="margin:0;font-size:13px">💧 Sin agua</button>
+      <button class="btno" onclick="reportarEmergencia('sin_electricidad')" style="margin:0;font-size:13px">⚡ Sin electricidad</button>
+      <button class="btno" onclick="reportarEmergencia('asalto')" style="margin:0;font-size:13px;border-color:rgba(226,75,74,0.6);color:var(--rd)">🔴 Asalto</button>
+      <button class="btno" onclick="reportarEmergencia('panico')" style="margin:0;font-size:13px;border-color:rgba(226,75,74,0.6);color:var(--rd)">🚨 Pánico</button>
+      <button class="btno" onclick="reportarEmergencia('otro')" style="margin:0;font-size:13px">✏️ Otro</button>
+    </div>
+  </div>
+  
+<!-- Saldo -->
   <div style="background:var(--grad-card);border:1px solid var(--bd2);border-radius:20px;padding:18px;margin-bottom:16px">
     <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Saldo AVS disponible</div>
     <div style="font-family:var(--font-d);font-size:28px;font-weight:800;background:var(--grad-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" id="neg-saldo">₡0</div>
@@ -2622,11 +2639,56 @@ async function avanzarPedido(id,nuevo){
     cargarPedidosNegocio();
   }catch(e){toast('No se pudo actualizar');}
 }
+
+// ===== ESTADO DEL COMERCIO: saturación + emergencias =====
+function toggleEmergencias(){ var e=document.getElementById('neg-emergencias'); if(!e)return; e.style.display=(e.style.display==='grid')?'none':'grid'; }
+async function pausarPedidos(){
+  if(!db||!negocioActual){toast('Sin sesión');return;}
+  var m=prompt('¿Por cuántos MINUTOS pausar la recepción de pedidos? (saturación). El admin / control de calidad reabre cuando sea prudente.','30');
+  if(m===null)return; var min=parseInt(m)||0; if(min<1){toast('Ingresá los minutos');return;}
+  var hasta=new Date(Date.now()+min*60000).toISOString();
+  try{ await db.from('negocios').update({pausado_hasta:hasta}).eq('id',negocioActual.id); negocioActual.pausado_hasta=hasta; toast('⏸ Recepción pausada '+min+' min'); refrescarEstadoComercio(); }
+  catch(e){console.error('pausar',e);toast('No se pudo pausar');}
+}
+async function reabrirPedidos(){
+  if(!db||!negocioActual)return;
+  if(!confirm('¿Reabrir la recepción de pedidos ahora?'))return;
+  try{ await db.from('negocios').update({pausado_hasta:null}).eq('id',negocioActual.id); negocioActual.pausado_hasta=null; toast('🟢 Recepción reabierta'); refrescarEstadoComercio(); }
+  catch(e){toast('No se pudo reabrir');}
+}
+function refrescarEstadoComercio(){
+  var chip=document.getElementById('neg-estado-chip'); var pb=document.getElementById('neg-pausar-btn'); if(!chip)return;
+  var ph=(negocioActual&&negocioActual.pausado_hasta)?new Date(negocioActual.pausado_hasta).getTime():0;
+  if(ph>Date.now()){
+    var ms=ph-Date.now(); var m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000);
+    chip.innerHTML='⏸ <span style="color:var(--am)">Pausado por saturación</span> · reabre en '+m+':'+(s<10?'0':'')+s+' &nbsp;<a onclick="reabrirPedidos()" style="color:var(--g);cursor:pointer;text-decoration:underline">Reabrir ahora</a>';
+    if(pb)pb.style.display='none';
+  } else {
+    chip.textContent='🟢 Recibiendo pedidos'; chip.style.color='var(--g)';
+    if(pb)pb.style.display='';
+  }
+}
+async function reportarEmergencia(tipo){
+  if(!db||!negocioActual){toast('Sin sesión');return;}
+  var labels={sin_agua:'Sin agua',sin_electricidad:'Sin electricidad',asalto:'ASALTO',panico:'Pánico (problema mayor)',otro:'Otro'};
+  var nota='';
+  if(tipo==='otro'){ nota=prompt('Describí brevemente la emergencia:')||''; if(!nota)return; }
+  if(!confirm('¿Enviar alerta a AVS: '+(labels[tipo]||tipo)+'?'))return;
+  try{
+    await db.from('alertas_comercio').insert({negocio_id:String(negocioActual.id),negocio_nombre:negocioActual.nombre,tipo:tipo,nota:nota,estado:'abierta',fecha:new Date().toISOString()});
+    if(tipo==='asalto'||tipo==='panico'){ var hasta=new Date(Date.now()+60*60000).toISOString(); try{ await db.from('negocios').update({pausado_hasta:hasta}).eq('id',negocioActual.id); negocioActual.pausado_hasta=hasta; refrescarEstadoComercio(); }catch(e){} }
+    _beep();
+    toast('🆘 Alerta enviada a AVS: '+(labels[tipo]||tipo));
+    var e=document.getElementById('neg-emergencias'); if(e)e.style.display='none';
+  }catch(e){console.error('alerta',e);toast('No se pudo enviar la alerta (¿corriste el SQL?)');}
+}
+
 function _beep(){ try{ var C=window.AudioContext||window.webkitAudioContext; if(!C)return; var ctx=new C(); var o=ctx.createOscillator(),g=ctx.createGain(); o.connect(g);g.connect(ctx.destination); o.type='sine'; o.frequency.value=880; g.gain.value=0.12; o.start(); setTimeout(function(){o.frequency.value=660;},160); setTimeout(function(){o.stop();ctx.close();},340);}catch(e){} }
 function iniciarMonitorPedidos(){ detenerMonitorPedidos(); _pedVistos=null; _chequearPedidosNuevos(); _negPollInt=setInterval(_chequearPedidosNuevos,12000); }
 function detenerMonitorPedidos(){ if(_negPollInt){clearInterval(_negPollInt);_negPollInt=null;} }
 async function _chequearPedidosNuevos(){
   if(!db||!negocioActual)return;
+  refrescarEstadoComercio();
   try{
     var r=await db.from('pedidos').select('id').eq('negocio_id',negocioActual.id).eq('estado','pendiente');
     var ids=(r.data||[]).map(function(p){return p.id;});
@@ -2664,7 +2726,7 @@ function solicitarTerritorio(){
 // ===== ESTADO ONLINE (latido para monitoreo en tiempo real) =====
 var _negHbInt=null;
 function iniciarHeartbeatNegocio(){
-  detenerHeartbeatNegocio(); _latidoNegocio(); _negHbInt=setInterval(_latidoNegocio,30000); iniciarMonitorPedidos();
+  detenerHeartbeatNegocio(); _latidoNegocio(); _negHbInt=setInterval(_latidoNegocio,30000); iniciarMonitorPedidos(); refrescarEstadoComercio();
   var o=document.getElementById('neg-online'); if(o){o.textContent='🟢 En línea'; o.style.color='var(--g)';}
 }
 function detenerHeartbeatNegocio(){ if(_negHbInt){clearInterval(_negHbInt);_negHbInt=null;} detenerMonitorPedidos(); var o=document.getElementById('neg-online'); if(o)o.textContent=''; }
@@ -4484,6 +4546,7 @@ async function abrirCarrito(negocioId, negocioNombre) {
 
 async function confirmarPedido() {
   if (carritoItems.length === 0) { toast('Agrega items al pedido'); return; }
+  if(db && carritoNegocioId){ try{ var _ns=await db.from('negocios').select('pausado_hasta').eq('id',carritoNegocioId).single(); var _ph=_ns.data&&_ns.data.pausado_hasta; if(_ph && new Date(_ph).getTime()>Date.now()){ var _mr=Math.max(1,Math.ceil((new Date(_ph).getTime()-Date.now())/60000)); toast('⏸ El comercio está saturado. Intentá de nuevo en ~'+_mr+' min.'); return; } }catch(e){} }
   const subtotal = carritoItems.reduce((s, i) => s + (i.precio * i.cantidad), 0);
   // Cliente paga precio limpio (envío ya trae la comisión incluida).
   // La comisión AVS del negocio (10% de productos) se descuenta de SU crédito al confirmarse el pago/entrega.
