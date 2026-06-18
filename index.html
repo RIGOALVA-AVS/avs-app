@@ -587,6 +587,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 /* Panel negocio */
 #panel-negocio{background:var(--bg);overflow-y:auto;padding:48px 20px 32px;}
+#neg-menu-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;align-items:start;}
+#neg-pedidos-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;align-items:start;}
 .neg-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
 .neg-avatar{width:52px;height:52px;background:var(--grad-g);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:22px;}
 
@@ -1551,7 +1553,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       </div>
       <input class="ifield" type="text" placeholder="O escribí categoría personalizada" id="item-cat" style="margin-bottom:8px">
       <div style="font-size:11px;color:var(--mt);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Foto del plato (URL)</div>
-      <input class="ifield" type="url" placeholder="https://... o dejá vacío" id="item-foto" style="margin-bottom:8px">
+      <input type="file" accept="image/*" id="item-foto-file" onchange="subirFotoItem(this)" class="ifield" style="margin-bottom:6px">
+      <input class="ifield" type="url" placeholder="(opcional) o pegá un enlace de la foto" id="item-foto" style="margin-bottom:8px">
       <div style="font-size:10px;color:var(--mt);margin-bottom:12px">Tip: subí la foto a Google Drive o WhatsApp y copiá el enlace</div>
       <div style="display:flex;gap:8px">
         <button class="btnp" onclick="guardarItem()" style="margin-top:0;flex:2">Guardar</button>
@@ -2492,6 +2495,20 @@ function selNegCat(el,cat){document.querySelectorAll('#neg-cats .vchip').forEach
 function selItemCat(el,cat){document.querySelectorAll('#cat-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');itemCategoria=cat;var i=document.getElementById('item-cat');if(i)i.value=cat;}
 function switchNegTab(tab){['menu','pedidos','stats'].forEach(function(t){var b=document.getElementById('negtab-'+t);var c=document.getElementById('neg-tab-'+t);if(b)b.classList.toggle('on',t===tab);if(c)c.style.display=(t===tab?'':'none');});if(tab==='pedidos')cargarPedidosNegocio();if(tab==='stats')cargarStatsNegocio();if(tab==='menu')cargarMenuNegocio();}
 function mostrarFormItem(){var f=document.getElementById('form-item');if(f)f.style.display='block';['item-nombre','item-desc','item-precio','item-cat','item-foto'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});itemCategoria='';document.querySelectorAll('#cat-chips .vchip').forEach(c=>c.classList.remove('sel'));}
+async function subirFotoItem(input){
+  var file=input.files&&input.files[0]; if(!file)return;
+  if(!db){toast('Sin conexión');return;}
+  toast('Subiendo foto...');
+  try{
+    var ext=(file.name.split('.').pop()||'jpg');
+    var fn='item-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.'+ext;
+    var up=await db.storage.from('fotos-menu').upload(fn,file);
+    if(up.error) throw up.error;
+    var u=db.storage.from('fotos-menu').getPublicUrl(fn);
+    var f=document.getElementById('item-foto'); if(f)f.value=(u.data&&u.data.publicUrl)||'';
+    toast('✅ Foto lista');
+  }catch(e){console.error('subirFotoItem',e);toast('No se pudo subir la foto');}
+}
 async function guardarItem(){
   if(!db||!negocioActual){toast('Sin sesión de negocio');return;}
   var nombre=(document.getElementById('item-nombre').value||'').trim();
@@ -4825,7 +4842,7 @@ function volverInicio(){
     go('login');
   }
 }
-function logout(){clearSession();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
+function logout(){clearSession();try{sessionStorage.removeItem('avs_negocio');}catch(e){}viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
 async function loginNegocio(phone){
   if(!db) return false;
   try{
@@ -4843,6 +4860,7 @@ async function doLoginNegocio(){
   if(!phone){toast('Ingresá el teléfono del negocio');return;}
   const ok = await loginNegocio(phone);
   if(!ok){toast('Negocio no encontrado o no aprobado');return;}
+  try{sessionStorage.setItem('avs_negocio',String(phone).trim());}catch(e){}
   const iconos = {restaurantes:'🍽️',salud:'🏥',hospedaje:'🏨',supermercado:'🛒',negocios:'🏪',otros:'✨'};
   document.getElementById('neg-avatar-ico').textContent = iconos[negocioActual.categoria]||'🏪';
   document.getElementById('neg-panel-nombre').textContent = negocioActual.nombre;
@@ -6980,6 +6998,24 @@ window.addEventListener('DOMContentLoaded',()=>{
     setTimeout(() => abrirComercioPorLink(comercioQR), 1000);
     return;
   }
+
+  // Restaurar sesión de comercio (queda activa hasta cerrar el app)
+  try{
+    var _negTel=sessionStorage.getItem('avs_negocio');
+    if(_negTel){
+      setTimeout(async function(){
+        var ok=await loginNegocio(_negTel);
+        if(ok){
+          var ic={restaurantes:'🍽️',salud:'🏥',hospedaje:'🏨',supermercado:'🛒',negocios:'🏪',otros:'✨'};
+          var a=document.getElementById('neg-avatar-ico'); if(a)a.textContent=ic[negocioActual.categoria]||'🏪';
+          var nn=document.getElementById('neg-panel-nombre'); if(nn)nn.textContent=negocioActual.nombre;
+          var nc=document.getElementById('neg-panel-cat'); if(nc)nc.textContent=negocioActual.categoria;
+          go('panel-negocio'); cargarMenuNegocio(); cargarStatsNegocio();
+        } else { try{sessionStorage.removeItem('avs_negocio');}catch(e){} go('login'); }
+      }, 800);
+      return;
+    }
+  }catch(e){}
 
   if(loadSession()&&user.name&&user.role){applyUser();setTimeout(async()=>{const savedViajeId=localStorage.getItem('avs_viaje_id');if(savedViajeId&&db&&user.role==='usuario'){viajeId=savedViajeId;const{data:v}=await db.from('viajes').select('estado').eq('id',viajeId).single();if(v&&v.estado==='solicitado'){go('buscando');toast('Retomando búsqueda...');pasajeroWaitInterval=setInterval(async()=>{try{const{data:vv}=await db.from('viajes').select('estado,conductor_nombre,conductor_placa').eq('id',viajeId).single();if(vv&&vv.estado==='aceptado'){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;if(vv.conductor_nombre)document.getElementById('cnom').textContent=vv.conductor_nombre;if(vv.conductor_placa)document.getElementById('cplate').textContent=vv.conductor_placa;trazarRutaPasajero();go('casignado');mostrarSOS(true);toast('¡Conductor en camino!');if(codigoViaje){document.getElementById('codigoPasajeroText').textContent=codigoViaje;document.getElementById('codigoDisplay').textContent=codigoViaje;}}else if(vv&&(vv.estado==='cancelado'||vv.estado==='rechazado')){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;viajeId=null;localStorage.removeItem('avs_viaje_id');go('pasajero');}}catch(e){}},2000);}else if(v&&v.estado==='aceptado'){trazarRutaPasajero();go('casignado');}else{viajeId=null;localStorage.removeItem('avs_viaje_id');go(user.role==='conductor'?'conductor':'pasajero');}}else{go(user.role==='conductor'?'conductor':'pasajero');}},1500);}else{
     // Check territorio - show selector briefly then go to login
