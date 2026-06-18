@@ -1514,22 +1514,22 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div style="font-size:12px;color:var(--mt)" id="neg-panel-cat">Categoría</div>
       <div style="font-size:11px;margin-top:2px" id="neg-online"></div>
     </div>
-    <button onclick="logout()" style="margin-left:auto;background:transparent;border:none;color:var(--mt);font-size:12px;cursor:pointer">Salir</button>
+    
   </div>
-  <div id="neg-estado-bar" style="background:var(--sf);border:1px solid var(--bd2);border-radius:14px;padding:12px;margin-bottom:14px">
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <span id="neg-estado-chip" style="font-weight:700;color:var(--g)">🟢 Recibiendo pedidos</span>
+  <div id="neg-estado-bar" style="background:var(--sf);border:1px solid var(--bd2);border-radius:14px;padding:14px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span id="neg-estado-chip" style="font-weight:700;font-size:15px;color:var(--g)">🟢 Recibiendo pedidos</span>
       <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btno" id="neg-pausar-btn" onclick="pausarPedidos()" style="width:auto;margin:0;padding:8px 12px;font-size:13px">⏸ Pausar (saturación)</button>
-        <button class="btno" onclick="toggleEmergencias()" style="width:auto;margin:0;padding:8px 12px;font-size:13px;border-color:rgba(226,75,74,0.5);color:var(--rd)">🆘 Emergencia</button>
+        <button class="btno" id="neg-pausar-btn" onclick="pausarPedidos()" style="width:auto;margin:0;padding:10px 16px;font-size:14px;border-color:#F5A623;color:#F5A623">⏸ Pausar pedidos</button>
+        <button onclick="toggleEmergencias()" style="width:auto;margin:0;padding:10px 16px;font-size:14px;background:var(--rd);border:none;color:#fff;border-radius:12px;font-weight:700;cursor:pointer">🆘 Emergencia</button>
       </div>
     </div>
-    <div id="neg-emergencias" style="display:none;margin-top:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">
-      <button class="btno" onclick="reportarEmergencia('sin_agua')" style="margin:0;font-size:13px">💧 Sin agua</button>
-      <button class="btno" onclick="reportarEmergencia('sin_electricidad')" style="margin:0;font-size:13px">⚡ Sin electricidad</button>
-      <button class="btno" onclick="reportarEmergencia('asalto')" style="margin:0;font-size:13px;border-color:rgba(226,75,74,0.6);color:var(--rd)">🔴 Asalto</button>
-      <button class="btno" onclick="reportarEmergencia('panico')" style="margin:0;font-size:13px;border-color:rgba(226,75,74,0.6);color:var(--rd)">🚨 Pánico</button>
-      <button class="btno" onclick="reportarEmergencia('otro')" style="margin:0;font-size:13px">✏️ Otro</button>
+    <div id="neg-emergencias" style="display:none;margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+      <button onclick="reportarEmergencia('sin_agua')" style="margin:0;padding:14px 10px;font-size:14px;background:var(--cd);border:1px solid var(--bd2);color:var(--tx);border-radius:12px;cursor:pointer">💧 Sin agua</button>
+      <button onclick="reportarEmergencia('sin_electricidad')" style="margin:0;padding:14px 10px;font-size:14px;background:var(--cd);border:1px solid var(--bd2);color:var(--tx);border-radius:12px;cursor:pointer">⚡ Sin electricidad</button>
+      <button onclick="reportarEmergencia('asalto')" style="margin:0;padding:14px 10px;font-size:15px;background:var(--rd);border:none;color:#fff;border-radius:12px;font-weight:800;cursor:pointer">🔴 ASALTO</button>
+      <button onclick="reportarEmergencia('panico')" style="margin:0;padding:14px 10px;font-size:15px;background:var(--rd);border:none;color:#fff;border-radius:12px;font-weight:800;cursor:pointer">🚨 PÁNICO</button>
+      <button onclick="reportarEmergencia('otro')" style="margin:0;padding:14px 10px;font-size:14px;background:var(--cd);border:1px solid var(--bd2);color:var(--tx);border-radius:12px;cursor:pointer">✏️ Otro</button>
     </div>
   </div>
   
@@ -2639,25 +2639,37 @@ async function cargarPedidosNegocio(){
   if(!db||!negocioActual){cont.innerHTML='Sin sesión';return;}
   cont.innerHTML='Cargando pedidos...';
   try{
-    var r=await db.from('pedidos').select('*').eq('negocio_id',negocioActual.id).order('fecha',{ascending:false}).limit(30);
-    var data=r.data;
-    if(!data||data.length===0){cont.innerHTML='<div class="nolist">Sin pedidos aún</div>';return;}
+    var desde=new Date(Date.now()-24*3600*1000).toISOString();
+    var r=await db.from('pedidos').select('*').eq('negocio_id',negocioActual.id).gte('fecha',desde).order('fecha',{ascending:false}).limit(40);
+    var data=(r.data||[]).filter(function(p){return p.estado!=='cancelado';});
+    if(data.length===0){cont.innerHTML='<div class="nolist">Sin pedidos activos</div>';return;}
     var sig={pendiente:'preparacion',preparacion:'listo',listo:'en_camino',en_camino:'entregado'};
-    var lbl={pendiente:'✅ Aceptar y preparar',preparacion:'Marcar listo',listo:'Marcar en camino',en_camino:'Marcar entregado'};
+    var lbl={pendiente:'✅ Aceptar y preparar',preparacion:'👨‍🍳 Marcar listo',listo:'📦 Marcar en camino',en_camino:'✔ Marcar entregado'};
+    var estLbl={pendiente:'Nuevo',preparacion:'En preparación',listo:'Listo',en_camino:'En camino',entregado:'Entregado'};
     cont.innerHTML=data.map(function(p){
       var items=[];try{items=JSON.parse(p.items||'[]');}catch(e){}
       var itTxt=items.map(function(i){return (i.cant||i.cantidad||1)+'× '+(i.nombre||'');}).join(', ');
       var est=p.estado||'pendiente';
-      var activo=(est!=='entregado'&&est!=='cancelado');
+      var activo=(est!=='entregado');
       var ini=p.fecha_inicio||'';
-      var timer = activo ? ('<span class="ped-timer" data-ini="'+ini+'" data-obj="'+OBJETIVO_PEDIDO_MIN+'" style="font-family:var(--font-d);font-weight:700">'+(ini?'⏱ ...':'⏸ sin iniciar')+'</span>') : '<span style="color:var(--g);font-size:12px">✔ '+est+'</span>';
-      var accion = sig[est] ? '<button class="bacp" style="margin-top:8px" onclick="avanzarPedido(\''+p.id+'\',\''+sig[est]+'\')">'+lbl[est]+'</button>' : '';
-      return '<div class="scard ped-card" id="pedcard-'+p.id+'"><div class="shd"><div class="spas">📦 '+(p.usuario_nombre||'Cliente')+'</div><div>'+timer+'</div></div><div style="font-size:12px;color:var(--mt);margin:4px 0">'+(itTxt||'—')+' · <i>'+est+'</i></div><div style="font-size:13px">Total: <b>₡'+((parseInt(p.total||0)).toLocaleString('es-CR'))+'</b> · comisión AVS ₡'+((parseInt(p.comision_avs||0)).toLocaleString('es-CR'))+'</div>'+accion+'</div>';
+      var timer = activo ? ('<span class="ped-timer" data-ini="'+ini+'" data-obj="'+OBJETIVO_PEDIDO_MIN+'" style="font-family:var(--font-d);font-weight:800;font-size:16px">'+(ini?'⏱ ...':'⏱ —')+'</span>') : '<span style="color:var(--g);font-weight:700">✔ Entregado</span>';
+      var accion = sig[est] ? '<button class="bacp" style="margin:0;flex:1" onclick="avanzarPedido(\''+p.id+'\',\''+sig[est]+'\')">'+lbl[est]+'</button>' : '';
+      var cancel = activo ? '<button class="brec" style="margin:0;width:auto;padding:10px 12px" title="Cancelar pedido" onclick="cancelarPedidoNegocio(\''+p.id+'\')">✕</button>' : '';
+      return '<div class="scard ped-card" id="pedcard-'+p.id+'" style="padding:14px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px"><div style="font-weight:700;font-size:15px">📦 '+(p.usuario_nombre||'Cliente')+'</div>'+timer+'</div>'+
+        '<div style="font-size:13px;color:var(--tx);margin-bottom:6px;line-height:1.4">'+(itTxt||'—')+'</div>'+
+        '<div style="font-size:12px;color:var(--mt);margin-bottom:10px"><b style="color:var(--g)">'+(estLbl[est]||est)+'</b> · Total ₡'+((parseInt(p.total||0)).toLocaleString('es-CR'))+'</div>'+
+        '<div style="display:flex;gap:8px">'+accion+cancel+'</div></div>';
     }).join('');
     _tickPedidoTimers();
     if(!_pedTickInt) _pedTickInt=setInterval(_tickPedidoTimers,1000);
   }catch(e){cont.innerHTML='<div class="nolist">Error al cargar pedidos</div>';}
 }
+async function cancelarPedidoNegocio(id){
+  if(!db)return; if(!confirm('¿Cancelar este pedido? Saldrá del tablero.'))return;
+  try{ await db.from('pedidos').update({estado:'cancelado'}).eq('id',id); toast('Pedido cancelado'); cargarPedidosNegocio(); }catch(e){toast('No se pudo cancelar');}
+}
+
 function _tickPedidoTimers(){
   var nodes=document.querySelectorAll('.ped-timer');
   if(nodes.length===0||window._avsPantallaActual!=='panel-negocio'){ if(_pedTickInt){clearInterval(_pedTickInt);_pedTickInt=null;} return; }
