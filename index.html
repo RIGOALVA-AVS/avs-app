@@ -1512,6 +1512,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div>
       <div style="font-family:var(--font-d);font-size:18px;font-weight:700" id="neg-panel-nombre">Mi Comercio</div>
       <div style="font-size:12px;color:var(--mt)" id="neg-panel-cat">Categoría</div>
+      <div style="font-size:11px;margin-top:2px" id="neg-online"></div>
     </div>
     <button onclick="logout()" style="margin-left:auto;background:transparent;border:none;color:var(--mt);font-size:12px;cursor:pointer">Salir</button>
   </div>
@@ -1531,6 +1532,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div class="adtbtn on" id="negtab-menu" onclick="switchNegTab('menu')">📋 Mi Menú</div>
     <div class="adtbtn" id="negtab-pedidos" onclick="switchNegTab('pedidos')">📦 Pedidos</div>
     <div class="adtbtn" id="negtab-stats" onclick="switchNegTab('stats')">📊 Stats</div>
+    <div class="adtbtn" id="negtab-equipo" onclick="switchNegTab('equipo')">👥 Equipo</div>
   </div>
   <!-- Contenido tabs -->
   <div id="neg-tab-menu">
@@ -1563,6 +1565,21 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     </div>
   </div>
   <div id="neg-tab-pedidos" style="display:none"><div class="nolist" id="neg-pedidos-lista">Cargando pedidos...</div></div>
+  <div id="neg-tab-equipo" style="display:none">
+    <div style="font-size:13px;color:var(--mt);margin-bottom:10px">Pueden tener acceso hasta 2 personas además del dueño: una para <b>servicio directo</b> y otra para <b>control de calidad</b>. Cada una entra con su propio teléfono.</div>
+    <div id="neg-accesos-lista"><div class="nolist">Sin accesos adicionales</div></div>
+    <div style="background:var(--sf);border:1px solid var(--bd2);border-radius:16px;padding:14px;margin-top:12px">
+      <div style="font-family:var(--font-d);font-size:15px;font-weight:600;margin-bottom:10px">Agregar acceso</div>
+      <input class="ifield" type="text" placeholder="Nombre de la persona" id="acc-nombre" style="margin-bottom:8px">
+      <input class="ifield" type="tel" placeholder="Teléfono (será su login)" id="acc-tel" style="margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px" id="acc-rol-chips">
+        <div class="vchip sel" onclick="selAccRol(this,'servicio')">🧑‍🍳 Servicio directo</div>
+        <div class="vchip" onclick="selAccRol(this,'control_calidad')">✅ Control de calidad</div>
+      </div>
+      <button class="btnp" onclick="agregarAcceso()" style="margin-top:0">Agregar persona</button>
+    </div>
+  </div>
+
   <div id="neg-tab-stats" style="display:none">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:14px;text-align:center">
@@ -2493,7 +2510,7 @@ var negCategoria='restaurantes';
 var itemCategoria='';
 function selNegCat(el,cat){document.querySelectorAll('#neg-cats .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');negCategoria=cat;}
 function selItemCat(el,cat){document.querySelectorAll('#cat-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');itemCategoria=cat;var i=document.getElementById('item-cat');if(i)i.value=cat;}
-function switchNegTab(tab){['menu','pedidos','stats'].forEach(function(t){var b=document.getElementById('negtab-'+t);var c=document.getElementById('neg-tab-'+t);if(b)b.classList.toggle('on',t===tab);if(c)c.style.display=(t===tab?'':'none');});if(tab==='pedidos')cargarPedidosNegocio();if(tab==='stats')cargarStatsNegocio();if(tab==='menu')cargarMenuNegocio();}
+function switchNegTab(tab){['menu','pedidos','stats','equipo'].forEach(function(t){var b=document.getElementById('negtab-'+t);var c=document.getElementById('neg-tab-'+t);if(b)b.classList.toggle('on',t===tab);if(c)c.style.display=(t===tab?'':'none');});if(tab==='pedidos')cargarPedidosNegocio();if(tab==='stats')cargarStatsNegocio();if(tab==='menu')cargarMenuNegocio();if(tab==='equipo')cargarAccesos();}
 function mostrarFormItem(){var f=document.getElementById('form-item');if(f)f.style.display='block';['item-nombre','item-desc','item-precio','item-cat','item-foto'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});itemCategoria='';document.querySelectorAll('#cat-chips .vchip').forEach(c=>c.classList.remove('sel'));}
 async function subirFotoItem(input){
   var file=input.files&&input.files[0]; if(!file)return;
@@ -2599,6 +2616,48 @@ function solicitarTerritorio(){
   if(!t)return;
   toast('¡Gracias! Registramos tu interés por '+t.trim());
 }
+// ===== ESTADO ONLINE (latido para monitoreo en tiempo real) =====
+var _negHbInt=null;
+function iniciarHeartbeatNegocio(){
+  detenerHeartbeatNegocio(); _latidoNegocio(); _negHbInt=setInterval(_latidoNegocio,30000);
+  var o=document.getElementById('neg-online'); if(o){o.textContent='🟢 En línea'; o.style.color='var(--g)';}
+}
+function detenerHeartbeatNegocio(){ if(_negHbInt){clearInterval(_negHbInt);_negHbInt=null;} var o=document.getElementById('neg-online'); if(o)o.textContent=''; }
+async function _latidoNegocio(){ if(!db||!negocioActual)return; try{ await db.from('negocios').update({last_seen:new Date().toISOString()}).eq('id',negocioActual.id); }catch(e){} }
+// ===== ACCESOS DEL COMERCIO (servicio / control de calidad) =====
+var _accRol='servicio';
+function selAccRol(el,rol){ document.querySelectorAll('#acc-rol-chips .vchip').forEach(function(c){c.classList.remove('sel');}); el.classList.add('sel'); _accRol=rol; }
+function _rolLabel(r){ return r==='control_calidad'?'Control de calidad':'Servicio directo'; }
+async function cargarAccesos(){
+  var cont=document.getElementById('neg-accesos-lista'); if(!cont)return;
+  if(!db||!negocioActual){cont.innerHTML='<div class="nolist">Sin sesión</div>';return;}
+  try{
+    var r=await db.from('negocio_accesos').select('*').eq('negocio_id',String(negocioActual.id)).order('fecha');
+    var data=r.data||[];
+    var cab='<div style="font-size:12px;color:var(--g);margin-bottom:8px">Conectado como: <b>'+(_negRol==='dueño'?'Dueño':_rolLabel(_negRol))+'</b></div>';
+    if(data.length===0){ cont.innerHTML=cab+'<div class="nolist">Sin accesos adicionales</div>'; return; }
+    cont.innerHTML=cab+data.map(function(a){return '<div class="scard" style="display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-weight:600">'+(a.nombre||'')+'</div><div style="font-size:12px;color:var(--mt)">'+_rolLabel(a.rol)+' · '+(a.telefono||'')+'</div></div><button class="brec" style="width:auto;padding:6px 10px;margin:0" onclick="eliminarAcceso(\''+a.id+'\')">Quitar</button></div>';}).join('');
+  }catch(e){cont.innerHTML='<div class="nolist">Error al cargar accesos</div>';}
+}
+async function agregarAcceso(){
+  if(!db||!negocioActual){toast('Sin sesión');return;}
+  var nombre=(document.getElementById('acc-nombre').value||'').trim();
+  var tel=(document.getElementById('acc-tel').value||'').trim();
+  if(!nombre||!tel){toast('Ingresá nombre y teléfono');return;}
+  try{
+    var r=await db.from('negocio_accesos').select('id').eq('negocio_id',String(negocioActual.id));
+    if((r.data||[]).length>=2){toast('Máximo 2 accesos adicionales por comercio');return;}
+    await db.from('negocio_accesos').insert({negocio_id:String(negocioActual.id),telefono:tel,nombre:nombre,rol:_accRol});
+    toast('✅ Acceso agregado');
+    document.getElementById('acc-nombre').value=''; document.getElementById('acc-tel').value='';
+    cargarAccesos();
+  }catch(e){console.error('agregarAcceso',e);toast('No se pudo agregar');}
+}
+async function eliminarAcceso(id){
+  if(!db)return; if(!confirm('¿Quitar este acceso?'))return;
+  try{ await db.from('negocio_accesos').delete().eq('id',id); toast('Acceso eliminado'); cargarAccesos(); }catch(e){toast('No se pudo eliminar');}
+}
+
 
 // ============== CHAT VIAJE (usuario <-> conductor) ==============
 var _chatInt=null,_chatYo='usuario',_chatOtro='conductor';
@@ -4842,16 +4901,23 @@ function volverInicio(){
     go('login');
   }
 }
-function logout(){clearSession();try{sessionStorage.removeItem('avs_negocio');}catch(e){}viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
+function logout(){clearSession();try{sessionStorage.removeItem('avs_negocio');}catch(e){}detenerHeartbeatNegocio();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
+var _negRol='dueño';
 async function loginNegocio(phone){
   if(!db) return false;
   try{
     var tel=String(phone||'').trim();
     var r=await db.from('negocios').select('*').eq('telefono',tel).eq('estado','aprobado').limit(1);
     var data=(r.data&&r.data[0])||null;
-    if(!data) return false;
-    negocioActual=data;
-    return true;
+    if(data){ negocioActual=data; _negRol='dueño'; return true; }
+    var ra=await db.from('negocio_accesos').select('*').eq('telefono',tel).limit(1);
+    var acc=(ra.data&&ra.data[0])||null;
+    if(acc){
+      var rn=await db.from('negocios').select('*').eq('id',acc.negocio_id).eq('estado','aprobado').limit(1);
+      var neg=(rn.data&&rn.data[0])||null;
+      if(neg){ negocioActual=neg; _negRol=acc.rol||'servicio'; return true; }
+    }
+    return false;
   }catch(e){console.error('loginNegocio',e);return false;}
 }
 
@@ -4868,6 +4934,7 @@ async function doLoginNegocio(){
   go('panel-negocio');
   cargarMenuNegocio();
   cargarStatsNegocio();
+  iniciarHeartbeatNegocio();
   if(negocioActual && negocioActual.saldo_avs!=null) avisoSaldoBajoAVS(parseInt(negocioActual.saldo_avs||0));
 }
 
@@ -7010,7 +7077,7 @@ window.addEventListener('DOMContentLoaded',()=>{
           var a=document.getElementById('neg-avatar-ico'); if(a)a.textContent=ic[negocioActual.categoria]||'🏪';
           var nn=document.getElementById('neg-panel-nombre'); if(nn)nn.textContent=negocioActual.nombre;
           var nc=document.getElementById('neg-panel-cat'); if(nc)nc.textContent=negocioActual.categoria;
-          go('panel-negocio'); cargarMenuNegocio(); cargarStatsNegocio();
+          go('panel-negocio'); cargarMenuNegocio(); cargarStatsNegocio(); iniciarHeartbeatNegocio();
         } else { try{sessionStorage.removeItem('avs_negocio');}catch(e){} go('login'); }
       }, 800);
       return;
