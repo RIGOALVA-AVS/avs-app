@@ -4826,6 +4826,18 @@ function volverInicio(){
   }
 }
 function logout(){clearSession();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
+async function loginNegocio(phone){
+  if(!db) return false;
+  try{
+    var tel=String(phone||'').trim();
+    var r=await db.from('negocios').select('*').eq('telefono',tel).eq('estado','aprobado').limit(1);
+    var data=(r.data&&r.data[0])||null;
+    if(!data) return false;
+    negocioActual=data;
+    return true;
+  }catch(e){console.error('loginNegocio',e);return false;}
+}
+
 async function doLoginNegocio(){
   const phone = document.getElementById('lphone').value.trim();
   if(!phone){toast('Ingresá el teléfono del negocio');return;}
