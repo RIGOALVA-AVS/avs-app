@@ -1061,7 +1061,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div style="font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--g);letter-spacing:1.5px;text-transform:uppercase;text-align:center;">🛍️ Promos de Atenas</div>
     <div id="login-promos-list" style="display:flex;flex-direction:column;gap:8px;"></div>
     <div style="font-size:11px;color:var(--mt);line-height:1.5;text-align:center;margin-top:4px;">Registrate para ver el catálogo completo de bienes y servicios.</div>
-    <button class="btno" onclick="abrirRegistro()" style="border-color:rgba(0,229,184,0.4);flex-shrink:0">🏪 Sumá tu negocio aquí</button>
+    <button class="btno" onclick="abrirRegistro()" style="border-color:rgba(0,229,184,0.4);flex-shrink:0">🏪 Sumá tu comercio aquí</button>
   </div>
 
 </div>
@@ -1442,7 +1442,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     <div style="background:rgba(0,229,184,0.07);border:1px solid var(--bd2);border-radius:16px;padding:16px;text-align:center">
       <div style="font-size:15px;font-weight:600;margin-bottom:6px">¿Tenés un negocio?</div>
       <div style="font-size:12px;color:var(--mt);margin-bottom:12px;line-height:1.5">Unite a la red AVS y llegá a más clientes en Atenas. Condiciones que se acuerdan al momento de afiliarte.</div>
-      <button class="btnp" style="margin-top:0" onclick="go('registro-negocio')">🏪 Registrá tu negocio</button>
+      <button class="btnp" style="margin-top:0" onclick="go('registro-negocio')">🏪 Registrá tu comercio</button>
     </div>
   </div>
 </div>
@@ -1467,7 +1467,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <div style="background:var(--bg);height:100%;overflow-y:auto;padding:48px 24px 40px">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
       <button onclick="go('login')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button>
-      <div style="font-family:var(--font-d);font-size:20px;font-weight:700">Registrá tu negocio</div>
+      <div style="font-family:var(--font-d);font-size:20px;font-weight:700">Registrá tu comercio</div>
     </div>
     <div style="font-size:11px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Datos del negocio</div>
     <input class="ifield" type="text" placeholder="Nombre del negocio" id="neg-nombre" style="margin-bottom:10px">
@@ -1508,7 +1508,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <div class="neg-header">
     <div class="neg-avatar" id="neg-avatar-ico">🏪</div>
     <div>
-      <div style="font-family:var(--font-d);font-size:18px;font-weight:700" id="neg-panel-nombre">Mi Negocio</div>
+      <div style="font-family:var(--font-d);font-size:18px;font-weight:700" id="neg-panel-nombre">Mi Comercio</div>
       <div style="font-size:12px;color:var(--mt)" id="neg-panel-cat">Categoría</div>
     </div>
     <button onclick="logout()" style="margin-left:auto;background:transparent;border:none;color:var(--mt);font-size:12px;cursor:pointer">Salir</button>
@@ -5661,7 +5661,7 @@ function abrirIngreso(role){
       ? `<button class="btnp promo-alert-btn" onclick="doLogin('usuario')" style="margin-top:6px;background:linear-gradient(135deg,#ffecb3,#ffd54f);color:#1a2433;font-weight:800;font-family:Arial,Helvetica,sans-serif;font-size:14px;letter-spacing:0.2px">🛍️ Entrar y aprovechar mi promo</button>`
       : `<button class="btnp" onclick="doLogin('usuario')" style="margin-top:6px">👤 Entrar como Usuario</button>
          <button class="btno" onclick="doLogin('conductor')">🚗 Entrar como Conductor</button>
-         <button class="btno" onclick="doLoginNegocio()" style="margin-top:6px">🏪 Acceso negocio</button>`)}
+         <button class="btno" onclick="doLoginNegocio()" style="margin-top:6px">🏪 Acceso comercio</button>`)}
     <button class="btno" onclick="resetLoginSheet()" style="margin-top:10px">← Volver</button>`;
   setTimeout(()=>initCarruselGenerico('avsCarruselIng'),60);
 }
