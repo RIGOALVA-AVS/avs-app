@@ -2485,6 +2485,142 @@ async function confirmarSinpeNegocio(pedidoId, comisionAVS) {
 }
 
 
+// ============== PANEL DEL COMERCIO (funciones) ==============
+var negCategoria='restaurantes';
+var itemCategoria='';
+function selNegCat(el,cat){document.querySelectorAll('#neg-cats .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');negCategoria=cat;}
+function selItemCat(el,cat){document.querySelectorAll('#cat-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');itemCategoria=cat;var i=document.getElementById('item-cat');if(i)i.value=cat;}
+function switchNegTab(tab){['menu','pedidos','stats'].forEach(function(t){var b=document.getElementById('negtab-'+t);var c=document.getElementById('neg-tab-'+t);if(b)b.classList.toggle('on',t===tab);if(c)c.style.display=(t===tab?'':'none');});if(tab==='pedidos')cargarPedidosNegocio();if(tab==='stats')cargarStatsNegocio();if(tab==='menu')cargarMenuNegocio();}
+function mostrarFormItem(){var f=document.getElementById('form-item');if(f)f.style.display='block';['item-nombre','item-desc','item-precio','item-cat','item-foto'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});itemCategoria='';document.querySelectorAll('#cat-chips .vchip').forEach(c=>c.classList.remove('sel'));}
+async function guardarItem(){
+  if(!db||!negocioActual){toast('Sin sesión de negocio');return;}
+  var nombre=(document.getElementById('item-nombre').value||'').trim();
+  var precio=parseInt(document.getElementById('item-precio').value||'0');
+  if(!nombre){toast('Ingresá el nombre del producto');return;}
+  if(!precio||precio<1){toast('Ingresá un precio válido');return;}
+  var descripcion=(document.getElementById('item-desc').value||'').trim();
+  var cat=(document.getElementById('item-cat').value||'').trim()||itemCategoria||'General';
+  var foto=(document.getElementById('item-foto').value||'').trim();
+  try{
+    await db.from('menu_items').insert({negocio_id:negocioActual.id,nombre:nombre,descripcion:descripcion,precio:precio,categoria_item:cat,foto_url:foto||null,disponible:true});
+    toast('✅ Item agregado al menú');
+    document.getElementById('form-item').style.display='none';
+    cargarMenuNegocio();
+  }catch(e){console.error(e);toast('No se pudo guardar el item');}
+}
+async function cargarMenuNegocio(){
+  var cont=document.getElementById('neg-menu-lista');if(!cont)return;
+  if(!db||!negocioActual){cont.innerHTML='<div class="nolist">Sin sesión</div>';return;}
+  try{
+    var r=await db.from('menu_items').select('*').eq('negocio_id',negocioActual.id).order('categoria_item');
+    var data=r.data;
+    if(!data||data.length===0){cont.innerHTML='<div class="nolist">Sin items en el menú</div>';return;}
+    cont.innerHTML=data.map(function(it){return '<div class="scard" style="display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-weight:600">'+(it.nombre||'')+(it.disponible===false?' <span style=\"color:var(--rd);font-size:11px\">(oculto)</span>':'')+'</div><div style="font-size:12px;color:var(--mt)">'+(it.categoria_item||'')+' · ₡'+((parseInt(it.precio)||0).toLocaleString('es-CR'))+'</div></div><button class="brec" style="width:auto;padding:6px 10px;margin:0" onclick="eliminarItem(\''+it.id+'\')">Quitar</button></div>';}).join('');
+  }catch(e){cont.innerHTML='<div class="nolist">Error al cargar el menú</div>';}
+}
+async function eliminarItem(id){
+  if(!db)return; if(!confirm('¿Quitar este item del menú?'))return;
+  try{ await db.from('menu_items').delete().eq('id',id); toast('Item eliminado'); cargarMenuNegocio(); }
+  catch(e){ try{ await db.from('menu_items').update({disponible:false}).eq('id',id); cargarMenuNegocio(); }catch(_){} }
+}
+async function cargarStatsNegocio(){
+  var ep=document.getElementById('stat-pedidos'),ev=document.getElementById('stat-ventas');
+  if(!db||!negocioActual)return;
+  try{
+    var hoy=new Date();hoy.setHours(0,0,0,0);
+    var r=await db.from('pedidos').select('total_negocio,total,fecha,estado').eq('negocio_id',negocioActual.id).gte('fecha',hoy.toISOString());
+    var arr=(r.data||[]).filter(function(p){return p.estado!=='cancelado';});
+    if(ep)ep.textContent=String(arr.length);
+    var ventas=arr.reduce(function(a,p){return a+(parseInt(p.total_negocio||p.total||0));},0);
+    if(ev)ev.textContent='₡'+ventas.toLocaleString('es-CR');
+  }catch(e){}
+}
+async function cargarPedidosNegocio(){
+  var cont=document.getElementById('neg-pedidos-lista');if(!cont)return;
+  if(!db||!negocioActual){cont.innerHTML='Sin sesión';return;}
+  cont.innerHTML='Cargando pedidos...';
+  try{
+    var r=await db.from('pedidos').select('*').eq('negocio_id',negocioActual.id).order('fecha',{ascending:false}).limit(30);
+    var data=r.data;
+    if(!data||data.length===0){cont.innerHTML='<div class="nolist">Sin pedidos aún</div>';return;}
+    var sig={pendiente:'preparacion',preparacion:'listo',listo:'en_camino',en_camino:'entregado'};
+    var lbl={pendiente:'Marcar en preparación',preparacion:'Marcar listo',listo:'Marcar en camino',en_camino:'Marcar entregado'};
+    cont.innerHTML=data.map(function(p){
+      var items=[];try{items=JSON.parse(p.items||'[]');}catch(e){}
+      var itTxt=items.map(function(i){return (i.cant||i.cantidad||1)+'× '+(i.nombre||'');}).join(', ');
+      var est=p.estado||'pendiente';
+      var accion = sig[est] ? '<button class="bacp" style="margin-top:8px" onclick="avanzarPedido(\''+p.id+'\',\''+sig[est]+'\')">'+lbl[est]+'</button>' : '';
+      return '<div class="scard"><div class="shd"><div class="spas">📦 '+(p.usuario_nombre||'Cliente')+'</div><div style="font-size:12px;color:var(--g)">'+est+'</div></div><div style="font-size:12px;color:var(--mt);margin:4px 0">'+(itTxt||'—')+'</div><div style="font-size:13px">Total: <b>₡'+((parseInt(p.total||0)).toLocaleString('es-CR'))+'</b> · comisión AVS ₡'+((parseInt(p.comision_avs||0)).toLocaleString('es-CR'))+'</div>'+accion+'</div>';
+    }).join('');
+  }catch(e){cont.innerHTML='<div class="nolist">Error al cargar pedidos</div>';}
+}
+async function avanzarPedido(id,nuevo){
+  if(!db)return;
+  try{
+    await db.from('pedidos').update({estado:nuevo}).eq('id',id);
+    if(nuevo==='entregado'){ await cobrarComisionPedido(id); }
+    toast('Pedido: '+nuevo);
+    cargarPedidosNegocio();
+  }catch(e){toast('No se pudo actualizar');}
+}
+function abrirSINPENegocio(monto){
+  if(!negocioActual){toast('Sin sesión de negocio');return;}
+  var num=(typeof SINPE_AVS!=='undefined'?SINPE_AVS:'el número AVS');
+  var conf='AVS-'+(negocioActual.telefono||negocioActual.id)+'-'+monto;
+  if(!confirm('Recarga de ₡'+monto.toLocaleString('es-CR')+' vía SINPE a '+num+' (concepto '+conf+'). ¿Registrar la recarga?'))return;
+  confirmarRecargaNegocio(monto,conf);
+}
+async function confirmarRecargaNegocio(monto,concepto){
+  if(!db||!negocioActual)return;
+  try{
+    await db.from('recargas').insert({negocio_id:String(negocioActual.id),negocio_nombre:negocioActual.nombre,monto:monto,concepto:concepto,estado:'pendiente',fecha:new Date().toISOString()});
+    toast('✅ Recarga registrada (pendiente de verificación por AVS)');
+  }catch(e){console.error('recargaNegocio',e);toast('Recarga anotada. Si falla, avisá a AVS.');}
+}
+function solicitarTerritorio(){
+  var t=prompt('¿En qué cantón te gustaría tener AVS? Escribilo:');
+  if(!t)return;
+  toast('¡Gracias! Registramos tu interés por '+t.trim());
+}
+
+// ============== CHAT VIAJE (usuario <-> conductor) ==============
+var _chatInt=null,_chatYo='usuario',_chatOtro='conductor';
+function abrirChat(otro){
+  if(!viajeId){toast('No hay viaje activo');return;}
+  _chatOtro=otro; _chatYo=(otro==='conductor')?'usuario':'conductor';
+  var nom=document.getElementById('chat-nombre');
+  if(nom){ var cn=document.getElementById('cnom'); nom.textContent=(otro==='conductor'&&cn&&cn.textContent)?cn.textContent:(otro==='conductor'?'Conductor':'Cliente'); }
+  go('chat');
+  _cargarMensajes();
+  if(_chatInt)clearInterval(_chatInt);
+  _chatInt=setInterval(function(){ if(window._avsPantallaActual==='chat')_cargarMensajes(); else {clearInterval(_chatInt);_chatInt=null;} },2500);
+}
+function cerrarChat(){
+  if(_chatInt){clearInterval(_chatInt);_chatInt=null;}
+  go(_chatYo==='conductor'?'condmap':'casignado');
+}
+async function enviarMensaje(){
+  var inp=document.getElementById('chat-msg-input'); if(!inp)return;
+  var txt=(inp.value||'').trim(); if(!txt)return;
+  if(!db||!viajeId){toast('Sin viaje activo');return;}
+  inp.value='';
+  try{ await db.from('mensajes').insert({viaje_id:String(viajeId),emisor:_chatYo,texto:txt,fecha:new Date().toISOString()}); }catch(e){console.error('chat',e);}
+  _cargarMensajes();
+}
+async function _cargarMensajes(){
+  var cont=document.getElementById('chat-msgs'); if(!cont||!db||!viajeId)return;
+  try{
+    var r=await db.from('mensajes').select('*').eq('viaje_id',String(viajeId)).order('fecha',{ascending:true});
+    var data=r.data||[];
+    if(data.length===0)return;
+    cont.innerHTML=data.map(function(m){
+      var mine=(m.emisor===_chatYo);
+      return '<div style="display:flex;justify-content:'+(mine?'flex-end':'flex-start')+';margin:4px 0"><div style="max-width:75%;padding:8px 12px;border-radius:14px;font-size:14px;line-height:1.35;background:'+(mine?'var(--g)':'var(--sf)')+';color:'+(mine?'#04121a':'var(--tx)')+';border:1px solid var(--bd)">'+(m.texto||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div></div>';
+    }).join('');
+    cont.scrollTop=cont.scrollHeight;
+  }catch(e){}
+}
+
 // ===== TRACKING PEDIDO EN TIEMPO REAL =====
 let trackingSub = null;
 let trackingPedidoId = null;
