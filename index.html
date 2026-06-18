@@ -1721,6 +1721,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 </div>
 
 
+<!-- CONFIRMACIÓN DE PEDIDO (cliente) -->
+<div id="pedido-conf-modal" style="display:none;position:fixed;inset:0;background:rgba(8,15,30,0.94);z-index:99995;align-items:center;justify-content:center;padding:20px">
+  <div style="max-width:430px;width:100%;background:var(--bg);border:1px solid var(--bd2);border-radius:18px;padding:22px;max-height:90vh;overflow-y:auto">
+    <div id="pedido-conf-body"></div>
+  </div>
+</div>
+
 <!-- CHAT VIAJE -->
 <div class="screen" id="chat">
   <div class="chat-hdr">
@@ -4604,7 +4611,7 @@ async function abrirCarrito(negocioId, negocioNombre) {
 
 async function confirmarPedido() {
   if (carritoItems.length === 0) { toast('Agrega items al pedido'); return; }
-  if(db && carritoNegocioId){ try{ var _ns=await db.from('negocios').select('pausado_hasta').eq('id',carritoNegocioId).single(); var _ph=_ns.data&&_ns.data.pausado_hasta; if(_ph && new Date(_ph).getTime()>Date.now()){ var _mr=Math.max(1,Math.ceil((new Date(_ph).getTime()-Date.now())/60000)); toast('⏸ El comercio está saturado. Intentá de nuevo en ~'+_mr+' min.'); return; } }catch(e){} }
+  if(db && carritoNegocioId){ try{ var _ns=await db.from('negocios').select('pausado_hasta').eq('id',carritoNegocioId).single(); var _ph=_ns.data&&_ns.data.pausado_hasta; if(_ph && new Date(_ph).getTime()>Date.now()){ var _mr=Math.max(1,Math.ceil((new Date(_ph).getTime()-Date.now())/60000)); alert('⏸ El comercio está temporalmente saturado.\nIntentá de nuevo en ~'+_mr+' min.'); return; } }catch(e){} }
   const subtotal = carritoItems.reduce((s, i) => s + (i.precio * i.cantidad), 0);
   // Cliente paga precio limpio (envío ya trae la comisión incluida).
   // La comisión AVS del negocio (10% de productos) se descuenta de SU crédito al confirmarse el pago/entrega.
@@ -4640,14 +4647,37 @@ async function confirmarPedido() {
     const lineas = carritoItems.map(i => i.cantidad + 'x ' + i.nombre + ' - \u20a1' + (i.precio*i.cantidad).toLocaleString('es-CR')).join(', ');
     const txt = 'PREFACTURA AVS - ' + carritoNegocioNombre + ' | ' + lineas + ' | Total: \u20a1' + total.toLocaleString('es-CR') + ' | SINPE: ' + sinpeNeg + ' | Concepto: AVS-' + pedidoData.id.slice(0,8).toUpperCase();
     const telUser = ('506' + user.phone.replace(/[^0-9]/g,'')).replace(/^506506/,'506');
-    setTimeout(() => window.open('https://wa.me/' + telUser + '?text=' + encodeURIComponent(txt), '_blank'), 500);
-    toast('Prefactura enviada por WhatsApp');
+    window._waPrefactura = 'https://wa.me/' + telUser + '?text=' + encodeURIComponent(txt);
+    mostrarConfirmacionPedido(total, sinpeNeg, tipoEntrega, pedidoData.id);
     carritoItems = []; tipoEntrega = 'recoger'; tarifaDelivery = 0; tipoVehiculoDelivery = 'moto'; window._cuponAplicado = null;
     cargarCuponesCarrito();
-    setTimeout(() => abrirTracking(pedidoData.id), 2000);
   }
 }
 
+
+function mostrarConfirmacionPedido(total,sinpe,entrega,pedidoId){
+  var pay;
+  if(entrega==='recoger') pay='🏪 <b>Recogés en el local.</b> Pagás ahí al recoger — efectivo o SINPE al comercio.';
+  else if(entrega==='delivery') pay='🚗 <b>Delivery a tu ubicación.</b> Pagás por SINPE al comercio, o en efectivo al recibir.';
+  else pay='Un asesor del comercio te contactará para coordinar el pago y la entrega.';
+  var conc='AVS-'+String(pedidoId).slice(0,6).toUpperCase();
+  var body='<div style="text-align:center;font-size:42px">✅</div>'+
+    '<div style="text-align:center;font-family:var(--font-d);font-size:20px;font-weight:700;margin:6px 0">¡Pedido enviado!</div>'+
+    '<div style="text-align:center;color:var(--mt);font-size:13px;margin-bottom:14px">'+((typeof carritoNegocioNombre!=="undefined"&&carritoNegocioNombre)||'El comercio')+' recibió tu pedido</div>'+
+    '<div style="background:var(--sf);border:1px solid var(--bd2);border-radius:12px;padding:14px;margin-bottom:12px">'+
+      '<div style="display:flex;justify-content:space-between;font-size:15px;margin-bottom:10px"><span>Total a pagar</span><b style="color:var(--g)">₡'+total.toLocaleString('es-CR')+'</b></div>'+
+      '<div style="font-size:13px;line-height:1.5;color:var(--tx)">'+pay+'</div>'+
+      '<div style="font-size:12px;color:var(--mt);margin-top:8px">SINPE del comercio: <b style="color:var(--g)">'+sinpe+'</b> &nbsp;·&nbsp; Concepto: <b>'+conc+'</b></div>'+
+    '</div>'+
+    '<div style="font-size:12px;color:var(--mt);text-align:center;margin-bottom:14px">El comercio confirmará tu pedido y el pago. <b>AVS no cobra el pedido</b> — el pago es directo al comercio.</div>'+
+    '<button class="btnp" onclick="abrirWaPrefactura()" style="margin-bottom:8px">📲 Enviar prefactura por WhatsApp</button>'+
+    '<button class="btno" onclick="cerrarConfPedido();abrirTracking(\''+pedidoId+'\')" style="margin-bottom:8px">Ver estado del pedido</button>'+
+    '<button class="btno" onclick="cerrarConfPedido()">Listo</button>';
+  var m=document.getElementById('pedido-conf-modal'); var b=document.getElementById('pedido-conf-body');
+  if(b)b.innerHTML=body; if(m)m.style.display='flex';
+}
+function cerrarConfPedido(){ var m=document.getElementById('pedido-conf-modal'); if(m)m.style.display='none'; }
+function abrirWaPrefactura(){ if(window._waPrefactura) window.open(window._waPrefactura,'_blank'); }
 
 function toggleFoto(id) {
   const wrap = document.getElementById('img-wrap-' + id);
