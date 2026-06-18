@@ -2462,6 +2462,17 @@ async function cobrarComisionPedido(pedidoId){
     }
   }catch(e){console.error('cobrarComisionPedido',e);}
 }
+async function cobrarComisionViaje(viajeId){
+  if(!db) return;
+  try{
+    const {data:v}=await db.from('viajes').select('conductor_telefono,comision_avs,comision_cobrada').eq('id',viajeId).single();
+    if(!v || v.comision_cobrada || !v.comision_avs || !v.conductor_telefono) return;
+    const {data:u}=await db.from('usuarios').select('saldo_avs').eq('telefono',v.conductor_telefono).single();
+    const nuevo=Math.max(0,(parseInt(u&&u.saldo_avs)||0)-Math.round(v.comision_avs));
+    await db.from('usuarios').update({saldo_avs:nuevo}).eq('telefono',v.conductor_telefono);
+    await db.from('viajes').update({comision_cobrada:true}).eq('id',viajeId);
+  }catch(e){console.error('cobrarComisionViaje',e);}
+}
 async function confirmarSinpeNegocio(pedidoId, comisionAVS) {
   if (!db || !negocioActual) return;
   if (!confirm('¿Confirmás que recibiste el pago SINPE del cliente?')) return;
@@ -5711,6 +5722,7 @@ async function confirmarPagadoSatisfactorio(rol){
 
     if(ambosConfirmados){
       // Cerrar viaje y mostrar calificación opcional
+      cobrarComisionViaje(viajeId);
       detenerTracking();
       mostrarSOS(false);
       const vid = viajeId;
@@ -6249,7 +6261,7 @@ function rechazarDelivery(pedidoId){
   const card=document.getElementById('ped-'+pedidoId);if(card){card.style.opacity='0';card.style.transition='opacity 0.3s';setTimeout(()=>card.remove(),300);}
   toast('Delivery rechazado');
 }
-async function aceptar(id,oriLat,oriLng,oriDesc,dstLat,dstLng,dstDesc){if(db){const updateData={estado:'aceptado'};try{updateData.conductor_nombre=user.name;let me=null;try{const r=await db.from('usuarios').select('placa,modelo_vehiculo,color_vehiculo,documentos_url').eq('telefono',user.phone).single();me=r.data;}catch(e){}if(me){updateData.conductor_placa=[me.placa,me.modelo_vehiculo].filter(Boolean).join(' · ')||'AVS';if(me.color_vehiculo)updateData.conductor_color=me.color_vehiculo;const _f=(me.documentos_url||{})['foto-conductor'];if(typeof _f==='string'&&_f.indexOf('/')>=0)updateData.conductor_foto=_f;}else{updateData.conductor_placa='AVS';}}catch(e){}const{error}=await db.from('viajes').update(updateData).eq('id',id);if(error)await db.from('viajes').update({estado:'aceptado'}).eq('id',id);}viajeId=id;viajeData={oriLat,oriLng,oriDesc,dstLat,dstLng,dstDesc};saveSession();const card=document.getElementById('card-'+id);if(card)card.remove();document.getElementById('snew').textContent=document.querySelectorAll('#slist .scard').length;toast('Viaje aceptado — abriendo mapa');mostrarSOS(true);go('condmap');document.getElementById('dtit').textContent='En camino a: '+oriDesc;document.getElementById('dsub').textContent='Calculando ruta...';iniciarCompartirUbicacion();setTimeout(()=>abrirMapaConductor(oriLat,oriLng,dstLat,dstLng,oriDesc),600);}
+async function aceptar(id,oriLat,oriLng,oriDesc,dstLat,dstLng,dstDesc){if(db){const updateData={estado:'aceptado',conductor_telefono:user.phone};try{updateData.conductor_nombre=user.name;let me=null;try{const r=await db.from('usuarios').select('placa,modelo_vehiculo,color_vehiculo,documentos_url').eq('telefono',user.phone).single();me=r.data;}catch(e){}if(me){updateData.conductor_placa=[me.placa,me.modelo_vehiculo].filter(Boolean).join(' · ')||'AVS';if(me.color_vehiculo)updateData.conductor_color=me.color_vehiculo;const _f=(me.documentos_url||{})['foto-conductor'];if(typeof _f==='string'&&_f.indexOf('/')>=0)updateData.conductor_foto=_f;}else{updateData.conductor_placa='AVS';}}catch(e){}const{error}=await db.from('viajes').update(updateData).eq('id',id);if(error)await db.from('viajes').update({estado:'aceptado'}).eq('id',id);}viajeId=id;viajeData={oriLat,oriLng,oriDesc,dstLat,dstLng,dstDesc};saveSession();const card=document.getElementById('card-'+id);if(card)card.remove();document.getElementById('snew').textContent=document.querySelectorAll('#slist .scard').length;toast('Viaje aceptado — abriendo mapa');mostrarSOS(true);go('condmap');document.getElementById('dtit').textContent='En camino a: '+oriDesc;document.getElementById('dsub').textContent='Calculando ruta...';iniciarCompartirUbicacion();setTimeout(()=>abrirMapaConductor(oriLat,oriLng,dstLat,dstLng,oriDesc),600);}
 function rechazar(id){if(db)db.from('viajes').update({estado:'rechazado'}).eq('id',id);const card=document.getElementById('card-'+id);if(card){card.style.opacity='0';card.style.transition='opacity 0.3s';setTimeout(()=>card.remove(),300);}document.getElementById('snew').textContent=Math.max(0,document.querySelectorAll('#slist .scard').length-1);toast('Solicitud rechazada');}
 function abrirMapaConductor(oriLat,oriLng,dstLat,dstLng,oriDesc){if(!dirSvc||!dirRendD||!dmap)return;google.maps.event.trigger(dmap,'resize');const pasajeroLoc={lat:parseFloat(oriLat),lng:parseFloat(oriLng)};dirSvc.route({origin:userLoc,destination:pasajeroLoc,travelMode:google.maps.TravelMode.DRIVING},(r,s)=>{if(s==='OK'){dirRendD.setDirections(r);const leg=r.routes[0].legs[0];document.getElementById('dsub').textContent=(leg.distance.value/1000).toFixed(1)+' km · ~'+Math.ceil(leg.duration.value/60)+' min al usuario';dmap.setCenter(userLoc);}else{document.getElementById('dsub').textContent='No se pudo calcular la ruta';}});}
 async function verificarCodigoViaje(){
