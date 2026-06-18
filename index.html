@@ -589,6 +589,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 #panel-negocio{background:var(--bg);overflow-y:auto;padding:48px 20px 32px;}
 #neg-menu-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;align-items:start;}
 #neg-pedidos-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;align-items:start;}
+@keyframes negPulse{0%{box-shadow:0 0 0 0 rgba(0,229,184,0.55)}70%{box-shadow:0 0 0 14px rgba(0,229,184,0)}100%{box-shadow:0 0 0 0 rgba(0,229,184,0)}}
+#neg-nuevo-banner{animation:negPulse 1.4s infinite}
 .neg-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
 .neg-avatar{width:52px;height:52px;background:var(--grad-g);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:22px;}
 
@@ -1516,6 +1518,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
     </div>
     
   </div>
+  <div id="neg-nuevo-banner" onclick="switchNegTab('pedidos')" style="display:none;cursor:pointer;background:linear-gradient(135deg,#00e5b8,#00b894);color:#04121a;border-radius:12px;padding:16px;margin-bottom:12px;font-weight:800;font-size:16px;text-align:center">🔔 ¡NUEVO PEDIDO! <span id="neg-nuevo-n"></span> — Tocá para ver los pedidos</div>
   <div id="neg-estado-bar" style="background:var(--sf);border:1px solid var(--bd2);border-radius:14px;padding:14px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span id="neg-estado-chip" style="font-weight:700;font-size:15px;color:var(--g)">🟢 Recibiendo pedidos</span>
@@ -1547,7 +1550,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
   <!-- Tabs -->
   <div class="adtab" style="margin-bottom:16px">
     <div class="adtbtn on" id="negtab-menu" onclick="switchNegTab('menu')">📋 Mi Menú</div>
-    <div class="adtbtn" id="negtab-pedidos" onclick="switchNegTab('pedidos')">📦 Pedidos</div>
+    <div class="adtbtn" id="negtab-pedidos" onclick="switchNegTab('pedidos')">📦 Pedidos <span id="negtab-pedidos-n" style="font-weight:800"></span></div>
     <div class="adtbtn" id="negtab-stats" onclick="switchNegTab('stats')">📊 Stats</div>
     <div class="adtbtn" id="negtab-equipo" onclick="switchNegTab('equipo')">👥 Equipo</div>
   </div>
@@ -2748,27 +2751,42 @@ async function reportarEmergencia(tipo){
   }catch(e){console.error('alerta',e);toast('No se pudo enviar la alerta (¿corriste el SQL?)');}
 }
 
-function _beep(){ try{ var C=window.AudioContext||window.webkitAudioContext; if(!C)return; var ctx=new C(); var o=ctx.createOscillator(),g=ctx.createGain(); o.connect(g);g.connect(ctx.destination); o.type='sine'; o.frequency.value=880; g.gain.value=0.12; o.start(); setTimeout(function(){o.frequency.value=660;},160); setTimeout(function(){o.stop();ctx.close();},340);}catch(e){} }
-function iniciarMonitorPedidos(){ detenerMonitorPedidos(); _pedVistos=null; _chequearPedidosNuevos(); _negPollInt=setInterval(_chequearPedidosNuevos,12000); }
-function detenerMonitorPedidos(){ if(_negPollInt){clearInterval(_negPollInt);_negPollInt=null;} }
+var _audioCtx=null,_negRtCh=null,_lastReminder=0;
+function _ensureAudio(){ try{ if(!_audioCtx){ var C=window.AudioContext||window.webkitAudioContext; if(C)_audioCtx=new C(); } if(_audioCtx&&_audioCtx.state==='suspended')_audioCtx.resume(); }catch(e){} }
+document.addEventListener('click',_ensureAudio); document.addEventListener('touchstart',_ensureAudio);
+function _beep(){ _ensureAudio(); try{ if(!_audioCtx)return; var o=_audioCtx.createOscillator(),g=_audioCtx.createGain(); o.connect(g);g.connect(_audioCtx.destination); o.type='sine'; o.frequency.value=900; g.gain.value=0.2; o.start(); setTimeout(function(){try{o.frequency.value=680;}catch(e){}},150); setTimeout(function(){try{o.stop();}catch(e){}},360);}catch(e){} }
+function _beepN(n){ for(var i=0;i<(n||1);i++) setTimeout(_beep, i*430); }
+function _setBannerPedidos(n){
+  var b=document.getElementById('neg-nuevo-banner'); var ns=document.getElementById('neg-nuevo-n'); var tn=document.getElementById('negtab-pedidos-n');
+  if(tn) tn.textContent=(n>0)?('('+n+')'):'';
+  if(b){ if(n>0){ b.style.display='block'; if(ns)ns.textContent='('+n+' sin aceptar)'; } else { b.style.display='none'; } }
+}
+function iniciarMonitorPedidos(){
+  detenerMonitorPedidos(); _pedVistos=null; _chequearPedidosNuevos(); _negPollInt=setInterval(_chequearPedidosNuevos,8000);
+  try{ if(negocioActual&&db&&db.channel){ _negRtCh=db.channel('ped-'+negocioActual.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'pedidos',filter:'negocio_id=eq.'+negocioActual.id},function(){ _chequearPedidosNuevos(); }).subscribe(); } }catch(e){}
+}
+function detenerMonitorPedidos(){ if(_negPollInt){clearInterval(_negPollInt);_negPollInt=null;} try{ if(_negRtCh&&db&&db.removeChannel) db.removeChannel(_negRtCh); }catch(e){} _negRtCh=null; }
 async function _chequearPedidosNuevos(){
   if(!db||!negocioActual)return;
   refrescarEstadoComercio();
   try{
     var r=await db.from('pedidos').select('id').eq('negocio_id',negocioActual.id).eq('estado','pendiente');
     var ids=(r.data||[]).map(function(p){return p.id;});
-    if(_pedVistos===null){ _pedVistos=ids; return; }
-    var nuevos=ids.filter(function(id){return _pedVistos.indexOf(id)<0;});
-    if(nuevos.length>0){
-      _beep();
-      var tab=document.getElementById('negtab-pedidos'); if(tab){ var orig=tab.style.background; tab.style.background='rgba(245,166,35,0.55)'; setTimeout(function(){tab.style.background=orig;},1300); }
-      toast('🔔 '+nuevos.length+' pedido(s) nuevo(s)');
-      try{ if(typeof Notification!=='undefined'&&Notification.permission==='granted') new Notification('AVS — Nuevo pedido',{body:negocioActual.nombre||'Tu comercio'}); }catch(e){}
-      var pt=document.getElementById('neg-tab-pedidos'); if(window._avsPantallaActual==='panel-negocio'&&pt&&pt.style.display!=='none') cargarPedidosNegocio();
+    _setBannerPedidos(ids.length);
+    if(_pedVistos!==null){
+      var nuevos=ids.filter(function(id){return _pedVistos.indexOf(id)<0;});
+      if(nuevos.length>0){
+        _beepN(3);
+        toast('🔔 '+nuevos.length+' PEDIDO(S) NUEVO(S)');
+        try{ if(typeof Notification!=='undefined'&&Notification.permission==='granted') new Notification('AVS — Nuevo pedido',{body:negocioActual.nombre||'Tu comercio'}); }catch(e){}
+        var pt=document.getElementById('neg-tab-pedidos'); if(window._avsPantallaActual==='panel-negocio'&&pt&&pt.style.display!=='none') cargarPedidosNegocio();
+      }
     }
+    if(ids.length>0){ var now=Date.now(); if(now-_lastReminder>30000){ _beep(); _lastReminder=now; } } else { _lastReminder=0; }
     _pedVistos=ids;
   }catch(e){}
 }
+
 function abrirSINPENegocio(monto){
   if(!negocioActual){toast('Sin sesión de negocio');return;}
   var num=(typeof SINPE_AVS!=='undefined'?SINPE_AVS:'el número AVS');
