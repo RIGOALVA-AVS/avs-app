@@ -916,6 +916,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div class="adtbtn" id="admtab-vehiculos" onclick="switchAdminTab('vehiculos')">🚗 Vehículos</div>
     <div class="adtbtn" id="admtab-recargas" onclick="switchAdminTab('recargas')">💰 Recargas</div>
     <div class="adtbtn" id="admtab-negocios" onclick="switchAdminTab('negocios')">🏪 Negocios</div>
+    <div class="adtbtn" id="admtab-cumplimiento" onclick="switchAdminTab('cumplimiento')">⏱️ Horarios</div>
     <div class="adtbtn" id="admtab-matchuber" onclick="switchAdminTab('matchuber')">💡 Match Uber</div>
     <div class="adtbtn" id="admtab-codigos" onclick="switchAdminTab('codigos')">🎫 Códigos</div>
     <div class="adtbtn" id="admtab-intentos" onclick="switchAdminTab('intentos')">🚨 Intentos</div>
@@ -971,6 +972,10 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     </div>
     <input class="ifield" id="buscar-negocio" type="text" placeholder="🔍 Buscar comercio por nombre" oninput="buscarEnLista('negocioslist',this.value)" style="margin:8px 20px 4px;width:calc(100% - 40px)">
     <div id="negocioslist"><div class="nolist">Cargando comercios...</div></div>
+  </div>
+  <div id="admin-cumplimiento" style="display:none;padding:0 0 20px">
+    <div style="font-size:12px;color:var(--mt);margin:10px 0">Comercios que fijaron horario y deberían tener la app activa. Solo comercios — los vehículos (motos/camiones) entran y salen a su gusto. Se actualiza solo cada 30 s.</div>
+    <div id="cumpl-lista"><div class="nolist">Cargando…</div></div>
   </div>
   <div id="admin-matchuber" style="display:none;padding:0 0 20px">
     <div class="adtab" style="margin-top:8px">
@@ -4375,6 +4380,41 @@ async function cargarVehiculosAdmin(){
 }
 async function aprobarVehiculo(id){if(!db)return;await db.from('vehiculos').update({estado_verificacion:'aprobado'}).eq('id',id);toast('✅ Vehículo aprobado');cargarVehiculosAdmin();}
 async function rechazarVehiculo(id){if(!db)return;if(!confirm('¿Rechazar este vehículo?'))return;await db.from('vehiculos').update({estado_verificacion:'rechazado'}).eq('id',id);toast('Vehículo rechazado');cargarVehiculosAdmin();}
+var _cumplInt=null;
+async function cargarCumplimiento(){
+  if(_cumplInt){clearInterval(_cumplInt);_cumplInt=null;}
+  async function run(){
+    var c2=document.getElementById('cumpl-lista'); if(!c2) return;
+    var panel=document.getElementById('admin-cumplimiento'); if(!panel||panel.style.display==='none'){ if(_cumplInt){clearInterval(_cumplInt);_cumplInt=null;} return; }
+    if(!db){ c2.innerHTML='<div class="nolist">Sin conexión</div>'; return; }
+    try{
+      var r=await db.from('negocios').select('id,nombre,categoria,hora_apertura,hora_cierre,last_seen,pausado_hasta').eq('estado','aprobado');
+      var data=(r.data||[]); var ahora=Date.now();
+      var rows=data.map(function(n){
+        var h=estadoHorario(n); if(!h.conf) return null;
+        var ls=n.last_seen?new Date(n.last_seen).getTime():0; var online=(ahora-ls)<150000;
+        var ph=(n.pausado_hasta)?new Date(n.pausado_hasta).getTime():0; var pausado=ph>ahora;
+        var estado,color,prio;
+        if(h.abierto){
+          if(pausado){ estado='⏸ Pausado (saturación)'; color='var(--am)'; prio=1; }
+          else if(online){ estado='✅ Activo en horario'; color='var(--g)'; prio=2; }
+          else { estado='⚠ INCUMPLE — app fuera de línea en horario'; color='var(--rd)'; prio=0; }
+        } else { estado='Fuera de horario'; color='var(--mt)'; prio=3; }
+        var hace= ls? ('hace '+Math.max(0,Math.round((ahora-ls)/60000))+' min') : 'sin registro';
+        return {prio:prio,html:'<div class="scard" style="padding:12px;margin-bottom:8px;border-left:3px solid '+color+'">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>🏪 '+(n.nombre||'')+'</b><span style="font-size:11px;color:var(--mt)">'+(n.hora_apertura||'?')+'–'+(n.hora_cierre||'?')+'</span></div>'+
+          '<div style="font-size:13px;color:'+color+';margin-top:3px">'+estado+'</div>'+
+          '<div style="font-size:11px;color:var(--mt);margin-top:2px">Última actividad: '+hace+'</div></div>'};
+      }).filter(Boolean);
+      rows.sort(function(a,b){return a.prio-b.prio;});
+      var incum=rows.filter(function(x){return x.prio===0;}).length;
+      var hdr='<div style="font-size:14px;margin-bottom:10px;color:'+(incum>0?'var(--rd)':'var(--g)')+'"><b>'+incum+'</b> comercio(s) incumpliendo ahora · '+rows.length+' con horario</div>';
+      c2.innerHTML= hdr + (rows.length?rows.map(function(x){return x.html;}).join(''):'<div class="nolist">Ningún comercio con horario configurado</div>');
+    }catch(e){ c2.innerHTML='<div class="nolist">No se pudo cargar</div>'; }
+  }
+  await run();
+  _cumplInt=setInterval(run,30000);
+}
 function switchAdminTab(tab){
   document.querySelectorAll('[id^="admtab-"]').forEach(el=>el.classList.remove('on'));
   document.getElementById('admtab-'+tab).classList.add('on');
@@ -4388,6 +4428,7 @@ function switchAdminTab(tab){
   const aE = document.getElementById('admin-emergencias'); if(aE) aE.style.display='none';
   const aP = document.getElementById('admin-promos'); if(aP) aP.style.display='none';
   const aRnd = document.getElementById('admin-rendimientos'); if(aRnd) aRnd.style.display='none';
+  const aCu = document.getElementById('admin-cumplimiento'); if(aCu) aCu.style.display='none';
   if(tab==='conductores'){document.getElementById('admin-conductores').style.display='block';cargarAdmin();}
   else if(tab==='vehiculos'){const aVeh2=document.getElementById('admin-vehiculos');if(aVeh2){aVeh2.style.display='block';filtrarVehiculos('pendiente');}}
   else if(tab==='recargas'){document.getElementById('admin-recargas').style.display='block';filtrarRecargas('pendiente');}
@@ -4398,6 +4439,7 @@ function switchAdminTab(tab){
   else if(tab==='emergencias' && aE){aE.style.display='block';filtrarEmergencias('activa');}
   else if(tab==='promos' && aP){aP.style.display='block';cargarPromosAdmin();cargarRegaliasAdmin();cargarCuponesAdmin();}
   else if(tab==='rendimientos'){const aR=document.getElementById('admin-rendimientos');if(aR){aR.style.display='block';cargarRendimientos();}}
+  else if(tab==='cumplimiento'){const aCu2=document.getElementById('admin-cumplimiento');if(aCu2){aCu2.style.display='block';cargarCumplimiento();}}
 }
 
 let matchUberFiltro = 'pendiente_aprobacion';
