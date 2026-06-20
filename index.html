@@ -1511,9 +1511,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 <div class="screen" id="panel-negocio">
   <style>
   #neg-rail{display:none;}
+  #neg-rail-lista{display:block;}
   @media(min-width:1000px){
     #neg-rail{display:flex;flex-direction:column;position:fixed;top:0;right:0;width:360px;height:100vh;background:var(--sf);border-left:1px solid var(--bd2);z-index:70;padding:16px 14px;overflow-y:auto;box-shadow:-8px 0 24px rgba(0,0,0,0.35);box-sizing:border-box;}
     #panel-negocio.screen{padding-right:392px;box-sizing:border-box;}
+  }
+  @media(min-width:1320px){
+    #neg-rail{width:600px;}
+    #panel-negocio.screen{padding-right:632px;}
+    #neg-rail-lista{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;}
   }
   </style>
   <div id="neg-rail">
