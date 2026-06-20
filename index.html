@@ -1553,6 +1553,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span id="neg-estado-chip" style="font-weight:700;font-size:15px;color:var(--g)">🟢 Recibiendo pedidos</span>
       <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btno" onclick="abrirHorario()" style="width:auto;margin:0;padding:10px 16px;font-size:14px">⏰ Horario</button>
         <button class="btno" id="neg-pausar-btn" onclick="pausarPedidos()" style="width:auto;margin:0;padding:10px 16px;font-size:14px;border-color:#F5A623;color:#F5A623">⏸ Pausar pedidos</button>
         <button onclick="toggleEmergencias()" style="width:auto;margin:0;padding:10px 16px;font-size:14px;background:var(--rd);border:none;color:#fff;border-radius:12px;font-weight:700;cursor:pointer">🆘 Emergencia</button>
       </div>
@@ -1824,6 +1825,20 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div style="font-size:11px;color:var(--mt);margin-bottom:12px">Tarifa sugerida por AVS según la distancia. El repartidor confirma el monto final.</div>
     <button class="btnp" onclick="solicitarEnvioSolo()" style="margin:0 0 8px">🛵 Solicitar repartidor</button>
     <button class="brec" style="width:100%;margin:0;padding:12px" onclick="cerrarEnvioSolo()">Cancelar</button>
+  </div>
+</div>
+
+<!-- HORARIO DE ATENCIÓN (comercio) -->
+<div id="horario-modal" style="display:none;position:fixed;inset:0;background:rgba(8,15,30,0.94);z-index:99996;align-items:center;justify-content:center;padding:20px">
+  <div style="max-width:400px;width:100%;background:var(--bg);border:1px solid var(--bd2);border-radius:18px;padding:22px">
+    <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:4px">⏰ Horario de atención</div>
+    <div style="font-size:12px;color:var(--mt);margin-bottom:16px">La app recibe pedidos desde <b>30 min después de abrir</b> hasta <b>30 min antes de cerrar</b>. Al pasar la hora de cierre, la sesión del comercio se cierra sola.</div>
+    <div style="display:flex;gap:12px;margin-bottom:14px">
+      <div style="flex:1"><div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Apertura</div><input class="ifield" type="time" id="hor-ap" style="margin:0"></div>
+      <div style="flex:1"><div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Cierre</div><input class="ifield" type="time" id="hor-ci" style="margin:0"></div>
+    </div>
+    <button class="btnp" onclick="guardarHorario()" style="margin:0 0 8px">Guardar horario</button>
+    <button class="brec" style="width:100%;margin:0;padding:12px" onclick="cerrarHorario()">Cancelar</button>
   </div>
 </div>
 
@@ -2994,17 +3009,57 @@ async function reabrirPedidos(){
   try{ await db.from('negocios').update({pausado_hasta:null}).eq('id',negocioActual.id); negocioActual.pausado_hasta=null; toast('🟢 Recepción reabierta'); refrescarEstadoComercio(); }
   catch(e){toast('No se pudo reabrir');}
 }
+function _hmToMin(h){ if(!h||(''+h).indexOf(':')<0)return null; var a=(''+h).split(':'); var m=parseInt(a[0])*60+parseInt(a[1]); return isNaN(m)?null:m; }
+function _fmtMin(m){ m=((m%1440)+1440)%1440; var H=Math.floor(m/60),M=m%60; return (H<10?'0':'')+H+':'+(M<10?'0':'')+M; }
+function estadoHorario(neg){
+  var ap=_hmToMin(neg&&neg.hora_apertura), ci=_hmToMin(neg&&neg.hora_cierre);
+  if(ap===null||ci===null) return {conf:false};
+  var d=new Date(); var now=d.getHours()*60+d.getMinutes();
+  var ini=ap+30, fin=ci-30;
+  if(now<ini) return {conf:true,abierto:false,fase:'antes',motivo:'Abre '+_fmtMin(ap)+' · recibe pedidos desde '+_fmtMin(ini)};
+  if(now>=fin) return {conf:true,abierto:false,fase:(now>=ci?'cerrado':'porCerrar'),motivo:(now>=ci?('Cerrado por hoy · horario '+_fmtMin(ap)+'–'+_fmtMin(ci)):('Cerrando · ya no recibe pedidos (cierra '+_fmtMin(ci)+')'))};
+  return {conf:true,abierto:true,motivo:''};
+}
+function abrirHorario(){
+  var ap=document.getElementById('hor-ap'), ci=document.getElementById('hor-ci');
+  if(ap)ap.value=(negocioActual&&negocioActual.hora_apertura)||'';
+  if(ci)ci.value=(negocioActual&&negocioActual.hora_cierre)||'';
+  var m=document.getElementById('horario-modal'); if(m)m.style.display='flex';
+}
+function cerrarHorario(){ var m=document.getElementById('horario-modal'); if(m)m.style.display='none'; }
+async function guardarHorario(){
+  if(!db||!negocioActual){ toast('Sin sesión'); return; }
+  var ap=(document.getElementById('hor-ap')||{}).value||'', ci=(document.getElementById('hor-ci')||{}).value||'';
+  if(!ap||!ci){ toast('Indicá apertura y cierre'); return; }
+  try{
+    var u=await db.from('negocios').update({hora_apertura:ap,hora_cierre:ci}).eq('id',negocioActual.id);
+    if(u&&u.error){ toast('No se pudo guardar (¿corriste el SQL?)'); return; }
+    negocioActual.hora_apertura=ap; negocioActual.hora_cierre=ci;
+    toast('⏰ Horario guardado: '+ap+'–'+ci);
+    cerrarHorario(); refrescarEstadoComercio();
+  }catch(e){ toast('No se pudo guardar el horario'); }
+}
 function refrescarEstadoComercio(){
   var chip=document.getElementById('neg-estado-chip'); var pb=document.getElementById('neg-pausar-btn'); if(!chip)return;
   var ph=(negocioActual&&negocioActual.pausado_hasta)?new Date(negocioActual.pausado_hasta).getTime():0;
   if(ph>Date.now()){
     var ms=ph-Date.now(); var m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000);
     chip.innerHTML='⏸ <span style="color:var(--am)">Pausado por saturación</span> · reabre en '+m+':'+(s<10?'0':'')+s+' &nbsp;<a onclick="reabrirPedidos()" style="color:var(--g);cursor:pointer;text-decoration:underline">Reabrir ahora</a>';
-    if(pb)pb.style.display='none';
-  } else {
-    chip.textContent='🟢 Recibiendo pedidos'; chip.style.color='var(--g)';
-    if(pb)pb.style.display='';
+    if(pb)pb.style.display='none'; return;
   }
+  var h=estadoHorario(negocioActual);
+  if(h.conf && !h.abierto){
+    chip.innerHTML='🔴 <span style="color:var(--rd)">'+h.motivo+'</span>';
+    if(pb)pb.style.display='';
+    if(h.fase==='cerrado' && negocioActual){
+      var hoy=new Date(); var key='avs_negcierre_'+negocioActual.id+'_'+hoy.getFullYear()+'-'+(hoy.getMonth()+1)+'-'+hoy.getDate();
+      var ya=false; try{ ya=!!localStorage.getItem(key); }catch(e){}
+      if(!ya){ try{ localStorage.setItem(key,'1'); }catch(e){} toast('🌙 Cierre del día — se cerró la sesión del comercio'); setTimeout(function(){ if(typeof logout==='function') logout(); },1800); }
+    }
+    return;
+  }
+  chip.textContent='🟢 Recibiendo pedidos'; chip.style.color='var(--g)';
+  if(pb)pb.style.display='';
 }
 async function reportarEmergencia(tipo){
   if(!db||!negocioActual){toast('Sin sesión');return;}
@@ -4910,7 +4965,7 @@ async function abrirCarrito(negocioId, negocioNombre) {
 
 async function confirmarPedido() {
   if (carritoItems.length === 0) { toast('Agrega items al pedido'); return; }
-  if(db && carritoNegocioId){ try{ var _ns=await db.from('negocios').select('pausado_hasta').eq('id',carritoNegocioId).single(); var _ph=_ns.data&&_ns.data.pausado_hasta; if(_ph && new Date(_ph).getTime()>Date.now()){ var _mr=Math.max(1,Math.ceil((new Date(_ph).getTime()-Date.now())/60000)); alert('⏸ El comercio está temporalmente saturado.\nIntentá de nuevo en ~'+_mr+' min.'); return; } }catch(e){} }
+  if(db && carritoNegocioId){ try{ var _ns=await db.from('negocios').select('pausado_hasta,hora_apertura,hora_cierre').eq('id',carritoNegocioId).single(); var _ph=_ns.data&&_ns.data.pausado_hasta; if(_ph && new Date(_ph).getTime()>Date.now()){ var _mr=Math.max(1,Math.ceil((new Date(_ph).getTime()-Date.now())/60000)); alert('⏸ El comercio está temporalmente saturado.\nIntentá de nuevo en ~'+_mr+' min.'); return; } var _h=estadoHorario(_ns.data); if(_h.conf && !_h.abierto){ alert('🕒 El comercio no está recibiendo pedidos en este momento.\n'+_h.motivo); return; } }catch(e){} }
   const subtotal = carritoItems.reduce((s, i) => s + (i.precio * i.cantidad), 0);
   // Cliente paga precio limpio (envío ya trae la comisión incluida).
   // La comisión AVS del negocio (10% de productos) se descuenta de SU crédito al confirmarse el pago/entrega.
