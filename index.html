@@ -1509,6 +1509,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 
 <!-- PANEL NEGOCIO -->
 <div class="screen" id="panel-negocio">
+  <style>
+  #neg-rail{display:none;}
+  @media(min-width:1000px){
+    #neg-rail{display:flex;flex-direction:column;position:fixed;top:0;right:0;width:360px;height:100vh;background:var(--sf);border-left:1px solid var(--bd2);z-index:70;padding:16px 14px;overflow-y:auto;box-shadow:-8px 0 24px rgba(0,0,0,0.35);box-sizing:border-box;}
+    #panel-negocio.screen{padding-right:392px;box-sizing:border-box;}
+  }
+  </style>
+  <div id="neg-rail">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:20px">📥</span><span style="font-family:var(--font-d);font-size:16px;font-weight:800">Pedidos en vivo</span></div>
+    <div id="neg-rail-lista"><div class="nolist">Cargando…</div></div>
+  </div>
   <div class="neg-header">
     <div class="neg-avatar" id="neg-avatar-ico">🏪</div>
     <div>
@@ -1673,6 +1684,27 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
           </div>
         </div>
       </div>
+      <!-- Metodo de pago -->
+      <div style="margin-top:12px" id="bloque-pago">
+        <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">¿Cómo vas a pagar?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div id="pay-sinpe" onclick="selMetodoPago('sinpe')" style="background:rgba(0,229,184,0.08);border:2px solid var(--g);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.2s">
+            <div style="font-size:22px">📲</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px">SINPE / transfer.</div>
+            <div style="font-size:10px;color:var(--mt)">Al número del comercio</div>
+          </div>
+          <div id="pay-efectivo" onclick="selMetodoPago('efectivo')" style="background:var(--cd);border:2px solid var(--bd);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.2s">
+            <div style="font-size:22px">💵</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px">Efectivo</div>
+            <div style="font-size:10px;color:var(--mt)">Pagás al recibir</div>
+          </div>
+        </div>
+        <div id="pago-efectivo-info" style="display:none;background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.3);border-radius:12px;padding:12px;margin-top:8px">
+          <div style="font-size:12px;color:var(--tx);margin-bottom:6px">¿Con cuánto vas a pagar? Así el comercio te lleva el <b>vuelto</b> exacto.</div>
+          <input class="ifield" type="number" id="paga-con" placeholder="Ej: 10000" oninput="calcVuelto()" style="margin:0">
+          <div id="vuelto-info" style="font-size:12px;color:var(--g);margin-top:6px">(Si pagás con monto exacto, dejalo en blanco)</div>
+        </div>
+      </div>
       <!-- Bloque para negocios de salud: contacto por asesor -->
       <div style="margin-top:12px;display:none" id="bloque-contacto-salud">
         <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">¿Cómo continúa tu solicitud?</div>
@@ -1728,6 +1760,20 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
 <div id="pedido-conf-modal" style="display:none;position:fixed;inset:0;background:rgba(8,15,30,0.94);z-index:99995;align-items:center;justify-content:center;padding:20px">
   <div style="max-width:430px;width:100%;background:var(--bg);border:1px solid var(--bd2);border-radius:18px;padding:22px;max-height:90vh;overflow-y:auto">
     <div id="pedido-conf-body"></div>
+  </div>
+</div>
+
+<!-- CANCELAR PEDIDO (comercio) -->
+<div id="ped-cancel-modal" style="display:none;position:fixed;inset:0;background:rgba(8,15,30,0.94);z-index:99996;align-items:center;justify-content:center;padding:20px">
+  <div style="max-width:430px;width:100%;background:var(--bg);border:1px solid var(--bd2);border-radius:18px;padding:22px;max-height:90vh;overflow-y:auto">
+    <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:4px">Cancelar pedido</div>
+    <div style="font-size:12px;color:var(--mt);margin-bottom:14px">Elegí el motivo. El cliente recibirá el aviso de que su pedido no se prepara.</div>
+    <button class="btno" style="width:100%;margin:0 0 8px;text-align:left;padding:13px" onclick="confirmarCancelacion('Producto agotado / sin ingredientes')">🥫 Producto agotado / sin ingredientes</button>
+    <button class="btno" style="width:100%;margin:0 0 8px;text-align:left;padding:13px" onclick="confirmarCancelacion('Para este pedido solo aceptamos SINPE')">📲 Solo aceptamos SINPE (no efectivo)</button>
+    <button class="btno" style="width:100%;margin:0 0 8px;text-align:left;padding:13px" onclick="confirmarCancelacion('Cerrado o fuerza mayor (sin luz/agua)')">🔌 Cerrado / fuerza mayor</button>
+    <button class="btno" style="width:100%;margin:0 0 8px;text-align:left;padding:13px" onclick="confirmarCancelacion('No alcanzamos a prepararlo a tiempo')">⏰ No alcanzamos a tiempo</button>
+    <button class="btno" style="width:100%;margin:0 0 12px;text-align:left;padding:13px" onclick="confirmarCancelacion('Otro')">✏️ Otro motivo…</button>
+    <button class="brec" style="width:100%;margin:0;padding:12px" onclick="cerrarCancelModal()">No cancelar — volver</button>
   </div>
 </div>
 
@@ -2319,6 +2365,26 @@ function selEntrega(tipo) {
   actualizarTotalCarrito();
 }
 
+window._metodoPago='sinpe'; window._pagaCon=0; window._vuelto=0;
+function _totalCarrito(){ var st=carritoItems.reduce(function(s,i){return s+i.precio*i.cantidad;},0); var d=(window._cuponAplicado&&window._cuponAplicado.valor>0)?Math.min(Math.round(window._cuponAplicado.valor),st+tarifaDelivery):0; return Math.max(0,st+tarifaDelivery-d); }
+function selMetodoPago(m){
+  window._metodoPago=m;
+  var sN=document.getElementById('pay-sinpe'), eN=document.getElementById('pay-efectivo'), info=document.getElementById('pago-efectivo-info');
+  if(sN){ sN.style.borderColor=(m==='sinpe')?'var(--g)':'var(--bd)'; sN.style.background=(m==='sinpe')?'rgba(0,229,184,0.08)':'var(--cd)'; }
+  if(eN){ eN.style.borderColor=(m==='efectivo')?'var(--g)':'var(--bd)'; eN.style.background=(m==='efectivo')?'rgba(0,229,184,0.08)':'var(--cd)'; }
+  if(info) info.style.display=(m==='efectivo')?'block':'none';
+  if(m!=='efectivo'){ window._pagaCon=0; window._vuelto=0; var pc=document.getElementById('paga-con'); if(pc)pc.value=''; }
+  else calcVuelto();
+}
+function calcVuelto(){
+  var pc=document.getElementById('paga-con'), info=document.getElementById('vuelto-info');
+  var total=_totalCarrito(), con=parseInt((pc&&pc.value)||'0')||0;
+  window._pagaCon=con;
+  if(!info)return;
+  if(con<=0){ window._vuelto=0; info.textContent='(Si pagás con monto exacto, dejalo en blanco)'; info.style.color='var(--mt)'; return; }
+  if(con<total){ window._vuelto=0; info.textContent='⚠ Es menos que el total (₡'+total.toLocaleString('es-CR')+'). Revisá el monto.'; info.style.color='var(--am)'; return; }
+  window._vuelto=con-total; info.textContent='Vuelto: ₡'+(con-total).toLocaleString('es-CR'); info.style.color='var(--g)';
+}
 function calcularDelivery() {
   // Comisión AVS incluida en la tarifa mostrada (un solo número para el usuario)
   const AVS_COMISION_DELIVERY = 0.10; // 10% — editable
@@ -2645,18 +2711,26 @@ async function cargarStatsNegocio(){
 var OBJETIVO_PEDIDO_MIN=30; // tiempo objetivo origen->entrega (editable)
 var _pedTickInt=null,_negPollInt=null,_pedVistos=null;
 async function cargarPedidosNegocio(){
-  var cont=document.getElementById('neg-pedidos-lista');if(!cont)return;
-  if(!db||!negocioActual){cont.innerHTML='Sin sesión';return;}
-  cont.innerHTML='Cargando pedidos...';
+  var tabEl=document.getElementById('neg-pedidos-lista');
+  var railEl=document.getElementById('neg-rail-lista');
+  if(!tabEl&&!railEl)return;
+  if(!db||!negocioActual){ if(tabEl)tabEl.innerHTML='Sin sesión'; return; }
+  var isPC=window.matchMedia&&window.matchMedia('(min-width:1000px)').matches;
+  function paint(html){
+    if(isPC){ if(railEl)railEl.innerHTML=html; if(tabEl)tabEl.innerHTML='<div class="nolist" style="padding:24px 12px">📥 Los pedidos en vivo aparecen en la columna de la derecha →</div>'; }
+    else { if(tabEl)tabEl.innerHTML=html; if(railEl)railEl.innerHTML=''; }
+  }
   try{
     var desde=new Date(Date.now()-24*3600*1000).toISOString();
     var r=await db.from('pedidos').select('*').eq('negocio_id',negocioActual.id).gte('fecha',desde).order('fecha',{ascending:false}).limit(40);
     var data=(r.data||[]).filter(function(p){return p.estado!=='cancelado';});
-    if(data.length===0){cont.innerHTML='<div class="nolist">Sin pedidos activos</div>';return;}
+    var frec={};
+    try{ var rf=await db.from('pedidos').select('usuario_telefono').eq('negocio_id',negocioActual.id).eq('estado','entregado'); (rf.data||[]).forEach(function(x){ var t=x.usuario_telefono||''; if(t)frec[t]=(frec[t]||0)+1; }); }catch(e){}
+    if(data.length===0){ paint('<div class="nolist">Sin pedidos activos</div>'); return; }
     var sig={pendiente:'preparacion',preparacion:'listo',listo:'en_camino',en_camino:'entregado'};
     var lbl={pendiente:'✅ Aceptar y preparar',preparacion:'👨‍🍳 Marcar listo',listo:'📦 Marcar en camino',en_camino:'✔ Marcar entregado'};
     var estLbl={pendiente:'Nuevo',preparacion:'En preparación',listo:'Listo',en_camino:'En camino',entregado:'Entregado'};
-    cont.innerHTML=data.map(function(p){
+    var html=data.map(function(p){
       var items=[];try{items=JSON.parse(p.items||'[]');}catch(e){}
       var itTxt=items.map(function(i){return (i.cant||i.cantidad||1)+'× '+(i.nombre||'');}).join(', ');
       var est=p.estado||'pendiente';
@@ -2665,19 +2739,41 @@ async function cargarPedidosNegocio(){
       var timer = activo ? ('<span class="ped-timer" data-ini="'+ini+'" data-obj="'+OBJETIVO_PEDIDO_MIN+'" style="font-family:var(--font-d);font-weight:800;font-size:16px">'+(ini?'⏱ ...':'⏱ —')+'</span>') : '<span style="color:var(--g);font-weight:700">✔ Entregado</span>';
       var accion = sig[est] ? '<button class="bacp" style="margin:0;flex:1" onclick="avanzarPedido(\''+p.id+'\',\''+sig[est]+'\')">'+lbl[est]+'</button>' : '';
       var cancel = activo ? '<button class="brec" style="margin:0;width:auto;padding:10px 12px" title="Cancelar pedido" onclick="cancelarPedidoNegocio(\''+p.id+'\')">✕</button>' : '';
-      return '<div class="scard ped-card" id="pedcard-'+p.id+'" style="padding:14px">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px"><div style="font-weight:700;font-size:15px">📦 '+(p.usuario_nombre||'Cliente')+'</div>'+timer+'</div>'+
+      var entIco = p.tipo_entrega==='delivery' ? '🚗 Delivery' : (p.tipo_entrega==='contacto'?'📞 Asesor':'🏪 Recoge');
+      var mp=p.metodo_pago||'sinpe';
+      var pagoLinea = (mp==='efectivo')
+        ? ('💵 Efectivo'+((parseInt(p.paga_con||0))>0 ? (' · paga con ₡'+parseInt(p.paga_con).toLocaleString('es-CR')+((parseInt(p.vuelto||0))>0 ? (' · vuelto ₡'+parseInt(p.vuelto).toLocaleString('es-CR')) : ' · exacto')) : ''))
+        : '📲 SINPE / transferencia';
+      var nfrec=frec[p.usuario_telefono||'']||0;
+      var badgeFrec = nfrec>=3 ? '<div style="margin-bottom:4px"><span style="font-size:11px;color:#ffd54f;font-weight:700">⭐ Cliente frecuente ('+nfrec+' pedidos)</span></div>' : '';
+      var notaCli = p.notas ? '<div style="font-size:12px;color:var(--mt);margin-bottom:6px">📝 '+p.notas+'</div>' : '';
+      return '<div class="scard ped-card" id="pedcard-'+p.id+'" style="padding:14px;margin-bottom:10px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px"><div style="font-weight:700;font-size:15px">📦 '+(p.usuario_nombre||'Cliente')+'</div>'+timer+'</div>'+
+        badgeFrec+
         '<div style="font-size:13px;color:var(--tx);margin-bottom:6px;line-height:1.4">'+(itTxt||'—')+'</div>'+
-        '<div style="font-size:12px;color:var(--mt);margin-bottom:10px"><b style="color:var(--g)">'+(estLbl[est]||est)+'</b> · Total ₡'+((parseInt(p.total||0)).toLocaleString('es-CR'))+'</div>'+
+        notaCli+
+        '<div style="font-size:12px;margin-bottom:4px">'+pagoLinea+'</div>'+
+        '<div style="font-size:12px;color:var(--mt);margin-bottom:10px"><b style="color:var(--g)">'+(estLbl[est]||est)+'</b> · '+entIco+' · Total ₡'+((parseInt(p.total||0)).toLocaleString('es-CR'))+'</div>'+
         '<div style="display:flex;gap:8px">'+accion+cancel+'</div></div>';
     }).join('');
+    paint(html);
     _tickPedidoTimers();
     if(!_pedTickInt) _pedTickInt=setInterval(_tickPedidoTimers,1000);
-  }catch(e){cont.innerHTML='<div class="nolist">Error al cargar pedidos</div>';}
+  }catch(e){ paint('<div class="nolist">Error al cargar pedidos</div>'); }
 }
-async function cancelarPedidoNegocio(id){
-  if(!db)return; if(!confirm('¿Cancelar este pedido? Saldrá del tablero.'))return;
-  try{ await db.from('pedidos').update({estado:'cancelado'}).eq('id',id); toast('Pedido cancelado'); cargarPedidosNegocio(); }catch(e){toast('No se pudo cancelar');}
+function cancelarPedidoNegocio(id){ _cancelPedidoId=id; var m=document.getElementById('ped-cancel-modal'); if(m)m.style.display='flex'; }
+var _cancelPedidoId=null;
+function cerrarCancelModal(){ var m=document.getElementById('ped-cancel-modal'); if(m)m.style.display='none'; _cancelPedidoId=null; }
+async function confirmarCancelacion(motivo){
+  if(!db||!_cancelPedidoId){ cerrarCancelModal(); return; }
+  if(motivo==='Otro'){ var t=prompt('Motivo de la cancelación (lo verá el cliente):'); if(!t)return; motivo=t.trim(); }
+  var id=_cancelPedidoId;
+  try{
+    var u=await db.from('pedidos').update({estado:'cancelado',motivo_cancelacion:motivo}).eq('id',id);
+    if(u&&u.error){ await db.from('pedidos').update({estado:'cancelado'}).eq('id',id); }
+    toast('Pedido cancelado — se le avisó al cliente');
+    cerrarCancelModal(); cargarPedidosNegocio();
+  }catch(e){ toast('No se pudo cancelar'); }
 }
 
 function _tickPedidoTimers(){
@@ -2697,6 +2793,14 @@ function _tickPedidoTimers(){
 }
 async function avanzarPedido(id,nuevo){
   if(!db)return;
+  if(nuevo==='preparacion'){
+    var mp='sinpe', tot=0, conc='';
+    try{ var rp=await db.from('pedidos').select('metodo_pago,total,id').eq('id',id).single(); if(rp.data){ mp=rp.data.metodo_pago||'sinpe'; tot=parseInt(rp.data.total||0); conc='AVS-'+String(rp.data.id).slice(0,6).toUpperCase(); } }catch(e){}
+    var msg = (mp==='efectivo')
+      ? '💵 El cliente paga en EFECTIVO al recibir/recoger.\n\n¿Iniciar la preparación?'
+      : '📲 El cliente paga por SINPE (₡'+tot.toLocaleString('es-CR')+', concepto '+conc+').\n\nConfirmá que YA recibiste el SINPE. Solo así inicia la preparación.\n\n¿Pago recibido — iniciar preparación?';
+    if(!confirm(msg)) return;
+  }
   if(nuevo==='en_camino'){ if(!confirm('Control de calidad antes de salir:\n  \u2714 Pedido completo\n  \u2714 Caliente y bien empacado (empaque termico)\n  \u2714 Bebidas y salsas incluidas\n\n\u00bfTodo verificado para despachar?')) return; }
   try{
     var upd={estado:nuevo};
@@ -2754,15 +2858,15 @@ async function reportarEmergencia(tipo){
 var _audioCtx=null,_negRtCh=null,_lastReminder=0;
 function _ensureAudio(){ try{ if(!_audioCtx){ var C=window.AudioContext||window.webkitAudioContext; if(C)_audioCtx=new C(); } if(_audioCtx&&_audioCtx.state==='suspended')_audioCtx.resume(); }catch(e){} }
 document.addEventListener('click',_ensureAudio); document.addEventListener('touchstart',_ensureAudio);
-function _beep(){ _ensureAudio(); try{ if(!_audioCtx)return; var o=_audioCtx.createOscillator(),g=_audioCtx.createGain(); o.connect(g);g.connect(_audioCtx.destination); o.type='sine'; o.frequency.value=900; g.gain.value=0.2; o.start(); setTimeout(function(){try{o.frequency.value=680;}catch(e){}},150); setTimeout(function(){try{o.stop();}catch(e){}},360);}catch(e){} }
-function _beepN(n){ for(var i=0;i<(n||1);i++) setTimeout(_beep, i*430); }
+function _beep(){ _ensureAudio(); try{ if(!_audioCtx)return; var t=_audioCtx.currentTime; var o=_audioCtx.createOscillator(),g=_audioCtx.createGain(); o.connect(g);g.connect(_audioCtx.destination); o.type='square'; o.frequency.setValueAtTime(1050,t); o.frequency.setValueAtTime(760,t+0.18); o.frequency.setValueAtTime(1050,t+0.36); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.6,t+0.02); g.gain.setValueAtTime(0.6,t+0.5); g.gain.exponentialRampToValueAtTime(0.0001,t+0.62); o.start(t); o.stop(t+0.64);}catch(e){} }
+function _beepN(n){ n=n||1; for(var i=0;i<n;i++) setTimeout(_beep, i*620); }
 function _setBannerPedidos(n){
   var b=document.getElementById('neg-nuevo-banner'); var ns=document.getElementById('neg-nuevo-n'); var tn=document.getElementById('negtab-pedidos-n');
   if(tn) tn.textContent=(n>0)?('('+n+')'):'';
   if(b){ if(n>0){ b.style.display='block'; if(ns)ns.textContent='('+n+' sin aceptar)'; } else { b.style.display='none'; } }
 }
 function iniciarMonitorPedidos(){
-  detenerMonitorPedidos(); _pedVistos=null; _chequearPedidosNuevos(); _negPollInt=setInterval(_chequearPedidosNuevos,8000);
+  detenerMonitorPedidos(); _pedVistos=null; _chequearPedidosNuevos(); cargarPedidosNegocio(); _negPollInt=setInterval(_chequearPedidosNuevos,8000);
   try{ if(negocioActual&&db&&db.channel){ _negRtCh=db.channel('ped-'+negocioActual.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'pedidos',filter:'negocio_id=eq.'+negocioActual.id},function(){ _chequearPedidosNuevos(); }).subscribe(); } }catch(e){}
 }
 function detenerMonitorPedidos(){ if(_negPollInt){clearInterval(_negPollInt);_negPollInt=null;} try{ if(_negRtCh&&db&&db.removeChannel) db.removeChannel(_negRtCh); }catch(e){} _negRtCh=null; }
@@ -2776,10 +2880,10 @@ async function _chequearPedidosNuevos(){
     if(_pedVistos!==null){
       var nuevos=ids.filter(function(id){return _pedVistos.indexOf(id)<0;});
       if(nuevos.length>0){
-        _beepN(3);
+        _beepN(4); try{ if(navigator.vibrate) navigator.vibrate([300,120,300,120,300]); }catch(e){}
         toast('🔔 '+nuevos.length+' PEDIDO(S) NUEVO(S)');
         try{ if(typeof Notification!=='undefined'&&Notification.permission==='granted') new Notification('AVS — Nuevo pedido',{body:negocioActual.nombre||'Tu comercio'}); }catch(e){}
-        var pt=document.getElementById('neg-tab-pedidos'); if(window._avsPantallaActual==='panel-negocio'&&pt&&pt.style.display!=='none') cargarPedidosNegocio();
+        if(window._avsPantallaActual==='panel-negocio') cargarPedidosNegocio();
       }
     }
     if(ids.length>0){ var now=Date.now(); if(now-_lastReminder>30000){ _beep(); _lastReminder=now; } } else { _lastReminder=0; }
@@ -2907,6 +3011,14 @@ function renderTimeline(estadoActual) {
   const idx = getEstadoIdx(estadoActual);
   const container = document.getElementById('track-timeline');
   if (!container) return;
+  if (estadoActual==='cancelado'){
+    container.innerHTML='<div style="background:rgba(226,75,74,0.1);border:1px solid rgba(226,75,74,0.4);border-radius:14px;padding:16px;text-align:center">'+
+      '<div style="font-size:34px">❌</div>'+
+      '<div style="font-weight:700;font-size:16px;color:#E24B4A;margin:6px 0">Pedido cancelado por el comercio</div>'+
+      (window._trackMotivo?('<div style="font-size:13px;color:var(--tx);margin-bottom:6px">Motivo: <b>'+window._trackMotivo+'</b></div>'):'')+
+      '<div style="font-size:12px;color:var(--mt)">No se realiza ningún cobro. Disculpá las molestias — podés hacer un nuevo pedido cuando gustés.</div></div>';
+    return;
+  }
   container.innerHTML = ESTADOS_PEDIDO.map((e, i) => {
     const done = i < idx;
     const active = i === idx;
@@ -2940,6 +3052,7 @@ async function abrirTracking(pedidoId) {
   const { data: p } = await db.from('pedidos').select('*').eq('id', pedidoId).single();
   if (!p) { toast('Pedido no encontrado'); return; }
 
+  window._trackMotivo = p.motivo_cancelacion || '';
   document.getElementById('track-negocio-nombre').textContent = p.negocio_nombre || 'Negocio';
   document.getElementById('track-pedido-id').textContent = 'Pedido #' + pedidoId.slice(0,8).toUpperCase();
   document.getElementById('track-total').textContent = '₡' + parseInt(p.total||0).toLocaleString('es-CR');
@@ -2979,7 +3092,9 @@ async function abrirTracking(pedidoId) {
       filter: `id=eq.${pedidoId}`
     }, payload => {
       const nuevoEstado = payload.new.estado;
+      window._trackMotivo = payload.new.motivo_cancelacion || '';
       renderTimeline(nuevoEstado);
+      if(nuevoEstado==='cancelado'){ toast('❌ El comercio canceló tu pedido'); }
       const estadoInfo = ESTADOS_PEDIDO.find(e => e.id === nuevoEstado);
       if (estadoInfo) {
         toast(estadoInfo.ico + ' ' + estadoInfo.label);
@@ -4638,10 +4753,18 @@ async function confirmarPedido() {
   const comision = Math.round(subtotal * 0.10);
   const totalNegocio = subtotal - comision; // el negocio cobra completo: el cupón lo financia AVS
   const entregaTexto = tipoEntrega === 'delivery' ? 'Delivery AVS' : (tipoEntrega === 'contacto' ? 'Serás contactado por un asesor' : 'Recoger en local');
-  if (!confirm('Confirmar pedido por \u20a1' + total.toLocaleString('es-CR') + '? ' + entregaTexto)) return;
+  const metodoPago = (window._metodoPago==='efectivo') ? 'efectivo' : 'sinpe';
+  let pagaCon = 0, vuelto = 0;
+  if (metodoPago==='efectivo') {
+    var _pcEl=document.getElementById('paga-con'); pagaCon = parseInt((_pcEl&&_pcEl.value)||'0')||0;
+    if (pagaCon>0 && pagaCon<total) { if(!confirm('El monto con el que pagás (₡'+pagaCon.toLocaleString('es-CR')+') es menor al total (₡'+total.toLocaleString('es-CR')+'). ¿Continuar igual?')) return; pagaCon=0; }
+    vuelto = pagaCon>total ? (pagaCon-total) : 0;
+  }
+  const pagoTxt = (metodoPago==='efectivo') ? ('Efectivo'+(pagaCon>0?(' (paga con ₡'+pagaCon.toLocaleString('es-CR')+(vuelto>0?(', vuelto ₡'+vuelto.toLocaleString('es-CR')):', exacto')+')'):'')) : 'SINPE / transferencia';
+  if (!confirm('Confirmar pedido por \u20a1' + total.toLocaleString('es-CR') + '? ' + entregaTexto + ' — Pago: ' + pagoTxt)) return;
   const notas = document.getElementById('carrito-notas') ? document.getElementById('carrito-notas').value.trim() : '';
   if (!db) { toast('Sin conexion'); return; }
-  const { data: pedidoData, error } = await db.from('pedidos').insert({
+  var _baseRow = {
     negocio_id: carritoNegocioId, negocio_nombre: carritoNegocioNombre,
     usuario_telefono: user.phone, usuario_nombre: user.name,
     items: JSON.stringify(carritoItems), subtotal,
@@ -4653,7 +4776,11 @@ async function confirmarPedido() {
     estado: 'pendiente', notas,
     cupon_codigo: descuentoCupon>0 ? window._cuponAplicado.codigo : null,
     descuento_cupon: descuentoCupon
-  }).select().single();
+  };
+  var _row = Object.assign({}, _baseRow, { metodo_pago: metodoPago, paga_con: pagaCon, vuelto: vuelto });
+  var _ins = await db.from('pedidos').insert(_row).select().single();
+  if (_ins.error) { _ins = await db.from('pedidos').insert(_baseRow).select().single(); }
+  const pedidoData = _ins.data; const error = _ins.error;
   if (error) { toast('Error: ' + error.message); return; }
   if (descuentoCupon>0 && window._cuponAplicado) {
     await db.from('cupones').update({canjeado:true}).eq('id', window._cuponAplicado.id);
@@ -4663,20 +4790,21 @@ async function confirmarPedido() {
     const { data: negData } = await db.from('negocios').select('sinpe,nombre').eq('id', carritoNegocioId).single();
     const sinpeNeg = negData?.sinpe || '88001234';
     const lineas = carritoItems.map(i => i.cantidad + 'x ' + i.nombre + ' - \u20a1' + (i.precio*i.cantidad).toLocaleString('es-CR')).join(', ');
-    const txt = 'PREFACTURA AVS - ' + carritoNegocioNombre + ' | ' + lineas + ' | Total: \u20a1' + total.toLocaleString('es-CR') + ' | SINPE: ' + sinpeNeg + ' | Concepto: AVS-' + pedidoData.id.slice(0,8).toUpperCase();
+    const txt = 'PREFACTURA AVS - ' + carritoNegocioNombre + ' | ' + lineas + ' | Total: \u20a1' + total.toLocaleString('es-CR') + '  | Pago: ' + pagoTxt + ' | SINPE: ' + sinpeNeg + ' | Concepto: AVS-' + pedidoData.id.slice(0,8).toUpperCase();
     const telUser = ('506' + user.phone.replace(/[^0-9]/g,'')).replace(/^506506/,'506');
     window._waPrefactura = 'https://wa.me/' + telUser + '?text=' + encodeURIComponent(txt);
-    mostrarConfirmacionPedido(total, sinpeNeg, tipoEntrega, pedidoData.id);
-    carritoItems = []; tipoEntrega = 'recoger'; tarifaDelivery = 0; tipoVehiculoDelivery = 'moto'; window._cuponAplicado = null;
+    mostrarConfirmacionPedido(total, sinpeNeg, tipoEntrega, pedidoData.id, metodoPago, pagaCon, vuelto);
+    carritoItems = []; tipoEntrega = 'recoger'; tarifaDelivery = 0; tipoVehiculoDelivery = 'moto'; window._cuponAplicado = null; window._metodoPago='sinpe'; window._pagaCon=0; window._vuelto=0; var _pcr=document.getElementById('paga-con'); if(_pcr)_pcr.value='';
     cargarCuponesCarrito();
   }
 }
 
 
-function mostrarConfirmacionPedido(total,sinpe,entrega,pedidoId){
-  var pay;
-  if(entrega==='recoger') pay='🏪 <b>Recogés en el local.</b> Pagás ahí al recoger — efectivo o SINPE al comercio.';
-  else if(entrega==='delivery') pay='🚗 <b>Delivery a tu ubicación.</b> Pagás por SINPE al comercio, o en efectivo al recibir.';
+function mostrarConfirmacionPedido(total,sinpe,entrega,pedidoId,metodo,pagaCon,vuelto){
+  var pay; var esEf=(metodo==='efectivo');
+  if(esEf){ pay='💵 <b>Pagás en efectivo</b> '+(entrega==='delivery'?'al recibir el pedido.':'al recoger en el local.'); if(pagaCon>0){ pay+=' Pagás con ₡'+pagaCon.toLocaleString('es-CR')+(vuelto>0?(' — vuelto ₡'+vuelto.toLocaleString('es-CR')+'.'):' (monto exacto).'); } }
+  else if(entrega==='recoger') pay='🏪 <b>Recogés en el local.</b> Pagás por SINPE al comercio (o efectivo al recoger).';
+  else if(entrega==='delivery') pay='🚗 <b>Delivery a tu ubicación.</b> Pagás por SINPE al comercio.';
   else pay='Un asesor del comercio te contactará para coordinar el pago y la entrega.';
   var conc='AVS-'+String(pedidoId).slice(0,6).toUpperCase();
   var body='<div style="text-align:center;font-size:42px">✅</div>'+
