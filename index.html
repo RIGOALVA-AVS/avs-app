@@ -1829,6 +1829,11 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
   </div>
 </div>
 
+<!-- PIN DE ACCESO (comercio) -->
+<div id="pin-modal" style="display:none;position:fixed;inset:0;background:rgba(8,15,30,0.96);z-index:99997;align-items:center;justify-content:center;padding:20px">
+  <div style="max-width:360px;width:100%;background:var(--bg);border:1px solid var(--bd2);border-radius:18px;padding:24px"><div id="pin-body"></div></div>
+</div>
+
 <!-- HORARIO DE ATENCIÓN (comercio) -->
 <div id="horario-modal" style="display:none;position:fixed;inset:0;background:rgba(8,15,30,0.94);z-index:99996;align-items:center;justify-content:center;padding:20px">
   <div style="max-width:400px;width:100%;background:var(--bg);border:1px solid var(--bd2);border-radius:18px;padding:22px">
@@ -3139,7 +3144,7 @@ function iniciarHeartbeatNegocio(){
   var o=document.getElementById('neg-online'); if(o){o.textContent='🟢 En línea'; o.style.color='var(--g)';}
 }
 function detenerHeartbeatNegocio(){ if(_negHbInt){clearInterval(_negHbInt);_negHbInt=null;} detenerMonitorPedidos(); var o=document.getElementById('neg-online'); if(o)o.textContent=''; }
-async function _latidoNegocio(){ if(!db||!negocioActual)return; try{ await db.from('negocios').update({last_seen:new Date().toISOString()}).eq('id',negocioActual.id); }catch(e){} }
+async function _latidoNegocio(){ if(!db||!negocioActual)return; try{ await db.from('negocios').update({last_seen:new Date().toISOString()}).eq('id',negocioActual.id); if(_authCuenta&&_negToken){ var r=await db.from(_authCuenta.tabla).select('sesion_token').eq('id',_authCuenta.id).single(); var tk=r&&r.data&&r.data.sesion_token; if(tk&&tk!==_negToken){ toast('🔒 Tu sesión se abrió en otro dispositivo'); logout(); } } }catch(e){} }
 // ===== ACCESOS DEL COMERCIO (servicio / control de calidad) =====
 var _accRol='servicio';
 function selAccRol(el,rol){ document.querySelectorAll('#acc-rol-chips .vchip').forEach(function(c){c.classList.remove('sel');}); el.classList.add('sel'); _accRol=rol; }
@@ -5475,21 +5480,65 @@ function volverInicio(){
     go('login');
   }
 }
-function logout(){clearSession();try{sessionStorage.removeItem('avs_negocio');}catch(e){}detenerHeartbeatNegocio();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
+function logout(){clearSession();try{sessionStorage.removeItem('avs_negocio');sessionStorage.removeItem('avs_neg_token');sessionStorage.removeItem('avs_neg_tabla');sessionStorage.removeItem('avs_neg_accid');}catch(e){}_negToken=null;_authCuenta=null;detenerHeartbeatNegocio();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
 var _negRol='dueño';
+var _authCuenta=null, _negToken=null, _pinFails=0;
+function _genTokenNeg(){ return 'tok-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10); }
+async function _sha6(phone,pin){ try{ var enc=new TextEncoder().encode('avs:'+phone+':'+pin); var h=await crypto.subtle.digest('SHA-256',enc); return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,'0');}).join(''); }catch(e){ return 'plain:'+pin; } }
+function cerrarPIN(){ var m=document.getElementById('pin-modal'); if(m)m.style.display='none'; }
+function pedirPIN(){
+  _pinFails=0;
+  var crear=!(_authCuenta&&_authCuenta.pin_hash);
+  var inp='style="margin:0 0 8px;text-align:center;letter-spacing:6px;font-size:20px" type="password" inputmode="numeric" maxlength="6" autocomplete="off"';
+  var body = crear
+    ? '<div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:4px">Creá tu PIN</div><div style="font-size:12px;color:var(--mt);margin-bottom:14px">6 dígitos. Lo usás para entrar a tu comercio. No lo compartas.</div><input class="ifield" id="pin-a" placeholder="••••••" '+inp+'><input class="ifield" id="pin-b" placeholder="Repetí el PIN" '+inp+'><button class="btnp" style="margin:6px 0 8px" onclick="confirmarPIN(true)">Crear PIN y entrar</button>'
+    : '<div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:4px">Ingresá tu PIN</div><div style="font-size:12px;color:var(--mt);margin-bottom:14px">'+((negocioActual&&negocioActual.nombre)||'')+'</div><input class="ifield" id="pin-a" placeholder="••••••" '+inp+'><button class="btnp" style="margin:6px 0 8px" onclick="confirmarPIN(false)">Entrar</button>';
+  body+='<button class="brec" style="width:100%;margin:0;padding:12px" onclick="cerrarPIN()">Cancelar</button>';
+  var b=document.getElementById('pin-body'); if(b)b.innerHTML=body;
+  var m=document.getElementById('pin-modal'); if(m)m.style.display='flex';
+  setTimeout(function(){ var x=document.getElementById('pin-a'); if(x)x.focus(); },100);
+}
+async function confirmarPIN(crear){
+  if(!_authCuenta){ cerrarPIN(); return; }
+  var a=(document.getElementById('pin-a')||{}).value||'';
+  if(!/^[0-9]{6}$/.test(a)){ toast('El PIN debe ser de 6 dígitos'); return; }
+  if(crear){
+    var b=(document.getElementById('pin-b')||{}).value||'';
+    if(a!==b){ toast('Los PIN no coinciden'); return; }
+    var h=await _sha6(_authCuenta.telefono,a);
+    try{ var u=await db.from(_authCuenta.tabla).update({pin_hash:h}).eq('id',_authCuenta.id); if(u&&u.error){ toast('No se pudo guardar el PIN (¿corriste el SQL?)'); return; } }catch(e){ toast('No se pudo guardar el PIN'); return; }
+    _authCuenta.pin_hash=h; await finalizarEntradaComercio();
+  } else {
+    var h2=await _sha6(_authCuenta.telefono,a);
+    if(h2!==_authCuenta.pin_hash){ _pinFails++; if(_pinFails>=5){ toast('Demasiados intentos. Probá más tarde.'); cerrarPIN(); } else { toast('PIN incorrecto ('+_pinFails+'/5)'); } return; }
+    await finalizarEntradaComercio();
+  }
+}
+async function finalizarEntradaComercio(){
+  cerrarPIN();
+  _negToken=_genTokenNeg();
+  try{ await db.from(_authCuenta.tabla).update({sesion_token:_negToken}).eq('id',_authCuenta.id); }catch(e){}
+  try{ sessionStorage.setItem('avs_neg_token',_negToken); sessionStorage.setItem('avs_neg_tabla',_authCuenta.tabla); sessionStorage.setItem('avs_neg_accid',String(_authCuenta.id)); }catch(e){}
+  var iconos={restaurantes:'🍽️',salud:'🏥',hospedaje:'🏨',supermercado:'🛒',negocios:'🏪',otros:'✨'};
+  var a1=document.getElementById('neg-avatar-ico'); if(a1)a1.textContent=iconos[negocioActual.categoria]||'🏪';
+  var n1=document.getElementById('neg-panel-nombre'); if(n1)n1.textContent=negocioActual.nombre;
+  var c1=document.getElementById('neg-panel-cat'); if(c1)c1.textContent=negocioActual.categoria;
+  go('panel-negocio'); cargarMenuNegocio(); cargarStatsNegocio(); iniciarHeartbeatNegocio();
+  if(negocioActual && negocioActual.saldo_avs!=null) avisoSaldoBajoAVS(parseInt(negocioActual.saldo_avs||0));
+}
 async function loginNegocio(phone){
   if(!db) return false;
   try{
     var tel=String(phone||'').trim();
     var r=await db.from('negocios').select('*').eq('telefono',tel).eq('estado','aprobado').limit(1);
     var data=(r.data&&r.data[0])||null;
-    if(data){ negocioActual=data; _negRol='dueño'; return true; }
+    if(data){ negocioActual=data; _negRol='dueño'; _authCuenta={tabla:'negocios',id:data.id,telefono:tel,pin_hash:data.pin_hash||''}; return true; }
     var ra=await db.from('negocio_accesos').select('*').eq('telefono',tel).limit(1);
     var acc=(ra.data&&ra.data[0])||null;
     if(acc){
       var rn=await db.from('negocios').select('*').eq('id',acc.negocio_id).eq('estado','aprobado').limit(1);
       var neg=(rn.data&&rn.data[0])||null;
-      if(neg){ negocioActual=neg; _negRol=acc.rol||'servicio'; return true; }
+      if(neg){ negocioActual=neg; _negRol=acc.rol||'servicio'; _authCuenta={tabla:'negocio_accesos',id:acc.id,telefono:tel,pin_hash:acc.pin_hash||''}; return true; }
     }
     return false;
   }catch(e){console.error('loginNegocio',e);return false;}
@@ -5501,15 +5550,7 @@ async function doLoginNegocio(){
   const ok = await loginNegocio(phone);
   if(!ok){toast('Negocio no encontrado o no aprobado');return;}
   try{sessionStorage.setItem('avs_negocio',String(phone).trim());}catch(e){}
-  const iconos = {restaurantes:'🍽️',salud:'🏥',hospedaje:'🏨',supermercado:'🛒',negocios:'🏪',otros:'✨'};
-  document.getElementById('neg-avatar-ico').textContent = iconos[negocioActual.categoria]||'🏪';
-  document.getElementById('neg-panel-nombre').textContent = negocioActual.nombre;
-  document.getElementById('neg-panel-cat').textContent = negocioActual.categoria;
-  go('panel-negocio');
-  cargarMenuNegocio();
-  cargarStatsNegocio();
-  iniciarHeartbeatNegocio();
-  if(negocioActual && negocioActual.saldo_avs!=null) avisoSaldoBajoAVS(parseInt(negocioActual.saldo_avs||0));
+  pedirPIN();
 }
 
 // ============== SEGURIDAD DE LOGIN ==============
@@ -7711,11 +7752,15 @@ window.addEventListener('DOMContentLoaded',()=>{
       setTimeout(async function(){
         var ok=await loginNegocio(_negTel);
         if(ok){
-          var ic={restaurantes:'🍽️',salud:'🏥',hospedaje:'🏨',supermercado:'🛒',negocios:'🏪',otros:'✨'};
-          var a=document.getElementById('neg-avatar-ico'); if(a)a.textContent=ic[negocioActual.categoria]||'🏪';
-          var nn=document.getElementById('neg-panel-nombre'); if(nn)nn.textContent=negocioActual.nombre;
-          var nc=document.getElementById('neg-panel-cat'); if(nc)nc.textContent=negocioActual.categoria;
-          go('panel-negocio'); cargarMenuNegocio(); cargarStatsNegocio(); iniciarHeartbeatNegocio();
+          var stTok=sessionStorage.getItem('avs_neg_token'); var valido=false;
+          if(stTok && _authCuenta){ try{ var rt=await db.from(_authCuenta.tabla).select('sesion_token').eq('id',_authCuenta.id).single(); var tk=rt&&rt.data&&rt.data.sesion_token; if(tk && tk===stTok){ valido=true; _negToken=stTok; } }catch(e){} }
+          if(valido){
+            var ic={restaurantes:'🍽️',salud:'🏥',hospedaje:'🏨',supermercado:'🛒',negocios:'🏪',otros:'✨'};
+            var a=document.getElementById('neg-avatar-ico'); if(a)a.textContent=ic[negocioActual.categoria]||'🏪';
+            var nn=document.getElementById('neg-panel-nombre'); if(nn)nn.textContent=negocioActual.nombre;
+            var nc=document.getElementById('neg-panel-cat'); if(nc)nc.textContent=negocioActual.categoria;
+            go('panel-negocio'); cargarMenuNegocio(); cargarStatsNegocio(); iniciarHeartbeatNegocio();
+          } else { go('login'); pedirPIN(); }
         } else { try{sessionStorage.removeItem('avs_negocio');}catch(e){} go('login'); }
       }, 800);
       return;
