@@ -1684,9 +1684,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
             <div style="font-size:10px;color:var(--mt)">En el local</div>
           </div>
           <div id="opt-delivery" onclick="selEntrega('delivery')" style="background:var(--cd);border:2px solid var(--bd);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.2s">
-            <div style="font-size:22px">🚗</div>
-            <div style="font-size:12px;font-weight:600;margin-top:4px">Delivery AVS</div>
-            <div style="font-size:10px;color:var(--mt)">A tu ubicación</div>
+            <div style="font-size:22px">🛵</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px">Se lo enviamos</div>
+            <div style="font-size:10px;color:var(--mt)">El comercio lo coordina</div>
           </div>
         </div>
       </div>
@@ -1724,7 +1724,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       </div>
       <!-- Info delivery -->
       <div id="delivery-info" style="display:none;background:rgba(0,229,184,0.05);border:1px solid var(--bd2);border-radius:12px;padding:12px;margin-top:10px">
-        <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Elegí el vehículo</div>
+        <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Envío sugerido (lo cobra el comercio)</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <div id="veh-moto" onclick="selVehiculoDelivery('moto')" style="background:rgba(0,229,184,0.08);border:2px solid var(--g);border-radius:12px;padding:10px 8px;text-align:center;cursor:pointer;transition:all 0.2s">
             <div style="font-size:20px">🛵</div>
@@ -1741,7 +1741,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
           <span style="font-size:13px;color:var(--mt)">Tiempo estimado</span>
           <span style="font-size:13px;font-weight:600" id="delivery-tiempo">~15-25 min</span>
         </div>
-        <div style="font-size:11px;color:var(--mt);margin-top:7px;line-height:1.4;border-top:1px dashed var(--bd);padding-top:7px">⏱️ El tiempo comienza a correr cuando el comercio confirma el pago (SINPE recibido o efectivo acordado), no antes.</div>
+        <div style="font-size:11px;color:var(--mt);margin-top:7px;line-height:1.4;border-top:1px dashed var(--bd);padding-top:7px">🛵 El envío lo coordina y lo cobra el comercio (con repartidor AVS o su propio vehículo). Este monto es una referencia de AVS. ⏱️ El tiempo corre cuando el comercio confirma el pago.</div>
       </div>
       <!-- Total final -->
       <div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
@@ -2556,7 +2556,7 @@ function usarCuponDisponible(i){
 // ===== PREFACTURA Y CONFIRMACIÓN SINPE =====
 async function enviarPrefactura(pedidoId, negocioNombre, negocioSinpe, items, total, tipoEntrega, userPhone) {
   const itemsTexto = JSON.parse(items).map(i => `• ${i.cantidad}x ${i.nombre} — ₡${(i.precio*i.cantidad).toLocaleString('es-CR')}`).join('\n');
-  const entregaTxt = tipoEntrega === 'delivery' ? '🚗 Delivery AVS' : (tipoEntrega === 'contacto' ? '📞 Contacto por asesor' : '🏪 Recoger en local');
+  const entregaTxt = tipoEntrega === 'delivery' ? '🛵 Se lo enviamos' : (tipoEntrega === 'contacto' ? '📞 Contacto por asesor' : '🏪 Recoger en local');
   const msg = encodeURIComponent(
     `🧾 *PREFACTURA AVS*\n` +
     `📍 ${negocioNombre}\n\n` +
@@ -2745,7 +2745,15 @@ async function cargarPedidosNegocio(){
       var timer = activo ? ('<span class="ped-timer" data-ini="'+ini+'" data-obj="'+OBJETIVO_PEDIDO_MIN+'" style="font-family:var(--font-d);font-weight:800;font-size:16px">'+(ini?'⏱ ...':'⏱ —')+'</span>') : '<span style="color:var(--g);font-weight:700">✔ Entregado</span>';
       var accion = sig[est] ? '<button class="bacp" style="margin:0;flex:1" onclick="avanzarPedido(\''+p.id+'\',\''+sig[est]+'\')">'+lbl[est]+'</button>' : '';
       var cancel = activo ? '<button class="brec" style="margin:0;width:auto;padding:10px 12px" title="Cancelar pedido" onclick="cancelarPedidoNegocio(\''+p.id+'\')">✕</button>' : '';
-      var entIco = p.tipo_entrega==='delivery' ? '🚗 Delivery' : (p.tipo_entrega==='contacto'?'📞 Asesor':'🏪 Recoge');
+      var entIco = p.tipo_entrega==='delivery' ? '🛵 Envío' : (p.tipo_entrega==='contacto'?'📞 Asesor':'🏪 Recoge');
+      var modoE=p.entrega_modo||''; var entregaBloque='';
+      if(p.tipo_entrega==='delivery'){
+        if(modoE==='repartidor') entregaBloque='<div style="font-size:12px;color:#ffd54f;margin-bottom:8px">🛵 Repartidor AVS solicitado</div>';
+        else if(modoE==='propio') entregaBloque='<div style="font-size:12px;color:var(--g);margin-bottom:8px">🚗 Entrega propia del comercio</div>';
+        else entregaBloque='<div style="display:flex;gap:6px;margin-bottom:8px">'+
+            '<button class="btno" style="margin:0;flex:1;padding:8px;font-size:12px" onclick="pedirRepartidor(\''+p.id+'\')">🛵 Pedir repartidor</button>'+
+            '<button class="btno" style="margin:0;flex:1;padding:8px;font-size:12px" onclick="entregoYo(\''+p.id+'\')">🚗 Entrego yo</button></div>';
+      }
       var mp=p.metodo_pago||'sinpe';
       var pagoLinea = (mp==='efectivo')
         ? ('💵 Efectivo'+((parseInt(p.paga_con||0))>0 ? (' · paga con ₡'+parseInt(p.paga_con).toLocaleString('es-CR')+((parseInt(p.vuelto||0))>0 ? (' · vuelto ₡'+parseInt(p.vuelto).toLocaleString('es-CR')) : ' · exacto')) : ''))
@@ -2760,7 +2768,7 @@ async function cargarPedidosNegocio(){
         notaCli+
         '<div style="font-size:12px;margin-bottom:4px">'+pagoLinea+'</div>'+
         '<div style="font-size:12px;color:var(--mt);margin-bottom:10px"><b style="color:var(--g)">'+(estLbl[est]||est)+'</b> · '+entIco+' · Total ₡'+((parseInt(p.total||0)).toLocaleString('es-CR'))+'</div>'+
-        '<div style="display:flex;gap:8px">'+accion+cancel+'</div></div>';
+        entregaBloque+'<div style="display:flex;gap:8px">'+accion+cancel+'</div></div>';
     }).join('');
     paint(html);
     _tickPedidoTimers();
@@ -2768,6 +2776,23 @@ async function cargarPedidosNegocio(){
   }catch(e){ paint('<div class="nolist">Error al cargar pedidos</div>'); }
 }
 function cancelarPedidoNegocio(id){ _cancelPedidoId=id; var m=document.getElementById('ped-cancel-modal'); if(m)m.style.display='flex'; }
+async function pedirRepartidor(pedidoId){
+  if(!db||!negocioActual) return;
+  if(!confirm('¿Publicar este envío para que un repartidor AVS lo tome?\n\nVos coordinás y cobrás el envío al cliente; el repartidor paga su comisión a AVS.')) return;
+  try{
+    var rp=await db.from('pedidos').select('*').eq('id',pedidoId).single(); var p=rp.data||{};
+    var monto=parseInt(p.tarifa_delivery||0)||0;
+    try{ await db.from('solicitudes_repartidor').insert({pedido_id:pedidoId,negocio_id:String(negocioActual.id),negocio_nombre:negocioActual.nombre,direccion:(p.notas||''),monto_envio:monto,estado:'buscando',fecha:new Date().toISOString()}); }catch(e){}
+    var u=await db.from('pedidos').update({entrega_modo:'repartidor'}).eq('id',pedidoId);
+    toast('🛵 Envío publicado — buscando repartidor');
+    cargarPedidosNegocio();
+  }catch(e){ toast('No se pudo publicar (¿corriste el SQL?)'); }
+}
+async function entregoYo(pedidoId){
+  if(!db) return;
+  try{ await db.from('pedidos').update({entrega_modo:'propio'}).eq('id',pedidoId); toast('🚗 Entrega propia del comercio'); cargarPedidosNegocio(); }
+  catch(e){ toast('No se pudo'); }
+}
 var _cancelPedidoId=null;
 function cerrarCancelModal(){ var m=document.getElementById('ped-cancel-modal'); if(m)m.style.display='none'; _cancelPedidoId=null; }
 async function confirmarCancelacion(motivo){
@@ -3062,7 +3087,7 @@ async function abrirTracking(pedidoId) {
   document.getElementById('track-negocio-nombre').textContent = p.negocio_nombre || 'Negocio';
   document.getElementById('track-pedido-id').textContent = 'Pedido #' + pedidoId.slice(0,8).toUpperCase();
   document.getElementById('track-total').textContent = '₡' + parseInt(p.total||0).toLocaleString('es-CR');
-  document.getElementById('track-entrega-tipo').textContent = p.tipo_entrega === 'delivery' ? '🚗 Delivery AVS' : '🏪 Recoger en local';
+  document.getElementById('track-entrega-tipo').textContent = p.tipo_entrega === 'delivery' ? '🛵 Se lo enviamos' : '🏪 Recoger en local';
 
   // Items
   const items = JSON.parse(p.items || '[]');
@@ -4758,7 +4783,7 @@ async function confirmarPedido() {
   const total = Math.max(0, subtotal + tarifaDelivery - descuentoCupon);
   const comision = Math.round(subtotal * 0.10);
   const totalNegocio = subtotal - comision; // el negocio cobra completo: el cupón lo financia AVS
-  const entregaTexto = tipoEntrega === 'delivery' ? 'Delivery AVS' : (tipoEntrega === 'contacto' ? 'Serás contactado por un asesor' : 'Recoger en local');
+  const entregaTexto = tipoEntrega === 'delivery' ? 'Se lo enviamos (lo coordina el comercio)' : (tipoEntrega === 'contacto' ? 'Serás contactado por un asesor' : 'Recoger en local');
   const metodoPago = (window._metodoPago==='efectivo') ? 'efectivo' : 'sinpe';
   let pagaCon = 0, vuelto = 0;
   if (metodoPago==='efectivo') {
@@ -4810,7 +4835,7 @@ function mostrarConfirmacionPedido(total,sinpe,entrega,pedidoId,metodo,pagaCon,v
   var pay; var esEf=(metodo==='efectivo');
   if(esEf){ pay='💵 <b>Pagás en efectivo</b> '+(entrega==='delivery'?'al recibir el pedido.':'al recoger en el local.'); if(pagaCon>0){ pay+=' Pagás con ₡'+pagaCon.toLocaleString('es-CR')+(vuelto>0?(' — vuelto ₡'+vuelto.toLocaleString('es-CR')+'.'):' (monto exacto).'); } }
   else if(entrega==='recoger') pay='🏪 <b>Recogés en el local.</b> Pagás por SINPE al comercio (o efectivo al recoger).';
-  else if(entrega==='delivery') pay='🚗 <b>Delivery a tu ubicación.</b> Pagás por SINPE al comercio.';
+  else if(entrega==='delivery') pay='🛵 <b>Te lo enviamos.</b> El comercio coordina y cobra el envío. Pagás por SINPE o efectivo al comercio.';
   else pay='Un asesor del comercio te contactará para coordinar el pago y la entrega.';
   var conc='AVS-'+String(pedidoId).slice(0,6).toUpperCase();
   var body='<div style="text-align:center;font-size:42px">✅</div>'+
