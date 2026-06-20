@@ -1099,6 +1099,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
       <div class="catbtn" onclick="selCat(this,'pet')">🐾 Pet</div>
       <div class="catbtn" onclick="selCat(this,'carga')">🧳 Carga</div>
     </div>
+    <div id="enc-banner" style="display:none;background:rgba(0,229,184,0.08);border:1px solid var(--bd2);border-radius:12px;padding:10px 12px;margin:4px 0 8px">
+      <div style="font-size:13px;font-weight:700">📦 Modo encomienda</div>
+      <div style="font-size:11px;color:var(--mt);margin:2px 0 6px">Poné dónde se <b>recoge</b> (origen) y dónde se <b>entrega</b> (destino). Se cotiza, muestra la ruta y se pide igual que un viaje.</div>
+      <input class="ifield" id="enc-nota" placeholder="¿Qué enviás? (opcional)" style="margin:0 0 6px" oninput="window._encNota=this.value">
+      <a onclick="salirEncomienda()" style="font-size:11px;color:var(--g);cursor:pointer;text-decoration:underline">Salir de modo encomienda</a>
+    </div>
     <div class="plabel">¿A dónde vas?</div>
     <div class="acwrap"><div class="dotg"></div><input type="text" id="oac" placeholder="Mi ubicación actual" autocomplete="off"><button id="gpsBtn" onclick="usarUbicacionActual()" title="Usar mi ubicación actual" style="background:transparent;border:none;color:var(--g);font-size:18px;cursor:pointer;padding:0 2px;flex-shrink:0">📍</button></div>
     <div class="acwrap"><div class="dotr"></div><input type="text" id="dac" placeholder="Escribe tu destino..." autocomplete="off"></div>
@@ -1134,7 +1140,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
         💡 ¿Uber te dio mejor precio? Compará →
       </button>
     </div>
-    <button class="btnp" style="margin-top:8px" onclick="solicitar()">Solicitar Viaje</button>
+    <button class="btnp" id="btn-solicitar" style="margin-top:8px" onclick="solicitar()">Solicitar Viaje</button>
     <!-- Carrusel publicitario de comercios aliados -->
     <div id="avsCarruselPasajero" style="border-radius:12px;overflow:hidden;border:1.5px solid rgba(0,229,184,0.3);margin-top:14px;position:relative;height:200px;flex-shrink:0;min-height:200px;">
       <div id="avsCarruselPasajeroPuntos" style="position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:3;"></div>
@@ -2837,9 +2843,17 @@ function selEncKm(k){
 }
 function openEncomienda(){
   if(!user||!user.phone){ toast('Iniciá sesión primero'); return; }
-  window._encKm='corta';
-  var m=document.getElementById('encomienda-modal'); if(m)m.style.display='flex';
-  selEncKm('corta');
+  window._modoEncomienda=true; window._encNota='';
+  var b=document.getElementById('enc-banner'); if(b)b.style.display='block';
+  var nt=document.getElementById('enc-nota'); if(nt)nt.value='';
+  var bs=document.getElementById('btn-solicitar'); if(bs)bs.textContent='📦 Solicitar encomienda';
+  var o=document.getElementById('oac'); if(o) o.focus();
+  toast('📦 Modo encomienda: indicá dónde se recoge y dónde se entrega');
+}
+function salirEncomienda(){
+  window._modoEncomienda=false; window._encNota='';
+  var b=document.getElementById('enc-banner'); if(b)b.style.display='none';
+  var bs=document.getElementById('btn-solicitar'); if(bs)bs.textContent='Solicitar Viaje';
 }
 function cerrarEncomienda(){ var m=document.getElementById('encomienda-modal'); if(m)m.style.display='none'; }
 async function solicitarEncomienda(){
@@ -2885,6 +2899,7 @@ async function solicitarEnvioSolo(){
   if(!carritoNegocioId){ toast('Abrí el comercio primero'); return; }
   var veh=window._envioVeh||'moto';
   var monto=(veh==='carro')?(tarifaDeliveryCarro||0):(tarifaDeliveryMoto||0);
+  if(!monto||monto<=0){ toast('Estamos calculando la tarifa, probá de nuevo en un momento'); return; }
   var dirEl=document.getElementById('envio-dir'); var dir=(dirEl&&dirEl.value||'').trim();
   if(!dir){ toast('Escribí la dirección de entrega'); return; }
   if(!confirm('Solicitar envío en '+(veh==='carro'?'carro':'moto')+' (~₡'+monto.toLocaleString('es-CR')+').\n\nEl repartidor coordina con vos el pago del envío. ¿Confirmar?')) return;
@@ -6353,7 +6368,8 @@ async function cargarRepartos(){
 async function aceptarReparto(id){
   if(!db||!user) return;
   try{
-    await db.from('solicitudes_repartidor').update({estado:'tomado',repartidor_telefono:user.phone}).eq('id',id).eq('estado','buscando');
+    var u=await db.from('solicitudes_repartidor').update({estado:'tomado',repartidor_telefono:user.phone}).eq('id',id).eq('estado','buscando').select();
+    if(!u||!u.data||u.data.length===0){ toast('Otro repartidor ya tomó este reparto'); cargarRepartos(); return; }
     toast('🛵 Reparto aceptado — coordiná con el cliente');
     cargarRepartos();
   }catch(e){ toast('No se pudo aceptar'); }
@@ -6423,14 +6439,14 @@ let codigoViaje='';
 
 async function solicitar(){const dest=document.getElementById('dac').value;if(!dest){toast('Ingresá tu destino');return;}if(!destLoc){toast('Seleccioná un destino del autocomplete');return;}const ori=document.getElementById('oac').value||'Mi ubicación actual';document.getElementById('bori').textContent=ori;document.getElementById('bdst').textContent=dest;document.getElementById('bfare').textContent='₡'+selFare.toLocaleString('es-CR');
   codigoViaje=generarCodigoViaje();
-  go('buscando');if(db){const{data,error}=await db.from('viajes').insert({estado:'solicitado',origen_lat:userLoc.lat,origen_lng:userLoc.lng,origen_descripcion:ori,destino_lat:destLoc.lat(),destino_lng:destLoc.lng(),destino_descripcion:dest,tarifa_estimada:selFare,comision_avs:selCom,total_pasajero:selFare,total_conductor:selComConductor,categoria_vehiculo:selCategoria,codigo_confirmacion:codigoViaje}).select().single();if(data){viajeId=data.id;saveSession();document.getElementById('codigoDisplay').textContent=codigoViaje;mostrarSOS(true);toast('Viaje #'+data.id.slice(0,6)+' enviado');pasajeroWaitInterval=setInterval(async()=>{try{const{data:v}=await db.from('viajes').select('estado,conductor_nombre,conductor_placa,conductor_color,conductor_foto').eq('id',viajeId).single();if(v&&v.estado==='aceptado'){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;if(v.conductor_nombre)document.getElementById('cnom').textContent=v.conductor_nombre;if(v.conductor_placa)document.getElementById('cplate').textContent=v.conductor_placa+(v.conductor_color?' · '+v.conductor_color:'');if(v.conductor_foto)ponerFotoConductor(v.conductor_foto);trazarRutaPasajero();go('casignado');mostrarSOS(true);toast('¡Conductor en camino!');if(codigoViaje){document.getElementById('codigoPasajeroText').textContent=codigoViaje;document.getElementById('codigoDisplay').textContent=codigoViaje;}}}catch(e){}},2000);setTimeout(()=>{if(pasajeroWaitInterval){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;}if(document.getElementById('buscando').classList.contains('active')){toast('Sin conductores disponibles. Intentá de nuevo.');go('pasajero');}},180000);}else{toast('Error al crear viaje.');go('pasajero');}}else{setTimeout(()=>{go('casignado');toast('¡Conductor encontrado!');trazarRutaPasajero();},4000);}}
+  go('buscando');if(db){var _vrow={estado:'solicitado',origen_lat:userLoc.lat,origen_lng:userLoc.lng,origen_descripcion:ori,destino_lat:destLoc.lat(),destino_lng:destLoc.lng(),destino_descripcion:dest,tarifa_estimada:selFare,comision_avs:selCom,total_pasajero:selFare,total_conductor:selComConductor,categoria_vehiculo:selCategoria,codigo_confirmacion:codigoViaje};if(window._modoEncomienda){_vrow.tipo_servicio='encomienda';_vrow.nota_encomienda=(window._encNota||'');}var _vins=await db.from('viajes').insert(_vrow).select().single();if(_vins.error&&window._modoEncomienda){delete _vrow.tipo_servicio;delete _vrow.nota_encomienda;_vins=await db.from('viajes').insert(_vrow).select().single();}var data=_vins.data,error=_vins.error;if(typeof salirEncomienda==='function')salirEncomienda();if(data){viajeId=data.id;saveSession();document.getElementById('codigoDisplay').textContent=codigoViaje;mostrarSOS(true);toast('Viaje #'+data.id.slice(0,6)+' enviado');pasajeroWaitInterval=setInterval(async()=>{try{const{data:v}=await db.from('viajes').select('estado,conductor_nombre,conductor_placa,conductor_color,conductor_foto').eq('id',viajeId).single();if(v&&v.estado==='aceptado'){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;if(v.conductor_nombre)document.getElementById('cnom').textContent=v.conductor_nombre;if(v.conductor_placa)document.getElementById('cplate').textContent=v.conductor_placa+(v.conductor_color?' · '+v.conductor_color:'');if(v.conductor_foto)ponerFotoConductor(v.conductor_foto);trazarRutaPasajero();go('casignado');mostrarSOS(true);toast('¡Conductor en camino!');if(codigoViaje){document.getElementById('codigoPasajeroText').textContent=codigoViaje;document.getElementById('codigoDisplay').textContent=codigoViaje;}}}catch(e){}},2000);setTimeout(()=>{if(pasajeroWaitInterval){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;}if(document.getElementById('buscando').classList.contains('active')){toast('Sin conductores disponibles. Intentá de nuevo.');go('pasajero');}},180000);}else{toast('Error al crear viaje.');go('pasajero');}}else{setTimeout(()=>{go('casignado');toast('¡Conductor encontrado!');trazarRutaPasajero();},4000);}}
 let conductorTrackInterval=null,pasajeroTrackInterval=null,conductorMarker=null;
 function trazarRutaPasajero(){if(!destLoc||!dirRendR||!dirSvc)return;dirSvc.route({origin:userLoc,destination:destLoc,travelMode:google.maps.TravelMode.DRIVING},(r,s)=>{if(s==='OK'){dirRendR.setDirections(r);document.getElementById('etamin').textContent=Math.ceil(r.routes[0].legs[0].duration.value/60);rmapInst.setCenter(userLoc);}});iniciarTrackingConductor();}
 async function ponerFotoConductor(ruta){try{if(!db||!ruta||ruta.indexOf('/')<0)return;const{data}=await db.storage.from('documentos-conductores').createSignedUrl(ruta,3600);if(data&&data.signedUrl){const av=document.getElementById('cinit');if(av){av.innerHTML='<img src="'+data.signedUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="Foto del conductor">';av.style.overflow='hidden';av.style.padding='0';}}}catch(e){console.error('fotoConductor:',e);}}
 function iniciarTrackingConductor(){if(pasajeroTrackInterval)clearInterval(pasajeroTrackInterval);pasajeroTrackInterval=setInterval(async()=>{if(!db||!viajeId)return;const{data}=await db.from('viajes').select('conductor_lat,conductor_lng').eq('id',viajeId).single();if(!data||!data.conductor_lat||!data.conductor_lng)return;const condPos={lat:data.conductor_lat,lng:data.conductor_lng};if(!conductorMarker){conductorMarker=new google.maps.Marker({position:condPos,map:rmapInst,icon:{path:google.maps.SymbolPath.FORWARD_CLOSED_ARROW,scale:5,fillColor:'#f5a623',fillOpacity:1,strokeColor:'#fff',strokeWeight:1,rotation:0},title:'Conductor'});}else{conductorMarker.setPosition(condPos);}const dist=google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(condPos),new google.maps.LatLng(userLoc));if(dist<200){document.querySelector('#casignado .ahdr div:last-child').innerHTML='🚗 Conductor en tu ubicación';document.getElementById('etamin').textContent='0';}else{document.querySelector('#casignado .ahdr div:last-child').innerHTML=`✅ En camino · ${(dist/1000).toFixed(1)} km`;}},5000);}
 function iniciarCompartirUbicacion(){if(!navigator.geolocation||!viajeId)return;conductorTrackInterval=setInterval(()=>{navigator.geolocation.getCurrentPosition(pos=>{if(!db||!viajeId)return;db.from('viajes').update({conductor_lat:pos.coords.latitude,conductor_lng:pos.coords.longitude,conductor_updated_at:new Date().toISOString()}).eq('id',viajeId).then(()=>{});},()=>{});},5000);}
 function detenerTracking(){if(conductorTrackInterval){clearInterval(conductorTrackInterval);conductorTrackInterval=null;}if(pasajeroTrackInterval){clearInterval(pasajeroTrackInterval);pasajeroTrackInterval=null;}if(conductorMarker){conductorMarker.setMap(null);conductorMarker=null;}}
-function cancelar(){if(viajeId&&db)db.from('viajes').update({estado:'cancelado'}).eq('id',viajeId);if(pasajeroWaitInterval){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;}viajeId=null;localStorage.removeItem('avs_viaje_id');go('pasajero');toast('Cancelado');}
+function cancelar(){if(viajeId&&db)db.from('viajes').update({estado:'cancelado'}).eq('id',viajeId);if(pasajeroWaitInterval){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;}viajeId=null;localStorage.removeItem('avs_viaje_id');if(typeof salirEncomienda==='function')salirEncomienda();go('pasajero');toast('Cancelado');}
 function confirmarFinalizar(){
   // NUEVO: Modal "Pagado satisfactorio" en lugar de simple confirm
   abrirModalPagadoSatisfactorio('usuario');
@@ -6954,7 +6970,7 @@ async function cargarSolicitudes(){
   const esCarga = (window._vehActivoTipo==='carga-liviana' || window._vehActivoTipo==='camion');
   if(esCarga){ return cargarFletesConductor(); }
   const [vRes,pRes,muRes] = await Promise.all([
-    esMoto ? Promise.resolve({data:[]}) : db.from('viajes').select('*').eq('estado','solicitado').order('fecha_solicitud',{ascending:false}).limit(10),
+    esMoto ? db.from('viajes').select('*').eq('estado','solicitado').eq('tipo_servicio','encomienda').order('fecha_solicitud',{ascending:false}).limit(10) : db.from('viajes').select('*').eq('estado','solicitado').order('fecha_solicitud',{ascending:false}).limit(10),
     esMoto
       ? db.from('pedidos').select('*').eq('estado','listo').eq('tipo_entrega','delivery').eq('tipo_vehiculo','moto').order('fecha',{ascending:false}).limit(10)
       : db.from('pedidos').select('*').eq('estado','listo').eq('tipo_entrega','delivery').or('tipo_vehiculo.eq.carro,tipo_vehiculo.is.null').order('fecha',{ascending:false}).limit(10),
@@ -7002,7 +7018,7 @@ async function cargarSolicitudes(){
   }).join('');
   const htmlViajes = viajes.map(v=>{
     const tarifa=parseInt(v.tarifa_estimada||0),comAVS=parseInt(v.comision_avs||Math.round(tarifa*0.10)),totalCond=parseInt(v.total_conductor||tarifa-comAVS);
-    return `<div class="scard" id="card-${v.id}"><div class="shd"><div class="spas">🚗 Viaje · Pasajero</div><div style="font-family:var(--font-d);font-size:13px;color:var(--mt)">🔑 ${v.codigo_confirmacion||'—'}</div></div><div class="sroute"><div class="spl"><span style="color:var(--g)">●</span>${v.origen_descripcion}</div><div style="width:2px;height:10px;background:var(--mt);margin-left:5px"></div><div class="spl"><span style="color:var(--rd)">●</span>${v.destino_descripcion}</div></div><div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Tarifa del viaje</span><span>₡${tarifa.toLocaleString('es-CR')}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Comisión AVS</span><span style="color:var(--rd)">−₡${comAVS.toLocaleString('es-CR')}</span></div><div style="border-top:1px solid var(--bd);padding-top:6px;margin-top:2px;display:flex;justify-content:space-between;font-weight:600"><span style="color:var(--g)">Conductor</span><span style="color:var(--g);font-family:var(--font-d);font-size:15px">₡${totalCond.toLocaleString('es-CR')}</span></div></div><div class="sact"><button class="bacp" onclick="aceptar('${v.id}',${v.origen_lat},${v.origen_lng},'${v.origen_descripcion}',${v.destino_lat},${v.destino_lng},'${v.destino_descripcion}')">Aceptar viaje</button><button class="brec" onclick="rechazar('${v.id}')">Rechazar</button></div></div>`;
+    return `<div class="scard" id="card-${v.id}"><div class="shd"><div class="spas">${v.tipo_servicio==='encomienda'?('📦 Encomienda'+(v.nota_encomienda?(' · '+v.nota_encomienda):'')):'🚗 Viaje · Pasajero'}</div><div style="font-family:var(--font-d);font-size:13px;color:var(--mt)">🔑 ${v.codigo_confirmacion||'—'}</div></div><div class="sroute"><div class="spl"><span style="color:var(--g)">●</span>${v.origen_descripcion}</div><div style="width:2px;height:10px;background:var(--mt);margin-left:5px"></div><div class="spl"><span style="color:var(--rd)">●</span>${v.destino_descripcion}</div></div><div style="background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Tarifa del viaje</span><span>₡${tarifa.toLocaleString('es-CR')}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mt)">Comisión AVS</span><span style="color:var(--rd)">−₡${comAVS.toLocaleString('es-CR')}</span></div><div style="border-top:1px solid var(--bd);padding-top:6px;margin-top:2px;display:flex;justify-content:space-between;font-weight:600"><span style="color:var(--g)">Conductor</span><span style="color:var(--g);font-family:var(--font-d);font-size:15px">₡${totalCond.toLocaleString('es-CR')}</span></div></div><div class="sact"><button class="bacp" onclick="aceptar('${v.id}',${v.origen_lat},${v.origen_lng},'${v.origen_descripcion}',${v.destino_lat},${v.destino_lng},'${v.destino_descripcion}')">Aceptar viaje</button><button class="brec" onclick="rechazar('${v.id}')">Rechazar</button></div></div>`;
   }).join('');
   const htmlPedidos = pedidos.map(p=>{
     const tarifa=parseInt(p.tarifa_delivery||1500);
