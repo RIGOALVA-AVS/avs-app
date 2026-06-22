@@ -7410,15 +7410,15 @@ async function pedirPromo(i){
 }
 // ===== Panel de promos en el celular (mismas 8 promos de la PC) =====
 async function abrirPromosMovil(){
-  let lista=AVS_PROMOS.slice(0,20);
+  let lista=AVS_PROMOS.slice(0,18);
   if(db){
     try{
-      const{data}=await db.from('promos').select('*').eq('activo',true).order('orden',{ascending:true}).order('id',{ascending:true}).limit(20);
-      if(data&&data.length>0)lista=data.slice(0,20);
+      const{data}=await db.from('promos').select('*').eq('activo',true).order('orden',{ascending:true}).order('id',{ascending:true}).limit(18);
+      if(data&&data.length>0)lista=data.slice(0,18);
     }catch(e){}
   }
-  while(lista.length<12)lista.push(null);
-  _promosActuales=lista.slice(0,20);
+  while(lista.length<18)lista.push(null);
+  _promosActuales=lista.slice(0,18);
   const ov=document.createElement('div');
   ov.id='promos-movil-ov';
   ov.style.cssText='position:fixed;inset:0;background:rgba(4,10,20,0.97);z-index:9999;display:flex;flex-direction:column;padding:18px;overflow-y:auto;';
