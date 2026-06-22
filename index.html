@@ -3008,6 +3008,7 @@ function _tickPedidoTimers(){
 async function avanzarPedido(id,nuevo){
   if(!db)return;
   if(nuevo==='preparacion'){
+    try{ if(negocioActual){ var _sn=await db.from('negocios').select('saldo_avs').eq('id',negocioActual.id).single(); var _sal=parseInt(_sn&&_sn.data&&_sn.data.saldo_avs||0); if(_sal<=0){ alert('🔒 Tu crédito AVS está agotado (₡'+_sal.toLocaleString('es-CR')+').\n\nRecargá tu saldo para aceptar y preparar pedidos — AVS cobra su comisión de ese crédito.'); return; } } }catch(e){}
     var mp='sinpe', tot=0, conc='';
     try{ var rp=await db.from('pedidos').select('metodo_pago,total,id').eq('id',id).single(); if(rp.data){ mp=rp.data.metodo_pago||'sinpe'; tot=parseInt(rp.data.total||0); conc='AVS-'+String(rp.data.id).slice(0,6).toUpperCase(); } }catch(e){}
     var msg = (mp==='efectivo')
@@ -3346,6 +3347,7 @@ async function abrirTracking(pedidoId) {
       filter: `id=eq.${pedidoId}`
     }, payload => {
       const nuevoEstado = payload.new.estado;
+      window._trackEstadoPrev = nuevoEstado;
       window._trackMotivo = payload.new.motivo_cancelacion || '';
       renderTimeline(nuevoEstado);
       if(nuevoEstado==='cancelado'){ toast('❌ El comercio canceló tu pedido'); }
@@ -3365,6 +3367,25 @@ async function abrirTracking(pedidoId) {
       }
     })
     .subscribe();
+
+  if (window._trackPoll) { clearInterval(window._trackPoll); window._trackPoll=null; }
+  window._trackEstadoPrev = (p && p.estado) || 'pendiente';
+  window._trackPoll = setInterval(async function(){
+    if(window._avsPantallaActual!=='tracking-pedido' || trackingPedidoId!==pedidoId){ clearInterval(window._trackPoll); window._trackPoll=null; return; }
+    try{
+      var rr=await db.from('pedidos').select('estado,motivo_cancelacion,negocio_id,negocio_nombre').eq('id',pedidoId).single();
+      if(!rr||!rr.data) return;
+      var ne=rr.data.estado||'pendiente';
+      if(ne!==window._trackEstadoPrev){
+        window._trackEstadoPrev=ne; window._trackMotivo=rr.data.motivo_cancelacion||'';
+        renderTimeline(ne);
+        if(ne==='cancelado'){ toast('❌ El comercio canceló tu pedido'); }
+        var ei=ESTADOS_PEDIDO.find(function(e){return e.id===ne;}); if(ei){ toast(ei.ico+' '+ei.label); if(navigator.vibrate)navigator.vibrate([200,100,200]); }
+        if(ne==='entregado'){ var yo=localStorage.getItem('resena-omitida-'+pedidoId); if(!yo&&typeof abrirResenaNegocio==='function'){ setTimeout(function(){abrirResenaNegocio(pedidoId,rr.data.negocio_id,rr.data.negocio_nombre||'el negocio');},2000); } }
+      }
+      if(ne==='entregado'||ne==='cancelado'){ clearInterval(window._trackPoll); window._trackPoll=null; }
+    }catch(e){}
+  }, 5000);
 }
 
 // Add estado buttons to negocio pedidos panel
