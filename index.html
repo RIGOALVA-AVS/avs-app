@@ -5552,7 +5552,7 @@ function renderNegocios(data, content) {
 // ===== NEGOCIOS MARKETPLACE =====
 async function verNegocios(cat) {
   cargarPromosAds(cat);
-  const titulos = {restaurantes:'🍽️ Restaurantes',salud:'🏥 Salud',hospedaje:'🏨 Hospedaje',supermercado:'🛒 Supermercados',negocios:'🏪 Negocios',otros:'✨ Otros servicios'};
+  const titulos = {restaurantes:'🍽️ Restaurantes',salud:'🏥 Salud',hospedaje:'🏨 Hospedaje',supermercado:'🛒 Supermercados',tramos:'🥬 Verdulerías / Tramos',carniceria:'🥩 Carnicerías',negocios:'🏪 Negocios',otros:'✨ Otros servicios'};
   document.getElementById('lista-titulo').textContent = titulos[cat]||cat;
   go('lista-negocios');
   const content = document.getElementById('lista-negocios-content');
