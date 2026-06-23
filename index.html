@@ -4559,6 +4559,20 @@ async function cargarCumplimiento(){
   _cumplInt=setInterval(run,30000);
 }
 var ADMIN_AREAS={ resumen:['resumen'], clientes:['vehiculos','negocios'], operacion:['recargas','rendimientos','promos','matchuber'], seguridad:['emergencias','intentos','codigos','cumplimiento'] };
+var _recAdminRt=null,_recAdminInt=null;
+function _refrescarAdminRecargas(){
+  try{ var ar=document.getElementById('admin-recargas'); if(ar&&ar.style.display!=='none'&&typeof cargarRecargas==='function') cargarRecargas(); }catch(e){}
+  try{ if(typeof cargarResumenAdmin==='function') cargarResumenAdmin(); }catch(e){}
+}
+function _iniciarRealtimeAdmin(){
+  _detenerRealtimeAdmin();
+  try{ _recAdminRt=db.channel('recargas-admin').on('postgres_changes',{event:'*',schema:'public',table:'recargas'},function(){ _refrescarAdminRecargas(); }).subscribe(); }catch(e){}
+  _recAdminInt=setInterval(function(){ if(window._avsPantallaActual==='admin') _refrescarAdminRecargas(); },10000);
+}
+function _detenerRealtimeAdmin(){
+  try{ if(_recAdminRt&&db&&db.removeChannel)db.removeChannel(_recAdminRt); }catch(e){} _recAdminRt=null;
+  if(_recAdminInt){clearInterval(_recAdminInt);_recAdminInt=null;}
+}
 function switchAdminArea(area){
   ['resumen','clientes','operacion','seguridad'].forEach(function(a){ var b=document.getElementById('adarea-'+a); if(b)b.classList.toggle('on',a===area); });
   var tabs=ADMIN_AREAS[area]||[];
@@ -5543,7 +5557,7 @@ function go(id, _fromPop){
   if(id==='pasajero')setTimeout(()=>{initCarruselGenerico('avsCarruselPasajero');},120);
   // Rehabilitar el botón de verificar cédula al entrar (evita que quede "pegado" en Verificando...)
   if(id==='registro-cedula'){setTimeout(()=>{const b=document.getElementById('reg-ced-submit');if(b){b.disabled=false;b.textContent='✓ Continuar';}const e=document.getElementById('reg-ced-error');if(e)e.textContent='';const fc=document.getElementById('reg-fecha-nac-cont');if(fc&&!fc.innerHTML.trim())fc.innerHTML=fechaNacHTML('u-fn');},40);}
-  if(id==='admin')switchAdminArea('resumen');
+  if(id==='admin'){switchAdminArea('resumen');if(typeof _iniciarRealtimeAdmin==='function')_iniciarRealtimeAdmin();}else{if(typeof _detenerRealtimeAdmin==='function')_detenerRealtimeAdmin();}
   if(id==='conductor')setTimeout(verificarVehiculoActivo,300);
   if(id==='flete')setTimeout(initFleteAutocomplete,150);
   if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);
