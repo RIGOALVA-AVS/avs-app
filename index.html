@@ -549,6 +549,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
 .adtab{display:flex;gap:8px;margin-bottom:16px;}
 .adtbtn{flex:1;padding:8px;border-radius:10px;border:1px solid var(--bd);background:var(--cd);font-size:12px;cursor:pointer;text-align:center;color:var(--mt);}
 #admin .adtab{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+@media(min-width:1024px){#negocioslist,#vehiculoslist,#recargaslist,#adminlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;padding:0 20px;align-items:start;}#negocioslist .adcard,#vehiculoslist .adcard,#recargaslist .adcard,#adminlist .adcard{margin:0 !important;}}
 #admin .adtab::-webkit-scrollbar{display:none;}
 #admin .adtab .adtbtn{flex:0 0 auto;white-space:nowrap;}
 .adtbtn.on{background:var(--g);color:var(--bg);border-color:var(--g);font-weight:600;}
@@ -4530,7 +4531,7 @@ async function cargarResumenAdmin(){
   if(!cont._lh) cont.innerHTML='<div class="nolist">Cargando…</div>';
   function n(r){ return (r&&typeof r.count==='number')?r.count:'—'; }
   function card(t,v,c){ return '<div style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:14px"><div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">'+t+'</div><div style="font-family:var(--font-d);font-size:22px;font-weight:800;color:'+(c||'var(--g)')+';margin-top:4px">'+v+'</div></div>'; }
-  function actCard(t,v,onclick){ var hot=(typeof v==='number'&&v>0); var col=hot?'#F5A623':'var(--mt)'; var bd=hot?'rgba(245,166,35,0.55)':'var(--bd)'; return '<div onclick="'+onclick+'" style="cursor:pointer;background:var(--sf);border:1px solid '+bd+';border-radius:14px;padding:14px"><div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">'+t+'</div><div style="font-family:var(--font-d);font-size:24px;font-weight:800;color:'+col+';margin-top:4px">'+v+(hot?' →':'')+'</div></div>'; }
+  function actCard(t,v,onclick){ var hot=(typeof v==='number'&&v>0); var col=hot?'#F5A623':'var(--mt)'; var bd=hot?'rgba(245,166,35,0.55)':'var(--bd)'; return '<div onclick="'+onclick+'" style="cursor:pointer;background:var(--sf);border:1px solid '+bd+';border-radius:14px;padding:14px'+(hot?';animation:avsPulse 1.6s infinite':'')+'"><div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">'+t+'</div><div style="font-family:var(--font-d);font-size:24px;font-weight:800;color:'+col+';margin-top:4px">'+v+(hot?' →':'')+'</div></div>'; }
   var d24=new Date(Date.now()-86400000).toISOString();
   try{
     var res=await Promise.all([
@@ -5071,7 +5072,7 @@ async function abrirComercioPorLink(comercioId){
 async function irAComercio(comercioId){
   if(!db){ toast('Sin conexión'); return; }
   const { data: neg } = await db.from('negocios').select('*').eq('id', comercioId).eq('estado','aprobado').maybeSingle();
-  if(!neg){ toast('Comercio no disponible'); setTimeout(()=>go(user.role==='conductor'?'conductor':'pasajero'),1200); return; }
+  if(!neg){ toast('Comercio no disponible'); setTimeout(()=>go(user.role==='conductor'?'conductor':(user.role==='admin'?'admin':'pasajero')),1200); return; }
   if(typeof _negociosCache !== 'undefined'){
     if(!_negociosCache.find(n=>n.id===neg.id)) _negociosCache.push(neg);
   }
@@ -5423,17 +5424,19 @@ async function cargarNegociosAdmin(){
   let{data}=await db.from('negocios').select('*').eq('estado',negociosFiltro).order('fecha',{ascending:false}); if(typeof negCatFiltro!=='undefined'&&negCatFiltro!=='todos')data=(data||[]).filter(function(nn){return nn.categoria===negCatFiltro;}); if(negCatFiltro==='salud'&&typeof negSubFiltro!=='undefined'&&negSubFiltro!=='todos')data=(data||[]).filter(function(nn){return nn.subcategoria===negSubFiltro;});
   const lista=document.getElementById('negocioslist');
   if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin negocios en este estado</div>';return;}
-  lista.innerHTML=data.map(n=>`
-    <div class="adcard" style="margin:8px 20px">
-      <div class="adname">${n.nombre}</div>
-      <div class="adinfo">📱 ${n.telefono} · 📍 ${n.direccion||'—'} · ${n.categoria}</div>
-      <div class="adinfo">${n.descripcion||''}</div>
-      <div class="adbadge ${n.estado}">${n.estado.toUpperCase()}</div>
-      ${negociosFiltro==='pendiente'?`<div class="adacts">
-        <button class="adaprob" onclick="accionNegocio('${n.id}','aprobado')">✅ Aprobar</button>
-        <button class="adrech" onclick="accionNegocio('${n.id}','rechazado')">❌ Rechazar</button>
-      </div>`:''}
-    </div>`).join('');
+  lista.innerHTML=data.map(function(n){
+    var online=(n.last_seen && (Date.now()-new Date(n.last_seen).getTime())<150000);
+    var saldo=parseInt(n.saldo_avs||0);
+    var sub=n.subcategoria?(' · '+n.subcategoria):'';
+    return '<div class="adcard" style="margin:8px 20px">'+
+      '<div class="adname" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+(n.nombre||'')+' <span style="font-size:11px;font-weight:600;color:'+(online?'var(--g)':'var(--mt)')+'">'+(online?'🟢 En línea':'⚪ Desconectado')+'</span></div>'+
+      '<div class="adinfo">📱 '+(n.telefono||'—')+' · 📍 '+(n.direccion||'—')+' · '+(n.categoria||'')+sub+'</div>'+
+      '<div class="adinfo">'+(n.descripcion||'')+'</div>'+
+      '<div class="adinfo">💳 Saldo AVS: <b style="color:'+(saldo<=0?'#F5A623':'var(--g)')+'">₡'+saldo.toLocaleString('es-CR')+'</b></div>'+
+      '<div class="adbadge '+n.estado+'">'+(n.estado||'').toUpperCase()+'</div>'+
+      (negociosFiltro==='pendiente'?('<div class="adacts"><button class="adaprob" onclick="accionNegocio(\''+n.id+'\',\'aprobado\')">✅ Aprobar</button><button class="adrech" onclick="accionNegocio(\''+n.id+'\',\'rechazado\')">❌ Rechazar</button></div>'):'')+
+      '</div>';
+  }).join('');
   const _bn=document.getElementById('buscar-negocio');if(_bn&&_bn.value)buscarEnLista('negocioslist',_bn.value);
 }
 
@@ -5668,7 +5671,7 @@ async function asegurarConsentimiento(phone){
 }
 function volverInicio(){
   if(loadSession() && user.name && user.role){
-    go(user.role==='conductor' ? 'conductor' : 'pasajero');
+    go(user.role==='conductor' ? 'conductor' : (user.role==='admin' ? 'admin' : 'pasajero'));
   } else {
     go('login');
   }
@@ -7984,7 +7987,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
   }catch(e){}
 
-  if(loadSession()&&user.name&&user.role){applyUser();setTimeout(async()=>{const savedViajeId=localStorage.getItem('avs_viaje_id');if(savedViajeId&&db&&user.role==='usuario'){viajeId=savedViajeId;const{data:v}=await db.from('viajes').select('estado').eq('id',viajeId).single();if(v&&v.estado==='solicitado'){go('buscando');toast('Retomando búsqueda...');pasajeroWaitInterval=setInterval(async()=>{try{const{data:vv}=await db.from('viajes').select('estado,conductor_nombre,conductor_placa').eq('id',viajeId).single();if(vv&&vv.estado==='aceptado'){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;if(vv.conductor_nombre)document.getElementById('cnom').textContent=vv.conductor_nombre;if(vv.conductor_placa)document.getElementById('cplate').textContent=vv.conductor_placa;trazarRutaPasajero();go('casignado');mostrarSOS(true);toast('¡Conductor en camino!');if(codigoViaje){document.getElementById('codigoPasajeroText').textContent=codigoViaje;document.getElementById('codigoDisplay').textContent=codigoViaje;}}else if(vv&&(vv.estado==='cancelado'||vv.estado==='rechazado')){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;viajeId=null;localStorage.removeItem('avs_viaje_id');go('pasajero');}}catch(e){}},2000);}else if(v&&v.estado==='aceptado'){trazarRutaPasajero();go('casignado');}else{viajeId=null;localStorage.removeItem('avs_viaje_id');go(user.role==='conductor'?'conductor':'pasajero');}}else{go(user.role==='conductor'?'conductor':'pasajero');}},1500);}else{
+  if(loadSession()&&user.name&&user.role){applyUser();setTimeout(async()=>{const savedViajeId=localStorage.getItem('avs_viaje_id');if(savedViajeId&&db&&user.role==='usuario'){viajeId=savedViajeId;const{data:v}=await db.from('viajes').select('estado').eq('id',viajeId).single();if(v&&v.estado==='solicitado'){go('buscando');toast('Retomando búsqueda...');pasajeroWaitInterval=setInterval(async()=>{try{const{data:vv}=await db.from('viajes').select('estado,conductor_nombre,conductor_placa').eq('id',viajeId).single();if(vv&&vv.estado==='aceptado'){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;if(vv.conductor_nombre)document.getElementById('cnom').textContent=vv.conductor_nombre;if(vv.conductor_placa)document.getElementById('cplate').textContent=vv.conductor_placa;trazarRutaPasajero();go('casignado');mostrarSOS(true);toast('¡Conductor en camino!');if(codigoViaje){document.getElementById('codigoPasajeroText').textContent=codigoViaje;document.getElementById('codigoDisplay').textContent=codigoViaje;}}else if(vv&&(vv.estado==='cancelado'||vv.estado==='rechazado')){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;viajeId=null;localStorage.removeItem('avs_viaje_id');go('pasajero');}}catch(e){}},2000);}else if(v&&v.estado==='aceptado'){trazarRutaPasajero();go('casignado');}else{viajeId=null;localStorage.removeItem('avs_viaje_id');go(user.role==='conductor'?'conductor':(user.role==='admin'?'admin':'pasajero'));}}else{go(user.role==='conductor'?'conductor':(user.role==='admin'?'admin':'pasajero'));}},1500);}else{
     // Check territorio - show selector briefly then go to login
     const terrGuardado = localStorage.getItem('avs_territorio');
     if(!terrGuardado){ localStorage.setItem('avs_territorio','atenas'); }
