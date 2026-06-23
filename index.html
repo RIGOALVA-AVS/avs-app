@@ -79,7 +79,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
 .avs-car-img:hover{transform:scale(1.04);}
 .avs-thumb-btn{transition:transform .2s ease;}
 .avs-thumb-btn:hover{transform:scale(2.4);z-index:60;position:relative;box-shadow:0 8px 24px rgba(0,0,0,0.6);}
-@keyframes avsPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,179,0,0.55);}50%{box-shadow:0 0 0 9px rgba(255,179,0,0);}}
+@keyframes avsPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,179,0,0);border-color:rgba(255,179,0,0.45);background:var(--sf)}50%{box-shadow:0 0 0 9px rgba(255,179,0,0.30);border-color:#FFB300;background:rgba(255,179,0,0.14)}}
 .promo-alert-btn{animation:avsPulse 1.6s infinite;}
 
 .lhero{height:calc(var(--real-vh, 1vh) * 44);width:100%;flex-shrink:0;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center center/contain no-repeat;background-color:#080f1e;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0;position:relative;overflow:hidden;}
@@ -1324,6 +1324,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
       <div><div class="slbl">Saldo AVS disponible</div><div class="samt" id="cond-saldo">₡0</div></div>
     </div>
     <div class="sbg"><div class="sfill"></div></div>
+    <div id="cond-recarga-pend"></div>
     <div class="rchips">
       <div class="rchip" onclick="abrirSINPE(5000)">₡5.000</div>
       <div class="rchip" onclick="abrirSINPE(10000)">₡10.000</div>
@@ -3217,8 +3218,10 @@ function solicitarTerritorio(){
 }
 // ===== ESTADO ONLINE (latido para monitoreo en tiempo real) =====
 var _negHbInt=null;
+var _saldoRtNeg=null;
+function _suscribirSaldoNegocio(){ if(!db||!negocioActual)return; try{ if(_saldoRtNeg&&db.removeChannel)db.removeChannel(_saldoRtNeg); }catch(e){} try{ _saldoRtNeg=db.channel('saldo-neg-'+negocioActual.id).on('postgres_changes',{event:'UPDATE',schema:'public',table:'negocios',filter:'id=eq.'+negocioActual.id},function(payload){ var sv=parseInt(payload.new.saldo_avs||0); negocioActual.saldo_avs=sv; var el=document.getElementById('neg-saldo'); if(el)el.textContent='₡'+sv.toLocaleString('es-CR'); if(typeof avisoSaldoBajoAVS==='function')avisoSaldoBajoAVS(sv); }).subscribe(); }catch(e){} }
 function iniciarHeartbeatNegocio(){
-  detenerHeartbeatNegocio(); _latidoNegocio(); _negHbInt=setInterval(_latidoNegocio,30000); iniciarMonitorPedidos(); refrescarEstadoComercio();
+  detenerHeartbeatNegocio(); _latidoNegocio(); _negHbInt=setInterval(_latidoNegocio,30000); iniciarMonitorPedidos(); refrescarEstadoComercio(); _suscribirSaldoNegocio();
   var o=document.getElementById('neg-online'); if(o){o.textContent='🟢 En línea'; o.style.color='var(--g)';}
 }
 function detenerHeartbeatNegocio(){ if(_negHbInt){clearInterval(_negHbInt);_negHbInt=null;} detenerMonitorPedidos(); var o=document.getElementById('neg-online'); if(o)o.textContent=''; }
@@ -4263,7 +4266,7 @@ async function cargarHistorial(){if(!db){document.getElementById('histlist').inn
 const SINPE_AVS='88915166';let sinpeMonto=0;
 function abrirSINPE(monto){sinpeMonto=monto;const f='₡'+monto.toLocaleString('es-CR');const c='AVS-'+user.phone+'-'+monto;document.getElementById('sinpe-monto').textContent=f;document.getElementById('sinpe-monto2').textContent=f;document.getElementById('sinpe-concepto').textContent=c;go('sinpe');}
 function copiarSINPE(){navigator.clipboard.writeText(SINPE_AVS).then(()=>toast('Número copiado: '+SINPE_AVS)).catch(()=>toast('Número AVS: '+SINPE_AVS));}
-async function confirmarPagoSINPE(){if(!db||!sinpeMonto)return;const concepto='AVS-'+user.phone+'-'+sinpeMonto;const{error}=await db.from('recargas').insert({conductor_telefono:user.phone,conductor_nombre:user.name,monto:sinpeMonto,concepto,estado:'pendiente',fecha:new Date().toISOString()});if(error){toast('Error al registrar. Intentá de nuevo.');return;}go('conductor');toast('✅ Pago registrado — acreditaremos en 1-2 horas');}
+async function confirmarPagoSINPE(){if(!db||!sinpeMonto)return;const concepto='AVS-'+user.phone+'-'+sinpeMonto;const{error}=await db.from('recargas').insert({conductor_telefono:user.phone,conductor_nombre:user.name,monto:sinpeMonto,concepto,estado:'pendiente',fecha:new Date().toISOString()});if(error){toast('Error al registrar. Intentá de nuevo.');return;}go('conductor');setTimeout(function(){if(typeof refrescarRecargaPendienteConductor==='function')refrescarRecargaPendienteConductor();},300);toast('✅ Pago registrado — acreditaremos en 1-2 horas');}
 let regEnergia='combustion';let regVehiculo='sedan',regFeatures={ac:false,pet:false,carga:false},regDocs={},selCategoria='todos';
 function selVchip(el,tipo){document.querySelectorAll('#vtype-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');regVehiculo=tipo;aplicarFotosVehiculo();llenarMarcas();saveRegProgress();}
 function selEnergia(el,tipo){document.querySelectorAll('#energia-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');regEnergia=tipo;saveRegProgress();}
@@ -6630,7 +6633,11 @@ function mostrarChipVehiculo(v){
   el.onclick=()=>verificarVehiculoActivo(true);
 }
 var _repInt=null;
-function iniciarMonitorRepartos(){ detenerMonitorRepartos(); cargarRepartos(); _repInt=setInterval(function(){ if(window._avsPantallaActual==='conductor') cargarRepartos(); },10000); }
+async function refrescarSaldoConductor(){ if(!db||!user||!user.phone)return; try{ var r=await db.from('usuarios').select('saldo_avs').eq('telefono',user.phone).single(); if(r&&r.data){ var sv=parseInt(r.data.saldo_avs||0); var el=document.getElementById('cond-saldo'); if(el)el.textContent='₡'+sv.toLocaleString('es-CR'); if(typeof avisoSaldoBajoAVS==='function')avisoSaldoBajoAVS(sv); } }catch(e){} }
+var _saldoRtCond=null;
+function _suscribirSaldoConductor(){ if(!db||!user||!user.phone)return; try{ if(_saldoRtCond&&db.removeChannel)db.removeChannel(_saldoRtCond); }catch(e){} try{ _saldoRtCond=db.channel('saldo-cond-'+user.phone).on('postgres_changes',{event:'UPDATE',schema:'public',table:'usuarios',filter:'telefono=eq.'+user.phone},function(payload){ var sv=parseInt(payload.new.saldo_avs||0); var el=document.getElementById('cond-saldo'); if(el)el.textContent='₡'+sv.toLocaleString('es-CR'); if(typeof avisoSaldoBajoAVS==='function')avisoSaldoBajoAVS(sv); toast('💳 Saldo actualizado: ₡'+sv.toLocaleString('es-CR')); if(typeof refrescarRecargaPendienteConductor==='function')refrescarRecargaPendienteConductor(); }).subscribe(); }catch(e){} }
+async function refrescarRecargaPendienteConductor(){ if(!db||!user||!user.phone)return; var el=document.getElementById('cond-recarga-pend'); if(!el)return; try{ var r=await db.from('recargas').select('monto,fecha,estado').eq('conductor_telefono',user.phone).eq('estado','pendiente'); if(r&&r.data&&r.data.length){ var tot=r.data.reduce(function(a,b){return a+parseInt(b.monto||0)},0); el.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.45);border-radius:12px;font-size:13px;display:flex;align-items:center;gap:8px"><span style=\'font-size:18px\'>\u23f3</span><span>Recarga pendiente de aprobaci\u00f3n: <strong>\u20a1'+tot.toLocaleString('es-CR')+'</strong>'+(r.data.length>1?' ('+r.data.length+' solicitudes)':'')+'</span></div>'; } else { el.innerHTML=''; } }catch(e){} }
+function iniciarMonitorRepartos(){ detenerMonitorRepartos(); cargarRepartos(); refrescarSaldoConductor(); refrescarRecargaPendienteConductor(); _suscribirSaldoConductor(); _repInt=setInterval(function(){ if(window._avsPantallaActual==='conductor'){ cargarRepartos(); refrescarSaldoConductor(); refrescarRecargaPendienteConductor(); } },10000); }
 function detenerMonitorRepartos(){ if(_repInt){clearInterval(_repInt);_repInt=null;} }
 async function cargarRepartos(){
   var cont=document.getElementById('rep-list'); var nb=document.getElementById('rep-new'); if(!cont)return;
