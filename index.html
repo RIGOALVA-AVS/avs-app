@@ -3137,6 +3137,7 @@ function detenerMonitorPedidos(){ if(_negPollInt){clearInterval(_negPollInt);_ne
 async function _chequearPedidosNuevos(){
   if(!db||!negocioActual)return;
   refrescarEstadoComercio();
+  try{ var _rsa=await db.from('negocios').select('saldo_avs').eq('id',negocioActual.id).single(); if(_rsa&&_rsa.data){ var _ss=parseInt(_rsa.data.saldo_avs||0); negocioActual.saldo_avs=_ss; var _se=document.getElementById('neg-saldo'); if(_se)_se.textContent='₡'+_ss.toLocaleString('es-CR'); } }catch(e){}
   try{
     var r=await db.from('pedidos').select('id').eq('negocio_id',negocioActual.id).eq('estado','pendiente');
     var ids=(r.data||[]).map(function(p){return p.id;});
