@@ -920,7 +920,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
   <div class="adhdr"><div class="adtit">🛡️ Panel Admin AVS</div><button onclick="logout()" style="background:transparent;border:none;color:var(--mt);font-size:13px;cursor:pointer">Salir</button></div>
   <div class="adtab" id="admin-area-bar" style="margin-bottom:8px">
     <div class="adtbtn on" id="adarea-resumen" onclick="switchAdminArea('resumen')">📊 Resumen</div>
-    <div class="adtbtn" id="adarea-clientes" onclick="switchAdminArea('clientes')">👥 Clientes</div>
+    <div class="adtbtn" id="adarea-clientes" onclick="switchAdminArea('clientes')">👥 Plataformistas</div>
     <div class="adtbtn" id="adarea-operacion" onclick="switchAdminArea('operacion')">💰 Operación</div>
     <div class="adtbtn" id="adarea-seguridad" onclick="switchAdminArea('seguridad')">🛡️ Seguridad</div>
   </div>
@@ -999,10 +999,21 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div class="adtab" style="margin-top:6px">
       <div class="adtbtn on" id="ncat-todos" onclick="filtrarNegCat('todos')">Todos</div>
       <div class="adtbtn" id="ncat-restaurantes" onclick="filtrarNegCat('restaurantes')">🍽️ Restaurantes</div>
-      <div class="adtbtn" id="ncat-tramos" onclick="filtrarNegCat('tramos')">🏬 Tramos</div>
+      <div class="adtbtn" id="ncat-tramos" onclick="filtrarNegCat('tramos')">🏬 Tramos/Verdulerías</div>
+      <div class="adtbtn" id="ncat-carniceria" onclick="filtrarNegCat('carniceria')">🥩 Carnicerías</div>
       <div class="adtbtn" id="ncat-supermercado" onclick="filtrarNegCat('supermercado')">🛒 Supermercados</div>
       <div class="adtbtn" id="ncat-hospedaje" onclick="filtrarNegCat('hospedaje')">🏨 Hoteles</div>
       <div class="adtbtn" id="ncat-salud" onclick="filtrarNegCat('salud')">🏥 Salud</div>
+    </div>
+    <div class="adtab" id="nsub-salud-row" style="margin-top:6px;display:none">
+      <div class="adtbtn on" id="nsub-todos" onclick="filtrarNegSub('todos')">Todas</div>
+      <div class="adtbtn" id="nsub-odontologia" onclick="filtrarNegSub('odontologia')">🦷 Odontología</div>
+      <div class="adtbtn" id="nsub-optica" onclick="filtrarNegSub('optica')">👓 Óptica</div>
+      <div class="adtbtn" id="nsub-farmacia" onclick="filtrarNegSub('farmacia')">💊 Farmacia</div>
+      <div class="adtbtn" id="nsub-medico_general" onclick="filtrarNegSub('medico_general')">🩺 Médico general</div>
+      <div class="adtbtn" id="nsub-especialista" onclick="filtrarNegSub('especialista')">👨‍⚕️ Especialistas</div>
+      <div class="adtbtn" id="nsub-centro_medico" onclick="filtrarNegSub('centro_medico')">🏥 Centro médico</div>
+      <div class="adtbtn" id="nsub-emergencias" onclick="filtrarNegSub('emergencias')">🚑 Emergencias</div>
     </div>
     <input class="ifield" id="buscar-negocio" type="text" placeholder="🔍 Buscar comercio por nombre" oninput="buscarEnLista('negocioslist',this.value)" style="margin:8px 20px 4px;width:calc(100% - 40px)">
     <div id="negocioslist"><div class="nolist">Cargando comercios...</div></div>
@@ -5397,7 +5408,7 @@ function filtrarNegocios(estado){
 
 async function cargarNegociosAdmin(){
   if(!db)return;
-  let{data}=await db.from('negocios').select('*').eq('estado',negociosFiltro).order('fecha',{ascending:false}); if(typeof negCatFiltro!=='undefined'&&negCatFiltro!=='todos')data=(data||[]).filter(function(nn){return nn.categoria===negCatFiltro;});
+  let{data}=await db.from('negocios').select('*').eq('estado',negociosFiltro).order('fecha',{ascending:false}); if(typeof negCatFiltro!=='undefined'&&negCatFiltro!=='todos')data=(data||[]).filter(function(nn){return nn.categoria===negCatFiltro;}); if(negCatFiltro==='salud'&&typeof negSubFiltro!=='undefined'&&negSubFiltro!=='todos')data=(data||[]).filter(function(nn){return nn.subcategoria===negSubFiltro;});
   const lista=document.getElementById('negocioslist');
   if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin negocios en este estado</div>';return;}
   lista.innerHTML=data.map(n=>`
@@ -5422,7 +5433,9 @@ async function accionNegocio(id,estado){
 }
 
 let negociosFiltro='pendiente'; var negCatFiltro='todos';
-function filtrarNegCat(c){ negCatFiltro=c; document.querySelectorAll('[id^="ncat-"]').forEach(function(b){b.classList.remove('on');}); var b=document.getElementById('ncat-'+c); if(b)b.classList.add('on'); cargarNegociosAdmin(); }
+function filtrarNegCat(c){ negCatFiltro=c; negSubFiltro='todos'; document.querySelectorAll('[id^="ncat-"]').forEach(function(b){b.classList.remove('on');}); var b=document.getElementById('ncat-'+c); if(b)b.classList.add('on'); var sr=document.getElementById('nsub-salud-row'); if(sr)sr.style.display=(c==='salud')?'':'none'; document.querySelectorAll('[id^="nsub-"]').forEach(function(b){b.classList.toggle('on',b.id==='nsub-todos');}); cargarNegociosAdmin(); }
+var negSubFiltro='todos';
+function filtrarNegSub(sb){ negSubFiltro=sb; document.querySelectorAll('[id^="nsub-"]').forEach(function(b){b.classList.remove('on');}); var b=document.getElementById('nsub-'+sb); if(b)b.classList.add('on'); cargarNegociosAdmin(); }
 
 async function enviarRegistroNegocio(){
   if(!consentimientoOK('comercio'))return;
