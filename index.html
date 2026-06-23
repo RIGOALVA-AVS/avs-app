@@ -5725,7 +5725,7 @@ function volverInicio(){
     go('login');
   }
 }
-function logout(){clearSession();try{sessionStorage.removeItem('avs_negocio');sessionStorage.removeItem('avs_neg_token');sessionStorage.removeItem('avs_neg_tabla');sessionStorage.removeItem('avs_neg_accid');}catch(e){}_negToken=null;_authCuenta=null;detenerHeartbeatNegocio();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
+function logout(){try{if(db&&user&&user.phone&&user.role==='conductor'){disponible=false;db.from('usuarios').update({estado_disponibilidad:'offline'}).eq('telefono',user.phone);}}catch(e){}if(typeof conductorReportInterval!=='undefined'&&conductorReportInterval){clearInterval(conductorReportInterval);conductorReportInterval=null;}clearSession();try{sessionStorage.removeItem('avs_negocio');sessionStorage.removeItem('avs_neg_token');sessionStorage.removeItem('avs_neg_tabla');sessionStorage.removeItem('avs_neg_accid');}catch(e){}_negToken=null;_authCuenta=null;detenerHeartbeatNegocio();viajeId=null;viajeData=null;if(pollInterval)clearInterval(pollInterval);if(pasajeroWaitInterval)clearInterval(pasajeroWaitInterval);go('login');}
 var _negRol='dueño';
 var _authCuenta=null, _negToken=null, _pinFails=0;
 function _genTokenNeg(){ return 'tok-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10); }
