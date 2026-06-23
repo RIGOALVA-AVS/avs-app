@@ -1598,7 +1598,8 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div id="neg-rail-lista"><div class="nolist">Cargando…</div></div>
   </div>
   <div class="neg-header">
-    <div class="neg-avatar" id="neg-avatar-ico">🏪</div>
+    <div class="neg-avatar" id="neg-avatar-ico" onclick="document.getElementById('neg-logo-file').click()" style="cursor:pointer;overflow:hidden" title="Tocá para subir tu logo">🏪</div>
+    <input type="file" id="neg-logo-file" accept="image/*" style="display:none" onchange="subirLogoNegocio(this)">
     <div>
       <div style="font-family:var(--font-d);font-size:18px;font-weight:700" id="neg-panel-nombre">Mi Comercio</div>
       <div style="font-size:12px;color:var(--mt)" id="neg-panel-cat">Categoría</div>
@@ -2803,6 +2804,23 @@ function setVTamPct(i,val){ if(window._vTam&&window._vTam[i])window._vTam[i].pct
 function addVTam(){ var n=prompt('Nombre del tamaño (ej. 1 Litro):'); if(!n)return; n=n.trim(); if(!n)return; var pp=prompt('% sobre el precio base (ej. 80):','0'); window._vTam=window._vTam||[]; window._vTam.push({nombre:n,pct:parseInt(pp)||0,on:true}); _renderVarEditor(); }
 function addVSab(){ var n=prompt('Nombre del sabor:'); if(!n)return; n=n.trim(); if(!n)return; window._vSab=window._vSab||[]; window._vSab.push({nombre:n,on:true}); _renderVarEditor(); }
 function _leerVariantesEditor(){ return { tamanos:(window._vTam||[]).filter(function(t){return t.on;}).map(function(t){return {nombre:t.nombre,pct:t.pct||0};}), sabores:(window._vSab||[]).filter(function(s){return s.on;}).map(function(s){return s.nombre;}) }; }
+async function subirLogoNegocio(input){
+  var file=input.files&&input.files[0]; if(!file||!negocioActual)return;
+  if(!db){toast('Sin conexión');return;}
+  toast('Subiendo logo...');
+  try{
+    var ext=(file.name.split('.').pop()||'jpg');
+    var fn='logo-'+negocioActual.id+'-'+Date.now()+'.'+ext;
+    var up=await db.storage.from('fotos-menu').upload(fn,file,{upsert:true});
+    if(up.error) throw up.error;
+    var u=db.storage.from('fotos-menu').getPublicUrl(fn);
+    var url=(u.data&&u.data.publicUrl)||'';
+    await db.from('negocios').update({logo_url:url}).eq('id',negocioActual.id);
+    negocioActual.logo_url=url;
+    var a1=document.getElementById('neg-avatar-ico'); if(a1)a1.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">';
+    toast('✅ Logo actualizado');
+  }catch(e){ console.error('logo',e); toast('No se pudo subir el logo (¿bucket fotos-menu?)'); }
+}
 function mostrarFormItem(){var f=document.getElementById('form-item');if(f)f.style.display='block';itemEditId=null;var _t0=document.getElementById('form-item-title');if(_t0)_t0.textContent='Nuevo item';var _g0=document.getElementById('item-guardar-btn');if(_g0)_g0.textContent='Guardar';['item-nombre','item-desc','item-precio','item-cat','item-foto','item-tamanos','item-sabores'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});itemCategoria='';document.querySelectorAll('#cat-chips .vchip').forEach(c=>c.classList.remove('sel'));if(typeof _initVarEditor==='function')_initVarEditor({});}
 async function subirFotoItem(input){
   var file=input.files&&input.files[0]; if(!file)return;
@@ -5581,10 +5599,13 @@ async function verNegocios(cat) {
     <div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;margin-bottom:14px;overflow:hidden">
       <div style="padding:16px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-          <div style="flex:1">
-            <div style="font-family:var(--font-d);font-size:16px;font-weight:600">${n.nombre}</div>
-            <div style="font-size:12px;color:var(--mt);margin-top:2px">📍 ${n.direccion||'Atenas'}</div>
-            ${ratingDisplay}
+          <div style="flex:1;display:flex;gap:10px;align-items:flex-start">
+            ${n.logo_url?`<img src="${n.logo_url}" style="width:46px;height:46px;border-radius:10px;object-fit:cover;flex-shrink:0;border:1px solid var(--bd)">`:''}
+            <div>
+              <div style="font-family:var(--font-d);font-size:16px;font-weight:600">${n.nombre}</div>
+              <div style="font-size:12px;color:var(--mt);margin-top:2px">📍 ${n.direccion||'Atenas'}</div>
+              ${ratingDisplay}
+            </div>
           </div>
           <div style="background:rgba(0,229,184,0.1);border:1px solid var(--bd);border-radius:8px;padding:3px 10px;font-size:11px;color:var(--g)">✅ Abierto</div>
         </div>
@@ -6019,8 +6040,8 @@ async function finalizarEntradaComercio(){
   _negToken=_genTokenNeg();
   try{ await db.from(_authCuenta.tabla).update({sesion_token:_negToken}).eq('id',_authCuenta.id); }catch(e){}
   try{ sessionStorage.setItem('avs_neg_token',_negToken); sessionStorage.setItem('avs_neg_tabla',_authCuenta.tabla); sessionStorage.setItem('avs_neg_accid',String(_authCuenta.id)); }catch(e){}
-  var iconos={restaurantes:'🍽️',salud:'🏥',hospedaje:'🏨',supermercado:'🛒',negocios:'🏪',otros:'✨'};
-  var a1=document.getElementById('neg-avatar-ico'); if(a1)a1.textContent=iconos[negocioActual.categoria]||'🏪';
+  var iconos={restaurantes:'🍽️',salud:'🏥',hospedaje:'🏨',supermercado:'🛒',tramos:'🥬',carniceria:'🥩',negocios:'🏪',otros:'✨'};
+  var a1=document.getElementById('neg-avatar-ico'); if(a1){ if(negocioActual.logo_url){ a1.innerHTML='<img src="'+negocioActual.logo_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">'; } else { a1.textContent=iconos[negocioActual.categoria]||'🏪'; } }
   var n1=document.getElementById('neg-panel-nombre'); if(n1)n1.textContent=negocioActual.nombre;
   var c1=document.getElementById('neg-panel-cat'); if(c1)c1.textContent=negocioActual.categoria;
   go('panel-negocio'); cargarMenuNegocio(); cargarStatsNegocio(); iniciarHeartbeatNegocio();
@@ -8622,15 +8643,15 @@ const DEMO_VIAJE = [
 const DEMO_PEDIDO = [
   {
     kicker: 'Paso 1 — Marketplace',
-    title: 'María quiere almorzar sin salir de casa',
-    narration: 'Entra a AVS → Servicios → 🍽️ Restaurantes. Ve los negocios locales de Atenas, con sus reseñas, calificación y fotos del menú. Sin Rappi, sin Uber Eats — todo local.',
+    title: 'María necesita verduras frescas sin ir al mercado',
+    narration: 'Entra a AVS y toca 🥬 Verdulerías (o lo dice por voz). Ve los tramos del Mercado Municipal de Atenas con sus productos frescos del día y precios actualizados según la feria del agricultor.',
     visual: `
       <div class="demo-card" style="max-width:380px;margin:0 auto">
         <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:60px;height:60px;border-radius:14px;background:linear-gradient(135deg,#f5a623,#d4881a);display:flex;align-items:center;justify-content:center;font-size:32px">🍕</div>
+          <div style="width:60px;height:60px;border-radius:14px;background:linear-gradient(135deg,#00d4aa,#00b894);display:flex;align-items:center;justify-content:center;font-size:32px">🥬</div>
           <div style="flex:1;text-align:left">
-            <div style="font-size:16px;font-weight:700">Pizzería La Finca</div>
-            <div style="font-size:12px;color:#aaa">📍 200m de tu ubicación</div>
+            <div style="font-size:16px;font-weight:700">Verdulería Evelin</div>
+            <div style="font-size:12px;color:#aaa">📍 Mercado Municipal de Atenas</div>
             <div style="font-size:12px;color:#00d4aa;margin-top:3px">⭐ 4.8 · 47 reseñas</div>
           </div>
           <div style="background:rgba(0,212,170,0.15);border:1px solid #00d4aa;border-radius:8px;padding:3px 10px;font-size:11px;color:#00d4aa">Abierto</div>
@@ -8640,32 +8661,18 @@ const DEMO_PEDIDO = [
   },
   {
     kicker: 'Paso 2 — Carrito',
-    title: 'Arma su pedido del menú con fotos',
-    narration: 'Cada negocio sube su menú con descripciones, precios y fotos. María elige una pizza y un refresco natural. El carrito calcula el subtotal en tiempo real.',
+    title: 'Arma su compra de verduras del día',
+    narration: 'Evelin sube sus productos con precios al día de la feria del agricultor. María arma su compra y el carrito calcula el subtotal en tiempo real.',
     visual: `
-      <div class="demo-card" style="max-width:380px;margin:0 auto">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
-          <div style="text-align:left">
-            <div style="font-size:14px;font-weight:600">🍕 Pizza Margherita</div>
-            <div style="font-size:11px;color:#aaa">Tomate, mozzarella, albahaca</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:11px;color:#888">1 ×</div>
-            <div style="font-size:14px;color:#00d4aa;font-weight:700">₡6.500</div>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
-          <div style="text-align:left">
-            <div style="font-size:14px;font-weight:600">🥤 Refresco natural</div>
-            <div style="font-size:11px;color:#aaa">Maracuyá fresco · 500ml</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:11px;color:#888">1 ×</div>
-            <div style="font-size:14px;color:#00d4aa;font-weight:700">₡1.200</div>
-          </div>
-        </div>
+      <div class="demo-card" style="max-width:400px;margin:0 auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.08)"><div style="text-align:left"><div style="font-size:14px;font-weight:600">🍅 Tomate</div><div style="font-size:11px;color:#aaa">feria del día</div></div><div style="text-align:right"><div style="font-size:11px;color:#888">1 kg</div><div style="font-size:14px;color:#00d4aa;font-weight:700">₡1.100</div></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.08)"><div style="text-align:left"><div style="font-size:14px;font-weight:600">🥔 Papa</div><div style="font-size:11px;color:#aaa">feria del día</div></div><div style="text-align:right"><div style="font-size:11px;color:#888">2 kg</div><div style="font-size:14px;color:#00d4aa;font-weight:700">₡1.600</div></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.08)"><div style="text-align:left"><div style="font-size:14px;font-weight:600">🧅 Cebolla</div><div style="font-size:11px;color:#aaa">feria del día</div></div><div style="text-align:right"><div style="font-size:11px;color:#888">1 kg</div><div style="font-size:14px;color:#00d4aa;font-weight:700">₡1.000</div></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.08)"><div style="text-align:left"><div style="font-size:14px;font-weight:600">🥕 Zanahoria</div><div style="font-size:11px;color:#aaa">feria del día</div></div><div style="text-align:right"><div style="font-size:11px;color:#888">1 kg</div><div style="font-size:14px;color:#00d4aa;font-weight:700">₡600</div></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.08)"><div style="text-align:left"><div style="font-size:14px;font-weight:600">🫑 Chile dulce</div><div style="font-size:11px;color:#aaa">feria del día</div></div><div style="text-align:right"><div style="font-size:11px;color:#888">½ kg</div><div style="font-size:14px;color:#00d4aa;font-weight:700">₡800</div></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.08)"><div style="text-align:left"><div style="font-size:14px;font-weight:600">🍌 Banano</div><div style="font-size:11px;color:#aaa">feria del día</div></div><div style="text-align:right"><div style="font-size:11px;color:#888">1 kg</div><div style="font-size:14px;color:#00d4aa;font-weight:700">₡700</div></div></div>
         <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:700">
-          <span>Subtotal</span><span style="color:#00d4aa">₡7.700</span>
+          <span>Subtotal verduras</span><span style="color:#00d4aa">₡5.800</span>
         </div>
       </div>
     `
@@ -8688,10 +8695,10 @@ const DEMO_PEDIDO = [
         </div>
       </div>
       <div class="demo-receipt">
-        <div class="row"><span>Subtotal</span><span>₡7.700</span></div>
+        <div class="row"><span>Subtotal verduras</span><span>₡5.800</span></div>
         <div class="row"><span>Delivery (moto, 0.8 km)</span><span>₡1.500</span></div>
-        <div class="row"><span>Comisión AVS</span><span>₡920</span></div>
-        <div class="row tot"><span>TOTAL</span><span>₡10.120</span></div>
+        <div class="row tot"><span>TOTAL que paga María</span><span>₡7.300</span></div>
+        <div class="row" style="opacity:.7"><span>Comisión AVS (del crédito de Evelin)</span><span>₡580</span></div>
       </div>
     `
   },
@@ -8703,9 +8710,9 @@ const DEMO_PEDIDO = [
       <div style="background:#0a3d2a;border:1px solid #25d366;border-radius:14px;padding:16px;max-width:340px;margin:0 auto;text-align:left">
         <div style="color:#25d366;font-weight:700;margin-bottom:10px">📲 SINPE Móvil</div>
         <div style="font-size:13px;color:#fff;line-height:1.7">
-          <div><b>Destinatario:</b> Pizzería La Finca</div>
-          <div><b>Número:</b> 8800-1234</div>
-          <div><b>Monto:</b> ₡10.120</div>
+          <div><b>Destinatario:</b> Verdulería Evelin</div>
+          <div><b>Número:</b> 8707-0924</div>
+          <div><b>Monto:</b> ₡7.300</div>
           <div><b>Concepto:</b> AVS-PED7842</div>
         </div>
         <div style="margin-top:14px;padding:8px;background:#000;border-radius:8px;text-align:center;font-family:monospace;color:#25d366;font-size:12px">✓ Pago confirmado</div>
@@ -8714,7 +8721,7 @@ const DEMO_PEDIDO = [
   },
   {
     kicker: 'Paso 5 — Preparación',
-    title: 'Pizzería La Finca recibe el pedido en su panel',
+    title: 'Verdulería Evelin recibe el pedido en su panel',
     narration: 'El negocio confirma el pago y cambia el estado a "En preparación". María ve la actualización en tiempo real desde su app, sin tener que llamar ni preguntar.',
     visual: `
       <div style="max-width:420px;margin:0 auto">
@@ -8733,7 +8740,7 @@ const DEMO_PEDIDO = [
     narration: 'Un conductor cercano acepta llevar el pedido. María ve su moto moverse en el mapa en tiempo real. Mismo sistema de seguridad que un viaje normal.',
     visual: `
       <div class="demo-map-sim">
-        <div class="map-pin" style="left:15%;top:60%;color:#f5a623">🍕</div>
+        <div class="map-pin" style="left:15%;top:60%;color:#00d4aa">🥬</div>
         <div class="map-route" style="left:18%;top:62%;width:60%;transform:rotate(-12deg)"></div>
         <div class="map-vehicle" style="left:45%;top:55%">🛵</div>
         <div class="map-pin" style="left:80%;top:32%;color:#00d4aa">🏠</div>
@@ -8768,7 +8775,7 @@ const DEMO_PEDIDO = [
   },
   {
     kicker: 'Paso 8 — Reseña automática',
-    title: 'María reseña a Pizzería La Finca',
+    title: 'María reseña a Verdulería Evelin',
     narration: 'Apenas el pedido se marca como entregado, AVS le muestra la pantalla de reseña: 5 estrellas, tags rápidos y comentario opcional. Los demás clientes verán esta reseña antes de pedir.',
     visual: `
       <div class="demo-stars">⭐⭐⭐⭐⭐</div>
@@ -8784,7 +8791,7 @@ const DEMO_PEDIDO = [
   },
   {
     kicker: 'Paso 9 — Cierre del ciclo',
-    title: 'Tres ganadores: María, Pizzería La Finca, Pedro',
+    title: 'Tres ganadores: María, Verdulería Evelin, Pedro',
     narration: 'En un solo flujo: el cliente recibió calidad, el negocio local vendió sin tener app propia, el conductor ganó dinero extra. AVS conectó toda la cadena, y la riqueza se quedó en el cantón.',
     visual: `
       <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
@@ -8794,9 +8801,9 @@ const DEMO_PEDIDO = [
           <div style="font-size:11px;color:#aaa;margin-top:3px">Recibió su pedido</div>
         </div>
         <div class="demo-card" style="text-align:center;padding:18px;min-width:130px">
-          <div style="font-size:32px;margin-bottom:6px">🍕</div>
-          <div style="font-size:13px;font-weight:700">Pizzería</div>
-          <div style="font-size:11px;color:#00d4aa;margin-top:3px">+₡6.930 venta</div>
+          <div style="font-size:32px;margin-bottom:6px">🥬</div>
+          <div style="font-size:13px;font-weight:700">Verdulería</div>
+          <div style="font-size:11px;color:#00d4aa;margin-top:3px">+₡5.220 venta</div>
         </div>
         <div class="demo-card" style="text-align:center;padding:18px;min-width:130px">
           <div style="font-size:32px;margin-bottom:6px">🛵</div>
@@ -8806,7 +8813,7 @@ const DEMO_PEDIDO = [
         <div class="demo-card" style="text-align:center;padding:18px;min-width:130px;border-color:#f5a623">
           <div style="font-size:32px;margin-bottom:6px">⚡</div>
           <div style="font-size:13px;font-weight:700;color:#f5a623">AVS</div>
-          <div style="font-size:11px;color:#f5a623;margin-top:3px">+₡920 comisión</div>
+          <div style="font-size:11px;color:#f5a623;margin-top:3px">+₡580 comisión</div>
         </div>
       </div>
       <div style="margin-top:24px;padding:18px;background:rgba(245,166,35,0.08);border:1px solid #f5a623;border-radius:14px;max-width:520px;margin-left:auto;margin-right:auto">
