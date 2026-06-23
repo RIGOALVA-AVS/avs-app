@@ -4523,12 +4523,14 @@ function switchAdminArea(area){
     if(tabs[0]) switchAdminTab(tabs[0]);
   }
 }
+function adminIr(area,tab){ switchAdminArea(area); switchAdminTab(tab); }
 async function cargarResumenAdmin(){
   var cont=document.getElementById('resumen-kpis'); if(!cont)return;
   if(!db){ cont.innerHTML='<div class="nolist">Sin conexión</div>'; return; }
-  cont.innerHTML='<div class="nolist">Cargando…</div>';
-  function card(t,v,c){ return '<div style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:14px"><div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">'+t+'</div><div style="font-family:var(--font-d);font-size:22px;font-weight:800;color:'+(c||'var(--g)')+';margin-top:4px">'+v+'</div></div>'; }
+  if(!cont._lh) cont.innerHTML='<div class="nolist">Cargando…</div>';
   function n(r){ return (r&&typeof r.count==='number')?r.count:'—'; }
+  function card(t,v,c){ return '<div style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:14px"><div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">'+t+'</div><div style="font-family:var(--font-d);font-size:22px;font-weight:800;color:'+(c||'var(--g)')+';margin-top:4px">'+v+'</div></div>'; }
+  function actCard(t,v,onclick){ var hot=(typeof v==='number'&&v>0); var col=hot?'#F5A623':'var(--mt)'; var bd=hot?'rgba(245,166,35,0.55)':'var(--bd)'; return '<div onclick="'+onclick+'" style="cursor:pointer;background:var(--sf);border:1px solid '+bd+';border-radius:14px;padding:14px"><div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">'+t+'</div><div style="font-family:var(--font-d);font-size:24px;font-weight:800;color:'+col+';margin-top:4px">'+v+(hot?' →':'')+'</div></div>'; }
   var d24=new Date(Date.now()-86400000).toISOString();
   try{
     var res=await Promise.all([
@@ -4537,17 +4539,27 @@ async function cargarResumenAdmin(){
       db.from('negocios').select('*',{count:'exact',head:true}).eq('estado','aprobado'),
       db.from('recargas').select('*',{count:'exact',head:true}).eq('estado','pendiente'),
       db.from('pedidos').select('*',{count:'exact',head:true}).gte('fecha',d24),
-      db.from('viajes').select('*',{count:'exact',head:true}).gte('fecha_solicitud',d24)
+      db.from('viajes').select('*',{count:'exact',head:true}).gte('fecha_solicitud',d24),
+      db.from('vehiculos').select('*',{count:'exact',head:true}).eq('estado_verificacion','pendiente'),
+      db.from('negocios').select('*',{count:'exact',head:true}).eq('estado','pendiente'),
+      db.from('alertas_comercio').select('*',{count:'exact',head:true}).eq('estado','abierta')
     ]);
-    var pend=n(res[3]);
-    cont.innerHTML =
-      card('Usuarios', n(res[0])) +
-      card('Flota (conductores)', n(res[1])) +
-      card('Comercios', n(res[2])) +
-      card('Recargas pendientes', pend, (typeof pend==='number'&&pend>0)?'#F5A623':'var(--g)') +
-      card('Pedidos (24h)', n(res[4])) +
+    var html =
+      '<div style="grid-column:1/-1;font-family:var(--font-d);font-size:13px;font-weight:700;margin:2px 0">⚠️ Requiere tu atención</div>'+
+      actCard('Recargas por acreditar', n(res[3]), "adminIr('operacion','recargas')")+
+      actCard('Negocios por aprobar', n(res[7]), "adminIr('clientes','negocios')")+
+      actCard('Vehículos por aprobar', n(res[6]), "adminIr('clientes','vehiculos')")+
+      actCard('Emergencias activas', n(res[8]), "adminIr('seguridad','emergencias')")+
+      '<div style="grid-column:1/-1;font-family:var(--font-d);font-size:13px;font-weight:700;margin:14px 0 2px">📈 Panorama</div>'+
+      card('Usuarios', n(res[0]))+
+      card('Flota (conductores)', n(res[1]))+
+      card('Comercios activos', n(res[2]))+
+      card('Pedidos (24h)', n(res[4]))+
       card('Viajes (24h)', n(res[5]));
-  }catch(e){ cont.innerHTML='<div class="nolist">No se pudo cargar el resumen</div>'; }
+    _setHTML(cont, html);
+  }catch(e){ if(!cont._lh)cont.innerHTML='<div class="nolist">No se pudo cargar el resumen</div>'; }
+  if(window._resInt)clearInterval(window._resInt);
+  window._resInt=setInterval(function(){ var ar=document.getElementById('admin-resumen'); if(!ar||ar.style.display==='none'){ clearInterval(window._resInt); window._resInt=null; return; } cargarResumenAdmin(); },30000);
 }
 function switchAdminTab(tab){
   document.querySelectorAll('[id^="admtab-"]').forEach(el=>el.classList.remove('on'));
