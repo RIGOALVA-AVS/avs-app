@@ -2692,28 +2692,19 @@ async function cobrarComisionPedido(pedidoId){
   try{
     const {data:p} = await db.from('pedidos').select('id,negocio_id,comision_avs,comision_cobrada').eq('id',pedidoId).single();
     if(!p || p.comision_cobrada || !p.comision_avs) return;
-    const {data:neg} = await db.from('negocios').select('saldo_avs').eq('id',p.negocio_id).single();
-    const nuevoSaldo = parseInt(neg?.saldo_avs||0) - Math.round(p.comision_avs);
-    await db.from('negocios').update({saldo_avs:nuevoSaldo}).eq('id',p.negocio_id);
-    await db.from('pedidos').update({comision_cobrada:true}).eq('id',pedidoId);
-    if(typeof negocioActual!=='undefined' && negocioActual && negocioActual.id===p.negocio_id){
+    const { data:r } = await db.functions.invoke('avs-saldo', { body:{ accion:'cobrar_comision_pedido', pedidoId: pedidoId } });
+    if(r && r.ok && typeof r.saldo!=='undefined' && typeof negocioActual!=='undefined' && negocioActual && negocioActual.id===p.negocio_id){
       const el=document.getElementById('neg-saldo');
-      if(el) el.textContent='₡'+nuevoSaldo.toLocaleString('es-CR');
-      toast(`💳 Comisión AVS ₡${Math.round(p.comision_avs).toLocaleString('es-CR')} descontada de tu crédito`);
-      avisoSaldoBajoAVS(nuevoSaldo);
+      if(el) el.textContent='₡'+parseInt(r.saldo).toLocaleString('es-CR');
+      toast('💳 Comisión AVS ₡'+Math.round(p.comision_avs).toLocaleString('es-CR')+' descontada de tu crédito');
+      avisoSaldoBajoAVS(parseInt(r.saldo));
     }
   }catch(e){console.error('cobrarComisionPedido',e);}
 }
 async function cobrarComisionViaje(viajeId){
   if(!db) return;
-  try{
-    const {data:v}=await db.from('viajes').select('conductor_telefono,comision_avs,comision_cobrada').eq('id',viajeId).single();
-    if(!v || v.comision_cobrada || !v.comision_avs || !v.conductor_telefono) return;
-    const {data:u}=await db.from('usuarios').select('saldo_avs').eq('telefono',v.conductor_telefono).single();
-    const nuevo=Math.max(0,(parseInt(u&&u.saldo_avs)||0)-Math.round(v.comision_avs));
-    await db.from('usuarios').update({saldo_avs:nuevo}).eq('telefono',v.conductor_telefono);
-    await db.from('viajes').update({comision_cobrada:true}).eq('id',viajeId);
-  }catch(e){console.error('cobrarComisionViaje',e);}
+  try{ await db.functions.invoke('avs-saldo', { body:{ accion:'cobrar_comision_viaje', viajeId: viajeId } }); }
+  catch(e){console.error('cobrarComisionViaje',e);}
 }
 async function confirmarSinpeNegocio(pedidoId, comisionAVS) {
   if (!db || !negocioActual) return;
@@ -4774,7 +4765,7 @@ async function marcarFalsaEmergencia(id){
 let recargasFiltro='pendiente';
 function filtrarRecargas(estado){recargasFiltro=estado;document.querySelectorAll('[id^="recbtn-"]').forEach(b=>b.classList.remove('on'));document.getElementById('recbtn-'+estado).classList.add('on');cargarRecargas();}
 async function cargarRecargas(){if(!db)return;const{data}=await db.from('recargas').select('*').eq('estado',recargasFiltro).order('fecha',{ascending:false});const lista=document.getElementById('recargaslist');if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin recargas en este estado</div>';return;}lista.innerHTML=data.map(r=>`<div class="adcard" style="margin:8px 20px"><div class="adname">${r.conductor_nombre||'—'}</div><div class="adinfo">📱 ${r.conductor_telefono} · 📅 ${new Date(r.fecha).toLocaleDateString('es-CR')}</div><div class="adinfo">💬 Concepto: <strong>${r.concepto}</strong></div><div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0"><div style="font-family:var(--font-d);font-size:24px;font-weight:700;color:var(--g)">₡${parseInt(r.monto).toLocaleString('es-CR')}</div><div class="adbadge ${r.estado}">${r.estado.toUpperCase()}</div></div>${recargasFiltro==='pendiente'?`<div class="adacts"><button class="adaprob" onclick="acreditarRecarga('${r.id}','${r.conductor_telefono}',${r.monto})">✅ Acreditar saldo</button><button class="adrech" onclick="rechazarRecarga('${r.id}')">❌ Rechazar</button></div>`:''}</div>`).join('');}
-async function acreditarRecarga(id,telefono,monto){if(!db)return;await db.from('recargas').update({estado:'acreditado'}).eq('id',id);const{data:c}=await db.from('usuarios').select('saldo_avs').eq('telefono',telefono).single();const s=parseInt(c?.saldo_avs||0);await db.from('usuarios').update({saldo_avs:s+monto}).eq('telefono',telefono);toast('✅ ₡'+monto.toLocaleString('es-CR')+' acreditados');cargarRecargas();}
+async function acreditarRecarga(id,telefono,monto){if(!db)return;try{const{data:r}=await db.functions.invoke('avs-saldo',{body:{accion:'acreditar_recarga',recargaId:id}});if(r&&r.ok){toast('✅ ₡'+(parseInt(monto)||0).toLocaleString('es-CR')+' acreditados');}else{toast('No se pudo acreditar');}cargarRecargas();}catch(e){toast('No se pudo acreditar');}}
 async function rechazarRecarga(id){if(!db)return;await db.from('recargas').update({estado:'rechazado'}).eq('id',id);toast('Recarga rechazada');cargarRecargas();}
 let adminFiltro='pendiente';
 function filtrarAdmin(estado){adminFiltro=estado;document.querySelectorAll('.adtbtn').forEach(b=>b.classList.remove('on'));document.getElementById('adbtn-'+estado).classList.add('on');cargarAdmin();}
@@ -6590,11 +6581,9 @@ async function entregarReparto(id,monto){
   if(!confirm('¿Confirmás que entregaste el reparto?\n\nSe cobrará la comisión AVS de tu saldo.')) return;
   try{
     await db.from('solicitudes_repartidor').update({estado:'entregado'}).eq('id',id);
-    var com=Math.round((parseInt(monto)||0)*0.12);
-    var c=await db.from('usuarios').select('saldo_avs').eq('telefono',user.phone).single();
-    var nuevo=Math.max(0,(parseInt(c&&c.data&&c.data.saldo_avs)||0)-com);
-    await db.from('usuarios').update({saldo_avs:nuevo}).eq('telefono',user.phone);
-    var el=document.getElementById('cond-saldo'); if(el)el.textContent='₡'+nuevo.toLocaleString('es-CR');
+    const { data:r } = await db.functions.invoke('avs-saldo', { body:{ accion:'cobrar_comision_reparto', solicitudId:id } });
+    var com=(r&&typeof r.comision!=='undefined')?parseInt(r.comision):Math.round((parseInt(monto)||0)*0.12);
+    if(r&&typeof r.saldo!=='undefined'){ var el=document.getElementById('cond-saldo'); if(el)el.textContent='₡'+parseInt(r.saldo).toLocaleString('es-CR'); }
     toast('✔ Entregado — comisión AVS ₡'+com.toLocaleString('es-CR'));
     cargarRepartos();
   }catch(e){ toast('No se pudo cerrar el reparto'); }
