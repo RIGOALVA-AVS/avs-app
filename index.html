@@ -5484,6 +5484,88 @@ function filtrarNegocios(estado){
   cargarNegociosAdmin();
 }
 
+
+var AVS_BASE_DOCS=[
+  {k:'patente',label:'Patente municipal',exp:true},
+  {k:'cedula_jur',label:'Cédula jurídica o del propietario',exp:false},
+  {k:'ccss',label:'Constancia CCSS al día',exp:true},
+  {k:'hacienda',label:'Constancia Hacienda al día',exp:false}
+];
+var AVS_DOCS_CAT={
+  restaurantes:[{k:'permiso_sanitario',label:'Permiso Sanitario de Funcionamiento',exp:true},{k:'manip_alimentos',label:'Manipulación de alimentos',exp:true}],
+  supermercado:[{k:'permiso_sanitario',label:'Permiso Sanitario de Funcionamiento',exp:true},{k:'senasa',label:'SENASA (si vende carnes/lácteos)',exp:true},{k:'manip_alimentos',label:'Manipulación de alimentos',exp:true}],
+  hospedaje:[{k:'permiso_sanitario',label:'Permiso Sanitario (hospedaje)',exp:true},{k:'poliza',label:'Póliza del establecimiento',exp:true}],
+  salud:[{k:'habilitacion',label:'Habilitación del establecimiento (Min. Salud)',exp:true},{k:'idoneidad',label:'Idoneidad profesional (colegio)',exp:false},{k:'desechos',label:'Manejo de desechos bioinfecciosos',exp:true}],
+  negocios:[{k:'permiso_sanitario',label:'Permiso Sanitario (si aplica)',exp:true}],
+  otros:[]
+};
+function reqDocsNegocio(cat){ return AVS_BASE_DOCS.concat(AVS_DOCS_CAT[cat]||[]); }
+function _docVerificado(n){
+  var req=reqDocsNegocio(n.categoria); if(!req.length) return false;
+  var urls=n.documentos_url||{}, venc=n.documentos_venc||{};
+  for(var i=0;i<req.length;i++){ var d=req[i];
+    if(!urls[d.k]) return false;
+    if(d.exp){ var v=venc[d.k]; if(!v||new Date(v).getTime()<Date.now()) return false; }
+  }
+  return true;
+}
+var _docNegActual=null;
+async function abrirDocsNegocio(id){
+  if(!db)return;
+  var r=await db.from('negocios').select('*').eq('id',id).single();
+  if(!r||!r.data){toast('No se encontró el negocio');return;}
+  _docNegActual=r.data; _renderDocsNegocio();
+}
+function cerrarDocsNegocio(){ var m=document.getElementById('docneg-modal'); if(m)m.remove(); _docNegActual=null; if(typeof cargarNegociosAdmin==='function')cargarNegociosAdmin(); }
+function _renderDocsNegocio(){
+  var n=_docNegActual; if(!n)return;
+  var req=reqDocsNegocio(n.categoria);
+  var urls=n.documentos_url||{}, venc=n.documentos_venc||{};
+  var verif=_docVerificado(n);
+  var rows=req.map(function(d){
+    var has=!!urls[d.k]; var v=venc[d.k]||'';
+    var vencido=d.exp&&v&&new Date(v).getTime()<Date.now();
+    var est = !has?'<span style="color:var(--mt)">— falta</span>'
+      : (d.exp ? (v ? (vencido?'<span style="color:#e24b4a">⏳ vencido</span>':'<span style="color:var(--g)">✓ vigente</span>') : '<span style="color:#f5a623">falta fecha</span>')
+               : '<span style="color:var(--g)">✓</span>');
+    var verBtn = has?'<button onclick="verDocNegocio(\''+urls[d.k]+'\')" style="background:transparent;border:1px solid var(--bd);color:var(--g);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer">👁 Ver</button>':'';
+    var dateInp = d.exp?'<input type="date" value="'+v+'" onchange="setVencDocNegocio(\''+d.k+'\',this.value)" style="background:var(--cd);border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:6px;font-size:12px">':'';
+    return '<div style="border-top:1px solid var(--bd);padding:10px 0"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span style="font-size:13px">'+d.label+(d.exp?' ⏳':'')+'</span>'+est+'</div><div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap"><label style="background:rgba(0,229,184,.12);border:1px solid rgba(0,229,184,.4);color:var(--g);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer">📤 Subir<input type="file" accept="image/*,application/pdf" style="display:none" onchange="subirDocNegocio(\''+d.k+'\',this)"></label>'+verBtn+dateInp+'</div></div>';
+  }).join('');
+  var badge = verif?'<span style="background:var(--g);color:#04231a;font-weight:800;font-size:12px;padding:5px 12px;border-radius:20px">✓ Verificado AVS</span>':'<span style="background:rgba(245,166,35,.15);color:#f5a623;border:1px solid rgba(245,166,35,.4);font-size:12px;padding:5px 12px;border-radius:20px">Documentación incompleta</span>';
+  var m=document.getElementById('docneg-modal'); if(m)m.remove();
+  m=document.createElement('div'); m.id='docneg-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML='<div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:20px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;color:var(--tx)"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-family:var(--font-d);font-size:17px;font-weight:700">📑 Documentos — '+(n.nombre||'')+'</div><button onclick="cerrarDocsNegocio()" style="background:none;border:none;color:#aaa;font-size:22px;cursor:pointer">✕</button></div><div style="font-size:12px;color:var(--mt);margin:2px 0 10px">Categoría: '+(n.categoria||'')+'</div><div style="margin-bottom:6px">'+badge+'</div>'+rows+'</div>';
+  document.body.appendChild(m);
+}
+async function subirDocNegocio(key,input){
+  var file=input.files&&input.files[0]; if(!file||!_docNegActual)return;
+  toast('Subiendo documento...');
+  try{
+    var ext=(file.name.split('.').pop()||'jpg');
+    var fn='neg-'+_docNegActual.id+'-'+key+'-'+Date.now()+'.'+ext;
+    var up=await db.storage.from('documentos-negocios').upload(fn,file,{upsert:true});
+    if(up.error) throw up.error;
+    var urls=Object.assign({},_docNegActual.documentos_url||{}); urls[key]=fn;
+    await db.from('negocios').update({documentos_url:urls}).eq('id',_docNegActual.id);
+    _docNegActual.documentos_url=urls; toast('✅ Documento subido'); _renderDocsNegocio();
+  }catch(e){ console.error('docneg',e); toast('No se pudo subir (¿bucket documentos-negocios + permisos?)'); }
+}
+async function setVencDocNegocio(key,val){
+  if(!_docNegActual)return;
+  var venc=Object.assign({},_docNegActual.documentos_venc||{}); venc[key]=val;
+  try{ await db.from('negocios').update({documentos_venc:venc}).eq('id',_docNegActual.id); _docNegActual.documentos_venc=venc; _renderDocsNegocio(); }catch(e){ toast('No se pudo guardar la fecha'); }
+}
+async function verDocNegocio(path){
+  if(!db||!path)return; toast('Abriendo...');
+  try{ var r=await db.storage.from('documentos-negocios').createSignedUrl(path,3600); if(r.error||!r.data||!r.data.signedUrl){toast('No se pudo abrir');return;}
+    var ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px'; ov.onclick=function(){ov.remove();};
+    var isPdf=/\.pdf$/i.test(path);
+    ov.innerHTML=isPdf?'<iframe src="'+r.data.signedUrl+'" style="width:92vw;height:90vh;border:none;border-radius:12px"></iframe>':'<img src="'+r.data.signedUrl+'" style="max-width:100%;max-height:90vh;border-radius:12px">';
+    document.body.appendChild(ov);
+  }catch(e){ toast('No se pudo abrir'); }
+}
 async function cargarNegociosAdmin(){
   if(!db)return;
   let{data}=await db.from('negocios').select('*').eq('estado',negociosFiltro).order('fecha',{ascending:false}); if(typeof negCatFiltro!=='undefined'&&negCatFiltro!=='todos')data=(data||[]).filter(function(nn){return nn.categoria===negCatFiltro;}); if(negCatFiltro==='salud'&&typeof negSubFiltro!=='undefined'&&negSubFiltro!=='todos')data=(data||[]).filter(function(nn){return nn.subcategoria===negSubFiltro;});
@@ -5498,8 +5580,10 @@ async function cargarNegociosAdmin(){
       '<div class="adinfo">📱 '+(n.telefono||'—')+' · 📍 '+(n.direccion||'—')+' · '+(n.categoria||'')+sub+'</div>'+
       '<div class="adinfo">'+(n.descripcion||'')+'</div>'+
       '<div class="adinfo">💳 Saldo AVS: <b style="color:'+(saldo<=0?'#F5A623':'var(--g)')+'">₡'+saldo.toLocaleString('es-CR')+'</b></div>'+
+      '<div class="adinfo">📑 '+(_docVerificado(n)?'<b style="color:var(--g)">✓ Verificado AVS</b>':'<span style="color:#f5a623">Documentación pendiente</span>')+'</div>'+
       '<div class="adbadge '+n.estado+'">'+(n.estado||'').toUpperCase()+'</div>'+
       (negociosFiltro==='pendiente'?('<div class="adacts"><button class="adaprob" onclick="accionNegocio(\''+n.id+'\',\'aprobado\')">✅ Aprobar</button><button class="adrech" onclick="accionNegocio(\''+n.id+'\',\'rechazado\')">❌ Rechazar</button></div>'):'')+
+      '<div class="adacts"><button onclick="abrirDocsNegocio(\''+n.id+'\')" style="background:transparent;border:1px solid var(--bd);color:var(--g);border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer">📑 Documentos</button></div>'+
       '</div>';
   }).join('');
   const _bn=document.getElementById('buscar-negocio');if(_bn&&_bn.value)buscarEnLista('negocioslist',_bn.value);
