@@ -7123,16 +7123,9 @@ const AVS_FALTAS_LIMITE = 3;
 async function registrarFalta(telefono, montoFlete){
   if(!db||!telefono)return null;
   try{
-    const{data:u}=await db.from('usuarios').select('faltas,saldo_avs').eq('telefono',telefono).single();
-    const faltas=(parseInt(u&&u.faltas)||0)+1;
-    let saldo=parseInt(u&&u.saldo_avs)||0;
-    const multa=Math.round((parseInt(montoFlete)||0)*0.10);
-    saldo=Math.max(0,saldo-multa);
-    const upd={faltas,saldo_avs:saldo};
-    if(faltas>=AVS_FALTAS_LIMITE){ upd.suspendido_hasta=new Date(Date.now()+48*60*60*1000).toISOString(); }
-    if(faltas>AVS_FALTAS_LIMITE){ upd.saldo_avs=0; }
-    await db.from('usuarios').update(upd).eq('telefono',telefono);
-    return {faltas, multa, suspendido: faltas>=AVS_FALTAS_LIMITE, perdioCredito: faltas>AVS_FALTAS_LIMITE};
+    const{data:r}=await db.functions.invoke('avs-saldo',{body:{accion:'registrar_falta',telefono:telefono,montoFlete:montoFlete}});
+    if(r&&r.ok) return {faltas:r.faltas, multa:r.multa, suspendido:r.suspendido, perdioCredito:r.perdioCredito};
+    return null;
   }catch(e){console.error('registrarFalta',e); return null;}
 }
 async function cascadeFlete(solId, exclTel){
@@ -7235,9 +7228,7 @@ async function finalizarFlete(solId, via){
     const {data:chk}=await db.from('solicitudes_carga').select('confirmada_por').eq('id',solId).single();
     if(chk&&chk.confirmada_por!==via){ /* otra parte ganó la carrera */ if(via==='cliente')_pintarOfertasFlete(solId); else cargarFletesConductor(); return; }
     if(tel){
-      const {data:u}=await db.from('usuarios').select('saldo_avs').eq('telefono',tel).single();
-      const nuevo=Math.max(0,(parseInt(u&&u.saldo_avs)||0)-com);
-      await db.from('usuarios').update({saldo_avs:nuevo}).eq('telefono',tel);
+      await db.functions.invoke('avs-saldo',{body:{accion:'cobrar_comision_flete',solicitudId:solId}});
     }
     const quien=via==='gps'?'GPS (llegada a destino)':(via==='cliente'?'el cliente':'el transportista');
     toast('🏁 Flete finalizado por '+quien+' · comisión AVS ₡'+com.toLocaleString('es-CR')+' descontada al transportista');
