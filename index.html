@@ -1405,6 +1405,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
       <div style="display:flex;align-items:center;gap:12px"><div style="width:28px;height:28px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--bg);flex-shrink:0">4</div><div style="font-size:13px">Confirmá el pago y tocá el botón de abajo</div></div>
     </div>
     <div style="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--am);line-height:1.5">⚠️ Tu saldo será acreditado en 1-2 horas hábiles después de confirmar el pago.</div>
+    <label style="display:flex;flex-direction:column;gap:6px;background:var(--sf);border:1px dashed var(--bd2);border-radius:12px;padding:14px;cursor:pointer;font-size:13px;margin-bottom:4px"><span>📎 Adjuntar comprobante del SINPE (opcional)</span><input type="file" accept="image/*" onchange="subirComprobante(this,'cond')" style="font-size:12px"><span id="comp-status-cond" style="font-size:12px;color:var(--mt)"></span></label>
     <button class="btnp" onclick="confirmarPagoSINPE()">✅ Ya realicé el pago</button>
     <button class="btno" onclick="go('conductor')" style="margin-top:0">Cancelar</button>
   </div>
@@ -3199,18 +3200,60 @@ async function _chequearPedidosNuevos(){
   }catch(e){}
 }
 
+async function subirComprobante(input,ctx){
+  var file=input.files&&input.files[0]; if(!file)return;
+  if(!db){toast('Sin conexión');return;}
+  toast('Subiendo comprobante...');
+  try{
+    var ext=(file.name.split('.').pop()||'jpg');
+    var fn='comp-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.'+ext;
+    var up=await db.storage.from('comprobantes-pago').upload(fn,file);
+    if(up.error) throw up.error;
+    comprobantePath=fn;
+    var lbl=document.getElementById('comp-status-'+ctx); if(lbl){lbl.textContent='✅ Comprobante adjunto'; lbl.style.color='var(--g)';}
+    toast('✅ Comprobante adjunto');
+  }catch(e){ console.error('comprobante',e); toast('No se pudo subir (¿bucket comprobantes-pago creado?)'); }
+}
+async function verComprobante(ruta){
+  if(!db){toast('Sin conexión');return;}
+  if(!ruta){toast('Sin comprobante');return;}
+  toast('Abriendo comprobante...');
+  try{
+    var r=await db.storage.from('comprobantes-pago').createSignedUrl(ruta,3600);
+    if(r.error||!r.data||!r.data.signedUrl){console.error(r.error);toast('No se pudo abrir');return;}
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick=function(){ov.remove();};
+    ov.innerHTML='<img src="'+r.data.signedUrl+'" style="max-width:100%;max-height:90vh;border-radius:12px">';
+    document.body.appendChild(ov);
+  }catch(e){console.error(e);toast('No se pudo abrir');}
+}
+function cerrarRecargaNegModal(){ var m=document.getElementById('recarga-neg-modal'); if(m)m.remove(); }
 function abrirSINPENegocio(monto){
   if(!negocioActual){toast('Sin sesión de negocio');return;}
   var num=(typeof SINPE_AVS!=='undefined'?SINPE_AVS:'el número AVS');
   var iva=Math.round(monto*0.13), total=monto+iva;
   var conf='AVS-'+(negocioActual.telefono||negocioActual.id)+'-'+total;
-  if(!confirm('Gastables: ₡'+monto.toLocaleString('es-CR')+'\n+ IVA del gobierno 13%: ₡'+iva.toLocaleString('es-CR')+'\nTotal a pagar por SINPE a '+num+': ₡'+total.toLocaleString('es-CR')+'\nConcepto: '+conf+'\n\n¿Registrar la recarga?'))return;
-  confirmarRecargaNegocio(monto,conf,iva,total);
+  comprobantePath=null;
+  var m=document.getElementById('recarga-neg-modal'); if(m)m.remove();
+  m=document.createElement('div'); m.id='recarga-neg-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML=`<div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:22px;max-width:380px;width:100%;max-height:88vh;overflow-y:auto;color:var(--tx)">
+    <div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:12px">Recargar saldo AVS</div>
+    <div style="background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:14px;text-align:center;margin-bottom:12px"><div style="font-size:12px;color:var(--mt)">Gastables</div><div style="font-family:var(--font-d);font-size:30px;font-weight:800;color:var(--g)">₡${monto.toLocaleString('es-CR')}</div><div style="font-size:12px;color:var(--mt);margin-top:8px;border-top:1px solid var(--bd);padding-top:8px">+ IVA del gobierno (13%): <strong>₡${iva.toLocaleString('es-CR')}</strong><br>Total a pagar por SINPE: <strong style="color:var(--g)">₡${total.toLocaleString('es-CR')}</strong></div></div>
+    <div style="font-size:13px;margin-bottom:6px">Enviá <strong style="color:var(--g)">₡${total.toLocaleString('es-CR')}</strong> por SINPE al <strong>${num}</strong></div>
+    <div style="font-size:13px;margin-bottom:12px">Concepto: <strong style="color:var(--g)">${conf}</strong></div>
+    <label style="display:flex;flex-direction:column;gap:6px;background:var(--cd);border:1px dashed var(--bd2);border-radius:12px;padding:12px;cursor:pointer;font-size:13px;margin-bottom:12px"><span>📎 Adjuntar comprobante del SINPE (opcional)</span><input type="file" accept="image/*" onchange="subirComprobante(this,'neg')" style="font-size:12px"><span id="comp-status-neg" style="font-size:12px;color:var(--mt)"></span></label>
+    <button class="btnp" style="width:100%;margin-bottom:8px" onclick="confirmarRecargaNegocio(${monto},'${conf}',${iva},${total})">Registrar recarga</button>
+    <button class="btno" style="width:100%" onclick="cerrarRecargaNegModal()">Cancelar</button>
+  </div>`;
+  document.body.appendChild(m);
 }
 async function confirmarRecargaNegocio(monto,concepto,iva,total){
   if(!db||!negocioActual)return;
   try{
-    await db.from('recargas').insert({negocio_id:String(negocioActual.id),negocio_nombre:negocioActual.nombre,monto:monto,iva:(iva||Math.round(monto*0.13)),total:(total||(monto+Math.round(monto*0.13))),concepto:concepto,estado:'pendiente',fecha:new Date().toISOString()});
+    await db.from('recargas').insert({negocio_id:String(negocioActual.id),negocio_nombre:negocioActual.nombre,monto:monto,iva:(iva||Math.round(monto*0.13)),total:(total||(monto+Math.round(monto*0.13))),comprobante_url:comprobantePath,concepto:concepto,estado:'pendiente',fecha:new Date().toISOString()});
+    cerrarRecargaNegModal(); comprobantePath=null;
     toast('✅ Recarga registrada (pendiente de verificación por AVS)');
   }catch(e){console.error('recargaNegocio',e);toast('Recarga anotada. Si falla, avisá a AVS.');}
 }
@@ -4266,10 +4309,10 @@ let historialRol='usuario',historialEstado='completado';
 function abrirHistorial(rol){historialRol=rol;historialEstado='completado';document.getElementById('hist-back').setAttribute('onclick',`go('${rol==='conductor'?'conductor':'pasajero'}')`);const tab2=document.getElementById('hbtn-cancelado');if(rol==='conductor'){tab2.textContent='❌ Rechazados';tab2.setAttribute('onclick',"filtrarHistorial('rechazado')");tab2.id='hbtn-rechazado';}else{tab2.textContent='❌ Cancelados';tab2.setAttribute('onclick',"filtrarHistorial('cancelado')");tab2.id='hbtn-cancelado';}document.querySelectorAll('[id^="hbtn-"]').forEach(b=>b.classList.remove('on'));document.getElementById('hbtn-completado').classList.add('on');go('historial');cargarHistorial();}
 async function filtrarHistorial(estado){historialEstado=estado;document.querySelectorAll('[id^="hbtn-"]').forEach(b=>b.classList.remove('on'));const btn=document.getElementById(estado==='rechazado'?'hbtn-rechazado':'hbtn-'+estado);if(btn)btn.classList.add('on');cargarHistorial();}
 async function cargarHistorial(){if(!db){document.getElementById('histlist').innerHTML='<div class="nolist">Sin conexión</div>';return;}const lista=document.getElementById('histlist');lista.innerHTML='<div class="nolist">Cargando...</div>';const{data}=await db.from('viajes').select('*').eq('estado',historialEstado).order('fecha_solicitud',{ascending:false}).limit(20);if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin viajes en este estado</div>';return;}const iconos={completado:'✅',cancelado:'❌',rechazado:'🚫'};lista.innerHTML=data.map(v=>{const tarifa=parseInt(v.tarifa_estimada||0),conductor=parseInt(v.total_conductor||Math.round(tarifa*0.88));const fecha=v.fecha_solicitud?new Date(v.fecha_solicitud).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'}):'—';return`<div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:12px;color:var(--mt)">${fecha}</div><div style="font-size:11px;padding:3px 10px;border-radius:20px;background:${historialEstado==='completado'?'rgba(0,212,170,0.1)':'rgba(226,75,74,0.1)'};color:${historialEstado==='completado'?'var(--g)':'var(--rd)'}">${iconos[historialEstado]} ${historialEstado.toUpperCase()}</div></div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mt)"><span style="color:var(--g)">●</span>${v.origen_descripcion||'—'}</div><div style="width:2px;height:8px;background:var(--mt);margin-left:4px"></div><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mt)"><span style="color:var(--rd)">●</span>${v.destino_descripcion||'—'}</div></div>${historialEstado==='completado'?`<div style="display:flex;justify-content:space-between;border-top:1px solid var(--bd);padding-top:10px"><div style="font-size:12px;color:var(--mt)">${historialRol==='conductor'?'Recibiste':'Pagaste'}</div><div style="font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--g)">₡${(historialRol==='conductor'?conductor:tarifa).toLocaleString('es-CR')}</div></div>`:''}</div>`;}).join('');}
-const SINPE_AVS='88915166';let sinpeMonto=0,sinpeIva=0,sinpeTotal=0;
-function abrirSINPE(monto){sinpeMonto=monto;sinpeIva=Math.round(monto*0.13);sinpeTotal=monto+sinpeIva;const fu='₡'+monto.toLocaleString('es-CR');const fi='₡'+sinpeIva.toLocaleString('es-CR');const ft='₡'+sinpeTotal.toLocaleString('es-CR');const c='AVS-'+user.phone+'-'+sinpeTotal;document.getElementById('sinpe-monto').textContent=fu;var _ei=document.getElementById('sinpe-iva');if(_ei)_ei.textContent=fi;var _et=document.getElementById('sinpe-total');if(_et)_et.textContent=ft;document.getElementById('sinpe-monto2').textContent=ft;document.getElementById('sinpe-concepto').textContent=c;go('sinpe');}
+const SINPE_AVS='88915166';let sinpeMonto=0,sinpeIva=0,sinpeTotal=0;var comprobantePath=null;
+function abrirSINPE(monto){sinpeMonto=monto;comprobantePath=null;var _cs0=document.getElementById('comp-status-cond');if(_cs0)_cs0.textContent='';sinpeIva=Math.round(monto*0.13);sinpeTotal=monto+sinpeIva;const fu='₡'+monto.toLocaleString('es-CR');const fi='₡'+sinpeIva.toLocaleString('es-CR');const ft='₡'+sinpeTotal.toLocaleString('es-CR');const c='AVS-'+user.phone+'-'+sinpeTotal;document.getElementById('sinpe-monto').textContent=fu;var _ei=document.getElementById('sinpe-iva');if(_ei)_ei.textContent=fi;var _et=document.getElementById('sinpe-total');if(_et)_et.textContent=ft;document.getElementById('sinpe-monto2').textContent=ft;document.getElementById('sinpe-concepto').textContent=c;go('sinpe');}
 function copiarSINPE(){navigator.clipboard.writeText(SINPE_AVS).then(()=>toast('Número copiado: '+SINPE_AVS)).catch(()=>toast('Número AVS: '+SINPE_AVS));}
-async function confirmarPagoSINPE(){if(!db||!sinpeMonto)return;var _iva=sinpeIva||Math.round(sinpeMonto*0.13);var _total=sinpeTotal||(sinpeMonto+_iva);const concepto='AVS-'+user.phone+'-'+_total;const{error}=await db.from('recargas').insert({conductor_telefono:user.phone,conductor_nombre:user.name,monto:sinpeMonto,iva:_iva,total:_total,concepto,estado:'pendiente',fecha:new Date().toISOString()});if(error){toast('Error al registrar. Intentá de nuevo.');return;}go('conductor');setTimeout(function(){if(typeof refrescarRecargaPendienteConductor==='function')refrescarRecargaPendienteConductor();},300);toast('✅ Pago registrado — acreditaremos en 1-2 horas');}
+async function confirmarPagoSINPE(){if(!db||!sinpeMonto)return;var _iva=sinpeIva||Math.round(sinpeMonto*0.13);var _total=sinpeTotal||(sinpeMonto+_iva);const concepto='AVS-'+user.phone+'-'+_total;const{error}=await db.from('recargas').insert({conductor_telefono:user.phone,conductor_nombre:user.name,monto:sinpeMonto,iva:_iva,total:_total,comprobante_url:comprobantePath,concepto,estado:'pendiente',fecha:new Date().toISOString()});if(error){toast('Error al registrar. Intentá de nuevo.');return;}comprobantePath=null;go('conductor');setTimeout(function(){if(typeof refrescarRecargaPendienteConductor==='function')refrescarRecargaPendienteConductor();},300);toast('✅ Pago registrado — acreditaremos en 1-2 horas');}
 let regEnergia='combustion';let regVehiculo='sedan',regFeatures={ac:false,pet:false,carga:false},regDocs={},selCategoria='todos';
 function selVchip(el,tipo){document.querySelectorAll('#vtype-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');regVehiculo=tipo;aplicarFotosVehiculo();llenarMarcas();saveRegProgress();}
 function selEnergia(el,tipo){document.querySelectorAll('#energia-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');regEnergia=tipo;saveRegProgress();}
@@ -4866,7 +4909,7 @@ async function marcarFalsaEmergencia(id){
 }
 let recargasFiltro='pendiente';
 function filtrarRecargas(estado){recargasFiltro=estado;document.querySelectorAll('[id^="recbtn-"]').forEach(b=>b.classList.remove('on'));document.getElementById('recbtn-'+estado).classList.add('on');cargarRecargas();}
-async function cargarRecargas(){if(!db)return;const{data}=await db.from('recargas').select('*').eq('estado',recargasFiltro).order('fecha',{ascending:false});const lista=document.getElementById('recargaslist');if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin recargas en este estado</div>';return;}lista.innerHTML=data.map(r=>`<div class="adcard" style="margin:8px 20px"><div class="adname">${r.conductor_nombre||r.negocio_nombre||r.usuario_nombre||'Recarga'}</div><div class="adinfo">${r.conductor_telefono?('📱 '+r.conductor_telefono):(r.usuario_telefono?('📱 '+r.usuario_telefono):(r.negocio_nombre?('🏪 '+r.negocio_nombre):''))} · 🕒 ${new Date(r.fecha).toLocaleString('es-CR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div><div class="adinfo">💬 Concepto: <strong>${r.concepto}</strong></div>${r.total?`<div class="adinfo">💵 Pagó: <strong>₡${parseInt(r.total).toLocaleString('es-CR')}</strong> (gastable ₡${parseInt(r.monto).toLocaleString('es-CR')} + IVA gobierno ₡${parseInt(r.iva||0).toLocaleString('es-CR')})</div>`:''}<div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0"><div style="font-family:var(--font-d);font-size:24px;font-weight:700;color:var(--g)">₡${parseInt(r.monto).toLocaleString('es-CR')}</div><div class="adbadge ${r.estado}">${r.estado.toUpperCase()}</div></div>${recargasFiltro==='pendiente'?`<div class="adacts"><button class="adaprob" onclick="acreditarRecarga('${r.id}','${r.conductor_telefono}',${r.monto})">✅ Acreditar saldo</button><button class="adrech" onclick="rechazarRecarga('${r.id}')">❌ Rechazar</button></div>`:''}</div>`).join('');}
+async function cargarRecargas(){if(!db)return;const{data}=await db.from('recargas').select('*').eq('estado',recargasFiltro).order('fecha',{ascending:false});const lista=document.getElementById('recargaslist');if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin recargas en este estado</div>';return;}lista.innerHTML=data.map(r=>`<div class="adcard" style="margin:8px 20px"><div class="adname">${r.conductor_nombre||r.negocio_nombre||r.usuario_nombre||'Recarga'}</div><div class="adinfo">${r.conductor_telefono?('📱 '+r.conductor_telefono):(r.usuario_telefono?('📱 '+r.usuario_telefono):(r.negocio_nombre?('🏪 '+r.negocio_nombre):''))} · 🕒 ${new Date(r.fecha).toLocaleString('es-CR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div><div class="adinfo">💬 Concepto: <strong>${r.concepto}</strong></div>${r.comprobante_url?`<div class="adinfo"><button onclick="verComprobante('${r.comprobante_url}')" style="background:var(--cd);border:1px solid var(--bd);color:var(--g);border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;margin-top:6px">📎 Ver comprobante</button></div>`:''}${r.total?`<div class="adinfo">💵 Pagó: <strong>₡${parseInt(r.total).toLocaleString('es-CR')}</strong> (gastable ₡${parseInt(r.monto).toLocaleString('es-CR')} + IVA gobierno ₡${parseInt(r.iva||0).toLocaleString('es-CR')})</div>`:''}<div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0"><div style="font-family:var(--font-d);font-size:24px;font-weight:700;color:var(--g)">₡${parseInt(r.monto).toLocaleString('es-CR')}</div><div class="adbadge ${r.estado}">${r.estado.toUpperCase()}</div></div>${recargasFiltro==='pendiente'?`<div class="adacts"><button class="adaprob" onclick="acreditarRecarga('${r.id}','${r.conductor_telefono}',${r.monto})">✅ Acreditar saldo</button><button class="adrech" onclick="rechazarRecarga('${r.id}')">❌ Rechazar</button></div>`:''}</div>`).join('');}
 async function acreditarRecarga(id,telefono,monto){if(!db)return;try{const{data:r}=await db.functions.invoke('avs-saldo',{body:{accion:'acreditar_recarga',recargaId:id}});if(r&&r.ok){toast('✅ ₡'+(parseInt(monto)||0).toLocaleString('es-CR')+' acreditados');}else{toast('No se pudo acreditar');}cargarRecargas();}catch(e){toast('No se pudo acreditar');}}
 async function rechazarRecarga(id){if(!db)return;await db.from('recargas').update({estado:'rechazado'}).eq('id',id);toast('Recarga rechazada');cargarRecargas();}
 let adminFiltro='pendiente';
