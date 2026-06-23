@@ -1164,6 +1164,13 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div class="plabel">¿A dónde vas?</div>
     <div class="acwrap"><div class="dotg"></div><input type="text" id="oac" placeholder="Mi ubicación actual" autocomplete="off"><button id="gpsBtn" onclick="usarUbicacionActual()" title="Usar mi ubicación actual" style="background:transparent;border:none;color:var(--g);font-size:18px;cursor:pointer;padding:0 2px;flex-shrink:0">📍</button></div>
     <div class="acwrap"><div class="dotr"></div><input type="text" id="dac" placeholder="Escribe tu destino..." autocomplete="off"></div>
+    <div style="margin:12px 0 4px">
+      <div class="plabel">🔎 ¿Qué necesitás? — buscá un servicio o producto</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input class="ifield" id="cmd-input" placeholder="Ej: pizza, farmacia, hotel, flete..." style="margin:0;flex:1" onkeydown="if(event.key==='Enter')asistenteComando(this.value)">
+        <button onclick="asistenteVoz()" id="cmd-mic" title="Hablar" style="width:46px;height:46px;border-radius:12px;background:var(--g);border:none;color:#04231a;font-size:20px;cursor:pointer;flex-shrink:0">🎤</button>
+      </div>
+    </div>
     <!-- Servicios AVS (solo móvil — en PC se muestran en la columna intermedia) -->
     <div class="servicios-movil">
     <!-- Fila 1: 3 servicios principales -->
@@ -5249,6 +5256,49 @@ function pintarAvisoHorario(neg){
   else { var h=estadoHorario(neg); if(h.conf && !h.abierto){ cerrado=true; msg='🕒 Cerrado ahora — '+h.motivo; } }
   if(av){ if(cerrado){ av.textContent=msg; av.style.display='block'; } else { av.style.display='none'; } }
   if(btn){ if(cerrado){ btn.disabled=true; btn.style.opacity='0.5'; btn.style.cursor='not-allowed'; btn.textContent='🕒 Fuera de horario'; } else { btn.disabled=false; btn.style.opacity=''; btn.style.cursor=''; btn.textContent='✅ Confirmar y pagar'; } }
+}
+async function asistenteComando(texto){
+  texto=(texto||'').trim(); if(!texto)return;
+  try{ if(db&&db.functions){ var r=await db.functions.invoke('avs-asistente',{body:{texto:texto}}); if(r&&r.data&&r.data.accion){ _ejecutarAccionAsistente(r.data); return; } } }catch(e){}
+  var rt=_ruteoPorPalabras(texto.toLowerCase());
+  if(rt){ _ejecutarAccionAsistente(rt); } else { toast('No encontré ese servicio. Probá: pizza, farmacia, hotel, flete...'); }
+}
+function _ruteoPorPalabras(t){
+  function has(arr){ return arr.some(function(w){return t.indexOf(w)>=0;}); }
+  if(has(['pizza','comida','restaurante','soda','almuerzo','cena','hambre','pollo','casado','hamburguesa','taco'])) return {accion:'servicio',valor:'restaurantes'};
+  if(has(['farmacia','medicina','medicamento','doctor','dentista','odonto','optica','clinica','medico','salud','emergencia','consulta'])) return {accion:'servicio',valor:'salud'};
+  if(has(['hotel','hospedaje','cabina','dormir','alojamiento','posada'])) return {accion:'servicio',valor:'hospedaje'};
+  if(has(['super','supermercado','abarrotes','mercado','verduleria','carniceria','tramo'])) return {accion:'servicio',valor:'supermercado'};
+  if(has(['patente','tramite','impuesto','municipal','permiso','bienes inmuebles'])) return {accion:'municipalidad'};
+  if(has(['promo','promocion','oferta','descuento','rebaja'])) return {accion:'promos'};
+  if(has(['flete','mudanza','carga','camion','transportar','mueble'])) return {accion:'flete'};
+  if(has(['encomienda','enviar','paquete','mandado','mensajeria','llevar algo'])) return {accion:'encomienda'};
+  if(has(['taxi','viaje','llevame','transporte','ir a','viajar'])) return {accion:'viaje'};
+  return null;
+}
+function _ejecutarAccionAsistente(a){
+  var acc=a.accion, val=a.valor;
+  var ci=document.getElementById('cmd-input'); if(ci)ci.value='';
+  if(acc==='servicio'){ if(typeof verNegocios==='function') verNegocios(val); }
+  else if(acc==='municipalidad'){ if(typeof abrirPortalMunicipal==='function') abrirPortalMunicipal(); }
+  else if(acc==='promos'){ if(typeof abrirPromosMovil==='function') abrirPromosMovil(); }
+  else if(acc==='flete'){ go('flete'); }
+  else if(acc==='encomienda'){ if(typeof openEncomienda==='function') openEncomienda(); }
+  else if(acc==='viaje'){ var d=document.getElementById('dac'); if(d){ try{d.scrollIntoView({block:'center'});}catch(e){} d.focus(); } toast('Escribí tu destino para el viaje'); }
+  else if(acc==='buscar'){ if(typeof verNegocios==='function') verNegocios(val||'restaurantes'); }
+  else { toast('No encontré ese servicio.'); }
+}
+function asistenteVoz(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ toast('Tu navegador no permite voz acá. Escribí lo que necesitás.'); var i=document.getElementById('cmd-input'); if(i)i.focus(); return; }
+  try{
+    var rec=new SR(); rec.lang='es-CR'; rec.interimResults=false; rec.maxAlternatives=1;
+    var mic=document.getElementById('cmd-mic'); if(mic)mic.textContent='🔴';
+    rec.onresult=function(ev){ var txt=ev.results[0][0].transcript; var i=document.getElementById('cmd-input'); if(i)i.value=txt; asistenteComando(txt); };
+    rec.onerror=function(){ var m=document.getElementById('cmd-mic'); if(m)m.textContent='🎤'; toast('No te escuché bien. Probá de nuevo o escribilo.'); };
+    rec.onend=function(){ var m=document.getElementById('cmd-mic'); if(m)m.textContent='🎤'; };
+    rec.start(); toast('🎤 Hablá: ¿qué necesitás?');
+  }catch(e){ var m=document.getElementById('cmd-mic'); if(m)m.textContent='🎤'; toast('No se pudo activar el micrófono.'); }
 }
 async function abrirCarrito(negocioId, negocioNombre) {
   carritoNegocioId = negocioId;
