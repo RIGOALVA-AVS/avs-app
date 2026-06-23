@@ -918,6 +918,12 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
 <!-- PANEL ADMIN -->
 <div class="screen" id="admin">
   <div class="adhdr"><div class="adtit">🛡️ Panel Admin AVS</div><button onclick="logout()" style="background:transparent;border:none;color:var(--mt);font-size:13px;cursor:pointer">Salir</button></div>
+  <div class="adtab" id="admin-area-bar" style="margin-bottom:8px">
+    <div class="adtbtn on" id="adarea-resumen" onclick="switchAdminArea('resumen')">📊 Resumen</div>
+    <div class="adtbtn" id="adarea-clientes" onclick="switchAdminArea('clientes')">👥 Clientes</div>
+    <div class="adtbtn" id="adarea-operacion" onclick="switchAdminArea('operacion')">💰 Operación</div>
+    <div class="adtbtn" id="adarea-seguridad" onclick="switchAdminArea('seguridad')">🛡️ Seguridad</div>
+  </div>
   <div class="adtab">
     <div class="adtbtn" id="admtab-conductores" onclick="switchAdminTab('conductores')" style="display:none">👥 Conductores</div>
     <div class="adtbtn" id="admtab-vehiculos" onclick="switchAdminTab('vehiculos')">🚗 Vehículos</div>
@@ -930,6 +936,10 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div class="adtbtn" id="admtab-emergencias" onclick="switchAdminTab('emergencias')">🆘 Emergencias</div>
     <div class="adtbtn" id="admtab-promos" onclick="switchAdminTab('promos')">🛍️ Promos</div>
     <div class="adtbtn" id="admtab-rendimientos" onclick="switchAdminTab('rendimientos')">📊 Rendimientos</div>
+  </div>
+  <div id="admin-resumen">
+    <div style="font-family:var(--font-d);font-size:15px;font-weight:700;margin:6px 0 12px">📊 Centro de mando</div>
+    <div id="resumen-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px"><div class="nolist">Cargando…</div></div>
   </div>
   <div id="admin-rendimientos" style="display:none">
     <div style="font-family:var(--font-d);font-size:15px;font-weight:700;margin-bottom:12px">📊 Rendimientos del mes por plataforma</div>
@@ -2985,6 +2995,7 @@ async function confirmarCancelacion(motivo){
   }catch(e){ toast('No se pudo cancelar'); }
 }
 
+function _setHTML(el,h){ if(el&&el._lh!==h){ el._lh=h; el.innerHTML=h; } }
 function _tickPedidoTimers(){
   var nodes=document.querySelectorAll('.ped-timer');
   if(nodes.length===0||window._avsPantallaActual!=='panel-negocio'){ if(_pedTickInt){clearInterval(_pedTickInt);_pedTickInt=null;} return; }
@@ -4462,11 +4473,52 @@ async function cargarCumplimiento(){
       rows.sort(function(a,b){return a.prio-b.prio;});
       var incum=rows.filter(function(x){return x.prio===0;}).length;
       var hdr='<div style="font-size:14px;margin-bottom:10px;color:'+(incum>0?'var(--rd)':'var(--g)')+'"><b>'+incum+'</b> comercio(s) incumpliendo ahora · '+rows.length+' con horario</div>';
-      c2.innerHTML= hdr + (rows.length?rows.map(function(x){return x.html;}).join(''):'<div class="nolist">Ningún comercio con horario configurado</div>');
+      _setHTML(c2, hdr + (rows.length?rows.map(function(x){return x.html;}).join(''):'<div class="nolist">Ningún comercio con horario configurado</div>'));
     }catch(e){ c2.innerHTML='<div class="nolist">No se pudo cargar</div>'; }
   }
   await run();
   _cumplInt=setInterval(run,30000);
+}
+var ADMIN_AREAS={ resumen:['resumen'], clientes:['vehiculos','negocios'], operacion:['recargas','rendimientos','promos','matchuber'], seguridad:['emergencias','intentos','codigos','cumplimiento'] };
+function switchAdminArea(area){
+  ['resumen','clientes','operacion','seguridad'].forEach(function(a){ var b=document.getElementById('adarea-'+a); if(b)b.classList.toggle('on',a===area); });
+  var tabs=ADMIN_AREAS[area]||[];
+  document.querySelectorAll('[id^="admtab-"]').forEach(function(b){ var t=b.id.replace('admtab-',''); b.style.display=(tabs.indexOf(t)>=0)?'':'none'; });
+  if(area==='resumen'){
+    ['conductores','vehiculos','recargas','negocios','cumplimiento','matchuber','codigos','intentos','emergencias','promos','rendimientos'].forEach(function(t){ var c=document.getElementById('admin-'+t); if(c)c.style.display='none'; });
+    document.querySelectorAll('[id^="admtab-"]').forEach(function(b){ b.classList.remove('on'); });
+    var ar=document.getElementById('admin-resumen'); if(ar)ar.style.display='block';
+    cargarResumenAdmin();
+  } else {
+    var ar=document.getElementById('admin-resumen'); if(ar)ar.style.display='none';
+    if(tabs[0]) switchAdminTab(tabs[0]);
+  }
+}
+async function cargarResumenAdmin(){
+  var cont=document.getElementById('resumen-kpis'); if(!cont)return;
+  if(!db){ cont.innerHTML='<div class="nolist">Sin conexión</div>'; return; }
+  cont.innerHTML='<div class="nolist">Cargando…</div>';
+  function card(t,v,c){ return '<div style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:14px"><div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">'+t+'</div><div style="font-family:var(--font-d);font-size:22px;font-weight:800;color:'+(c||'var(--g)')+';margin-top:4px">'+v+'</div></div>'; }
+  function n(r){ return (r&&typeof r.count==='number')?r.count:'—'; }
+  var d24=new Date(Date.now()-86400000).toISOString();
+  try{
+    var res=await Promise.all([
+      db.from('usuarios').select('*',{count:'exact',head:true}).neq('tipo','conductor'),
+      db.from('usuarios').select('*',{count:'exact',head:true}).eq('tipo','conductor'),
+      db.from('negocios').select('*',{count:'exact',head:true}).eq('estado','aprobado'),
+      db.from('recargas').select('*',{count:'exact',head:true}).eq('estado','pendiente'),
+      db.from('pedidos').select('*',{count:'exact',head:true}).gte('fecha',d24),
+      db.from('viajes').select('*',{count:'exact',head:true}).gte('fecha_solicitud',d24)
+    ]);
+    var pend=n(res[3]);
+    cont.innerHTML =
+      card('Usuarios', n(res[0])) +
+      card('Flota (conductores)', n(res[1])) +
+      card('Comercios', n(res[2])) +
+      card('Recargas pendientes', pend, (typeof pend==='number'&&pend>0)?'#F5A623':'var(--g)') +
+      card('Pedidos (24h)', n(res[4])) +
+      card('Viajes (24h)', n(res[5]));
+  }catch(e){ cont.innerHTML='<div class="nolist">No se pudo cargar el resumen</div>'; }
 }
 function switchAdminTab(tab){
   document.querySelectorAll('[id^="admtab-"]').forEach(el=>el.classList.remove('on'));
@@ -4482,6 +4534,7 @@ function switchAdminTab(tab){
   const aP = document.getElementById('admin-promos'); if(aP) aP.style.display='none';
   const aRnd = document.getElementById('admin-rendimientos'); if(aRnd) aRnd.style.display='none';
   const aCu = document.getElementById('admin-cumplimiento'); if(aCu) aCu.style.display='none';
+  const aRes = document.getElementById('admin-resumen'); if(aRes) aRes.style.display='none';
   if(tab==='conductores'){document.getElementById('admin-conductores').style.display='block';cargarAdmin();}
   else if(tab==='vehiculos'){const aVeh2=document.getElementById('admin-vehiculos');if(aVeh2){aVeh2.style.display='block';filtrarVehiculos('pendiente');}}
   else if(tab==='recargas'){document.getElementById('admin-recargas').style.display='block';filtrarRecargas('pendiente');}
@@ -5394,7 +5447,7 @@ function go(id, _fromPop){
   if(id==='pasajero')setTimeout(()=>{initCarruselGenerico('avsCarruselPasajero');},120);
   // Rehabilitar el botón de verificar cédula al entrar (evita que quede "pegado" en Verificando...)
   if(id==='registro-cedula'){setTimeout(()=>{const b=document.getElementById('reg-ced-submit');if(b){b.disabled=false;b.textContent='✓ Continuar';}const e=document.getElementById('reg-ced-error');if(e)e.textContent='';const fc=document.getElementById('reg-fecha-nac-cont');if(fc&&!fc.innerHTML.trim())fc.innerHTML=fechaNacHTML('u-fn');},40);}
-  if(id==='admin')switchAdminTab('vehiculos');
+  if(id==='admin')switchAdminArea('resumen');
   if(id==='conductor')setTimeout(verificarVehiculoActivo,300);
   if(id==='flete')setTimeout(initFleteAutocomplete,150);
   if(id==='emergencia')setTimeout(cargarContactosEmergencia,100);
@@ -6548,7 +6601,7 @@ async function cargarRepartos(){
     var disp=data.filter(function(x){return x.estado==='buscando';});
     if(nb)nb.textContent=String(disp.length);
     if(data.length===0){ cont.innerHTML='<div class="nolist">No hay repartos por ahora</div>'; return; }
-    cont.innerHTML=data.map(function(x){
+    var _rh=data.map(function(x){
       var veh=(x.vehiculo==='carro')?'🚗 Carro':'🛵 Moto';
       var monto=parseInt(x.monto_envio||0)||0;
       var com=Math.round(monto*0.12);
@@ -6565,7 +6618,7 @@ async function cargarRepartos(){
         (x.cliente_nombre?('<div style="font-size:12px;color:var(--mt)">👤 '+x.cliente_nombre+(x.cliente_telefono?(' · '+x.cliente_telefono):'')+'</div>'):'')+
         '<div style="font-size:13px;margin-top:4px">Cobrás el envío: <b style="color:var(--g)">₡'+monto.toLocaleString('es-CR')+'</b> · comisión AVS ₡'+com.toLocaleString('es-CR')+'</div>'+
         btn+'</div>';
-    }).join('');
+    }).join(''); _setHTML(cont,_rh);
   }catch(e){ cont.innerHTML='<div class="nolist">No se pudo cargar (¿corriste el SQL?)</div>'; }
 }
 async function aceptarReparto(id){
