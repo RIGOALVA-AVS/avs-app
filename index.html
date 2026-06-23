@@ -1171,24 +1171,19 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
         <button onclick="asistenteVoz()" id="cmd-mic" title="Hablar" style="width:46px;height:46px;border-radius:12px;background:var(--g);border:none;color:#04231a;font-size:20px;cursor:pointer;flex-shrink:0">🎤</button>
       </div>
     </div>
-    <!-- Servicios AVS (solo móvil — en PC se muestran en la columna intermedia) -->
+    <!-- Servicios (móvil) - grilla uniforme -->
+    <style>.svc-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 6px;background:var(--sf);border:1px solid var(--bd);border-radius:14px;cursor:pointer;font-size:24px;color:var(--tx);text-align:center;line-height:1}.svc-tile span{font-size:11px;color:var(--mt);font-weight:600;line-height:1.1}.svc-tile:active{border-color:var(--g);background:rgba(0,229,184,0.06)}</style>
     <div class="servicios-movil">
-    <!-- Fila 1: 3 servicios principales -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px;margin-top:4px">
-      <div class="dest-chip" onclick="verNegocios('restaurantes')">🍽️<br><span style="font-size:10px">Restaurantes</span></div>
-      <div class="dest-chip" onclick="verNegocios('salud')">🏥<br><span style="font-size:10px">Salud</span></div>
-      <div class="dest-chip" onclick="verNegocios('hospedaje')">🏨<br><span style="font-size:10px">Hospedaje</span></div>
-    </div>
-    <!-- Fila 2: Municipalidad + Más -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-      <div class="dest-chip" onclick="abrirPortalMunicipal()" style="background:linear-gradient(135deg,rgba(96,165,250,0.15),rgba(96,165,250,0.05));border:1px solid rgba(96,165,250,0.4);color:#60a5fa;padding:12px;font-weight:600">🏛️ Municipalidad</div>
-      <div class="dest-chip promo-alert-btn" onclick="abrirPromosMovil()" style="padding:12px;font-weight:800;background:linear-gradient(135deg,#00e5b8,#00b894);color:#04231a;border:none;box-shadow:0 0 14px rgba(0,229,184,0.45)">🎁 Promos</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:6px">
-      <div class="dest-chip" onclick="go('flete')" style="background:linear-gradient(135deg,rgba(0,229,184,0.15),rgba(0,229,184,0.05));border:1px solid var(--bd2);padding:12px;font-weight:600">🚚 Flete / Carga (subasta)</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:6px">
-      <div class="dest-chip" onclick="openEncomienda()" style="background:linear-gradient(135deg,rgba(0,229,184,0.15),rgba(0,229,184,0.05));border:1px solid var(--bd2);padding:12px;font-weight:600">📦 Encomienda / Entrega (moto)</div>
+    <div class="plabel" style="margin-top:14px">Servicios en Atenas</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <div class="svc-tile" onclick="verNegocios('restaurantes')">🍽️<span>Restaurantes</span></div>
+      <div class="svc-tile" onclick="verNegocios('salud')">🏥<span>Salud</span></div>
+      <div class="svc-tile" onclick="verNegocios('hospedaje')">🏨<span>Hospedaje</span></div>
+      <div class="svc-tile" onclick="verNegocios('supermercado')">🛒<span>Súper</span></div>
+      <div class="svc-tile" onclick="abrirPortalMunicipal()">🏛️<span>Municipal</span></div>
+      <div class="svc-tile" onclick="abrirPromosMovil()">🎁<span>Promos</span></div>
+      <div class="svc-tile" onclick="go('flete')">🚚<span>Flete</span></div>
+      <div class="svc-tile" onclick="openEncomienda()">📦<span>Encomienda</span></div>
     </div>
     </div><!-- /servicios-movil -->
     <div class="tinfo" id="tinfo">
