@@ -1191,12 +1191,10 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
       <div class="svc-tile" onclick="verNegocios('restaurantes')">🍽️<span>Restaurantes</span></div>
       <div class="svc-tile" onclick="verNegocios('salud')">🏥<span>Salud</span></div>
-      <div class="svc-tile" onclick="verNegocios('hospedaje')">🏨<span>Hospedaje</span></div>
       <div class="svc-tile" onclick="verNegocios('supermercado')">🛒<span>Súper</span></div>
       <div class="svc-tile" onclick="abrirPortalMunicipal()">🏛️<span>Municipal</span></div>
       <div class="svc-tile" onclick="abrirPromosMovil()">🎁<span>Promos</span></div>
       <div class="svc-tile" onclick="go('flete')">🚚<span>Flete</span></div>
-      <div class="svc-tile" onclick="openEncomienda()">📦<span>Encomienda</span></div>
     </div>
     </div><!-- /servicios-movil -->
 
@@ -1222,21 +1220,12 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div class="servcol-btn" onclick="verNegocios('salud')">
       <span class="servcol-ico">🏥</span><span class="servcol-lbl">Salud</span>
     </div>
-    <div class="servcol-btn" onclick="verNegocios('hospedaje')">
-      <span class="servcol-ico">🏨</span><span class="servcol-lbl">Hospedaje</span>
-    </div>
     <div class="servcol-btn" onclick="go('flete')">
       <span class="servcol-ico">🚚</span><span class="servcol-lbl">Flete</span>
     </div>
   </div>
   <button class="share-btn" onclick="abrirCompartirViaje()" title="Compartir viaje con contactos">🟢</button>
   <button class="panic-btn" onclick="abrirEmergencia()" title="EMERGENCIA REAL">🆘</button>
-  <div class="bnav">
-    <div class="nitem" onclick="go('pasajero')"><span class="nico on">🏠</span><span class="nlbl on">Inicio</span></div>
-    <div class="nitem" onclick="abrirHistorial('usuario')"><span class="nico">🗺️</span><span class="nlbl">Mis Viajes</span></div>
-    <div class="nitem" onclick="abrirSaldoUsuario()"><span class="nico">💳</span><span class="nlbl">Saldo</span></div>
-    <div class="nitem" onclick="go('perfil')"><span class="nico">👤</span><span class="nlbl">Perfil</span></div>
-  </div>
 </div>
 
 <div class="screen" id="buscando">
@@ -5260,12 +5249,10 @@ function _ruteoPorPalabras(t){
   function has(arr){ return arr.some(function(w){return t.indexOf(w)>=0;}); }
   if(has(['pizza','comida','restaurante','soda','almuerzo','cena','hambre','pollo','casado','hamburguesa','taco'])) return {accion:'servicio',valor:'restaurantes'};
   if(has(['farmacia','medicina','medicamento','doctor','dentista','odonto','optica','clinica','medico','salud','emergencia','consulta'])) return {accion:'servicio',valor:'salud'};
-  if(has(['hotel','hospedaje','cabina','dormir','alojamiento','posada'])) return {accion:'servicio',valor:'hospedaje'};
   if(has(['super','supermercado','abarrotes','mercado','verduleria','carniceria','tramo'])) return {accion:'servicio',valor:'supermercado'};
   if(has(['patente','tramite','impuesto','municipal','permiso','bienes inmuebles'])) return {accion:'municipalidad'};
   if(has(['promo','promocion','oferta','descuento','rebaja'])) return {accion:'promos'};
   if(has(['flete','mudanza','carga','camion','transportar','mueble'])) return {accion:'flete'};
-  if(has(['encomienda','enviar','paquete','mandado','mensajeria','llevar algo'])) return {accion:'encomienda'};
   if(has(['taxi','viaje','llevame','transporte','ir a','viajar'])) return {accion:'viaje'};
   return null;
 }
