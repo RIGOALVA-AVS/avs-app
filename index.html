@@ -5484,7 +5484,7 @@ function go(id, _fromPop){
   document.getElementById(id).classList.add('active');
   // Botón flotante 🏠: visible en toda pantalla que no sea una "casa" ni la portada
   const _hb=document.getElementById('btn-home-avs');
-  if(_hb)_hb.style.display=(['login','pasajero','conductor','admin','panel-negocio'].includes(id))?'none':'block';
+  if(_hb)_hb.style.display=(id==='login')?'none':'block';
   setTimeout(()=>{if(id==='usuario'||id==='pasajero')aplicarLayoutPasajeroPC();},50);
   if(id==='registro')setTimeout(()=>{const cont=document.getElementById('rfechanac-cont');if(cont&&!cont.innerHTML.trim())cont.innerHTML=fechaNacHTML('r-fn');llenarMarcas();loadRegProgress();},100);
   // Insertar el bloque de consentimiento en cada registro (si el slot existe y está vacío)
