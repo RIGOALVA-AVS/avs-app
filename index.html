@@ -1595,12 +1595,12 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
   #neg-rail{display:none;}
   #neg-rail-lista{display:block;}
   @media(min-width:1100px){
-    #neg-rail{display:flex;flex-direction:column;position:fixed;top:0;right:0;width:360px;height:100vh;background:var(--sf);border-left:1px solid var(--bd2);z-index:70;padding:16px 14px;overflow-y:auto;box-shadow:-8px 0 24px rgba(0,0,0,0.35);box-sizing:border-box;}
-    #panel-negocio.screen{padding-right:392px;box-sizing:border-box;}
+    #neg-rail{display:flex;flex-direction:column;position:fixed;top:0;right:0;width:50vw;height:100vh;background:var(--sf);border-left:1px solid var(--bd2);z-index:70;padding:16px 14px;overflow-y:auto;box-shadow:-8px 0 24px rgba(0,0,0,0.35);box-sizing:border-box;}
+    #panel-negocio.screen{padding-right:50vw;box-sizing:border-box;}
   }
   @media(min-width:1320px){
-    #neg-rail{width:600px;}
-    #panel-negocio.screen{padding-right:632px;}
+    #neg-rail{width:50vw;}
+    #panel-negocio.screen{padding-right:50vw;}
     #neg-rail-lista{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;}
   }
   </style>
@@ -1654,6 +1654,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div class="adtbtn" id="negtab-pedidos" onclick="switchNegTab('pedidos')">📦 Pedidos <span id="negtab-pedidos-n" style="font-weight:800"></span></div>
     <div class="adtbtn" id="negtab-stats" onclick="switchNegTab('stats')">📊 Stats</div>
     <div class="adtbtn" id="negtab-equipo" onclick="switchNegTab('equipo')">👥 Equipo</div>
+    <div class="adtbtn" id="negtab-documentos" onclick="switchNegTab('documentos')">📑 Documentos</div>
   </div>
   <!-- Contenido tabs -->
   <div id="neg-tab-menu">
@@ -1701,6 +1702,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     </div>
   </div>
   <div id="neg-tab-pedidos" style="display:none"><div class="nolist" id="neg-pedidos-lista">Cargando pedidos...</div></div>
+  <div id="neg-tab-documentos" style="display:none"><div id="neg-docs-list" style="margin-top:10px"></div></div>
   <div id="neg-tab-equipo" style="display:none">
     <div style="font-size:13px;color:var(--mt);margin-bottom:10px">Pueden tener acceso hasta 2 personas además del dueño: una para <b>servicio directo</b> y otra para <b>control de calidad</b>. Cada una entra con su propio teléfono.</div>
     <div id="neg-accesos-lista"><div class="nolist">Sin accesos adicionales</div></div>
@@ -2766,7 +2768,29 @@ var negCategoria='restaurantes';
 var itemCategoria='';
 function selNegCat(el,cat){document.querySelectorAll('#neg-cats .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');negCategoria=cat;}
 function selItemCat(el,cat){document.querySelectorAll('#cat-chips .vchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');itemCategoria=cat;var i=document.getElementById('item-cat');if(i)i.value=cat;}
-function switchNegTab(tab){['menu','pedidos','stats','equipo'].forEach(function(t){var b=document.getElementById('negtab-'+t);var c=document.getElementById('neg-tab-'+t);if(b)b.classList.toggle('on',t===tab);if(c)c.style.display=(t===tab?'':'none');});if(tab==='pedidos')cargarPedidosNegocio();if(tab==='stats')cargarStatsNegocio();if(tab==='menu')cargarMenuNegocio();if(tab==='equipo')cargarAccesos();}
+async function cargarDocsNegocioProveedor(){
+  if(!db||!negocioActual)return; var cont=document.getElementById('neg-docs-list'); if(!cont)return;
+  cont.innerHTML='<div class="nolist">Cargando…</div>';
+  try{ var r=await db.from('negocios').select('categoria,documentos_url,documentos_venc').eq('id',negocioActual.id).single(); if(r&&r.data){ negocioActual.categoria=r.data.categoria||negocioActual.categoria; negocioActual.documentos_url=r.data.documentos_url||{}; negocioActual.documentos_venc=r.data.documentos_venc||{}; } }catch(e){}
+  var n=negocioActual; var req=reqDocsNegocio(n.categoria); var urls=n.documentos_url||{}, venc=n.documentos_venc||{}; var verif=_docVerificado(n);
+  var rows=req.map(function(d){
+    var has=!!urls[d.k]; var v=venc[d.k]||''; var vencido=d.exp&&v&&new Date(v).getTime()<Date.now();
+    var est=!has?'<span style="color:var(--mt)">— falta</span>':(d.exp?(v?(vencido?'<span style="color:#e24b4a">⏳ vencido</span>':'<span style="color:var(--g)">✓ vigente</span>'):'<span style="color:#f5a623">falta fecha</span>'):'<span style="color:var(--g)">✓</span>');
+    var verBtn=has?'<button onclick="verDocNegocio(\''+urls[d.k]+'\')" style="background:transparent;border:1px solid var(--bd);color:var(--g);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer">👁 Ver</button>':'';
+    var dateInp=d.exp?'<input type="date" value="'+v+'" onchange="setVencDocProveedor(\''+d.k+'\',this.value)" style="background:var(--cd);border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:6px;font-size:12px">':'';
+    return '<div style="border-top:1px solid var(--bd);padding:10px 0"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span style="font-size:13px">'+d.label+(d.exp?' ⏳':'')+'</span>'+est+'</div><div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap"><label style="background:rgba(0,229,184,.12);border:1px solid rgba(0,229,184,.4);color:var(--g);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer">📤 Subir<input type="file" accept="image/*,application/pdf" style="display:none" onchange="subirDocProveedor(\''+d.k+'\',this)"></label>'+verBtn+dateInp+'</div></div>';
+  }).join('');
+  var badge=verif?'<span style="background:var(--g);color:#04231a;font-weight:800;font-size:12px;padding:5px 12px;border-radius:20px">✓ Verificado AVS</span>':'<span style="background:rgba(245,166,35,.15);color:#f5a623;border:1px solid rgba(245,166,35,.4);font-size:12px;padding:5px 12px;border-radius:20px">Documentación incompleta</span>';
+  cont.innerHTML='<div style="margin:4px 0 6px">'+badge+'</div><div style="font-size:12px;color:var(--mt);margin-bottom:6px">Subí tus documentos. AVS los verifica y controla los vencimientos.</div>'+rows;
+}
+async function subirDocProveedor(key,input){
+  var file=input.files&&input.files[0]; if(!file||!negocioActual)return; toast('Subiendo documento...');
+  try{ var ext=(file.name.split('.').pop()||'jpg'); var fn='neg-'+negocioActual.id+'-'+key+'-'+Date.now()+'.'+ext; var up=await db.storage.from('documentos-negocios').upload(fn,file,{upsert:true}); if(up.error)throw up.error; var urls=Object.assign({},negocioActual.documentos_url||{}); urls[key]=fn; await db.from('negocios').update({documentos_url:urls}).eq('id',negocioActual.id); negocioActual.documentos_url=urls; toast('✅ Documento subido'); cargarDocsNegocioProveedor(); }catch(e){ console.error('docprov',e); toast('No se pudo subir (¿bucket documentos-negocios?)'); }
+}
+async function setVencDocProveedor(key,val){
+  if(!negocioActual)return; var venc=Object.assign({},negocioActual.documentos_venc||{}); venc[key]=val; try{ await db.from('negocios').update({documentos_venc:venc}).eq('id',negocioActual.id); negocioActual.documentos_venc=venc; cargarDocsNegocioProveedor(); }catch(e){ toast('No se pudo guardar la fecha'); }
+}
+function switchNegTab(tab){['menu','pedidos','stats','equipo','documentos'].forEach(function(t){var b=document.getElementById('negtab-'+t);var c=document.getElementById('neg-tab-'+t);if(b)b.classList.toggle('on',t===tab);if(c)c.style.display=(t===tab?'':'none');});if(tab==='pedidos')cargarPedidosNegocio();if(tab==='stats')cargarStatsNegocio();if(tab==='menu')cargarMenuNegocio();if(tab==='equipo')cargarAccesos();if(tab==='documentos')cargarDocsNegocioProveedor();}
 function mostrarFormItem(){var f=document.getElementById('form-item');if(f)f.style.display='block';['item-nombre','item-desc','item-precio','item-cat','item-foto'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});itemCategoria='';document.querySelectorAll('#cat-chips .vchip').forEach(c=>c.classList.remove('sel'));}
 async function subirFotoItem(input){
   var file=input.files&&input.files[0]; if(!file)return;
