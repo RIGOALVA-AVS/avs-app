@@ -1232,9 +1232,6 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div class="servcol-btn" onclick="go('flete')">
       <span class="servcol-ico">🚚</span><span class="servcol-lbl">Flete</span>
     </div>
-    <div class="servcol-btn" onclick="go('servicios')">
-      <span class="servcol-ico">✨</span><span class="servcol-lbl">Más</span>
-    </div>
   </div>
   <button class="share-btn" onclick="abrirCompartirViaje()" title="Compartir viaje con contactos">🟢</button>
   <button class="panic-btn" onclick="abrirEmergencia()" title="EMERGENCIA REAL">🆘</button>
@@ -1535,7 +1532,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
 <div class="screen" id="lista-negocios">
   <div id="lista-neg-scroll" style="background:var(--bg);height:100%;overflow-y:auto;padding:48px 20px 32px">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <button onclick="go('servicios')" style="width:36px;height:36px;background:rgba(0,229,184,0.1);border:1px solid var(--bd2);border-radius:50%;color:var(--g);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>
+      <button onclick="go('pasajero')" style="width:36px;height:36px;background:rgba(0,229,184,0.1);border:1px solid var(--bd2);border-radius:50%;color:var(--g);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>
       <div style="font-family:var(--font-d);font-size:20px;font-weight:700" id="lista-titulo">Negocios</div>
     </div>
     <!-- Buscador -->
@@ -2057,7 +2054,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
 <div class="screen" id="tracking-pedido">
   <div style="background:var(--bg);height:100%;overflow-y:auto;padding:48px 20px 32px">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-      <button onclick="go('servicios')" style="width:36px;height:36px;background:rgba(0,229,184,0.1);border:1px solid var(--bd2);border-radius:50%;color:var(--g);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>
+      <button onclick="go('pasajero')" style="width:36px;height:36px;background:rgba(0,229,184,0.1);border:1px solid var(--bd2);border-radius:50%;color:var(--g);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>
       <div style="font-family:var(--font-d);font-size:20px;font-weight:700">Estado del pedido</div>
     </div>
     <!-- Negocio info -->
@@ -5785,7 +5782,7 @@ async function enviarRegistroNegocio(){
     if(error){toast('Error al registrar. Intentá de nuevo.');return;}
   }
   toast('✅ Solicitud enviada — te contactaremos pronto');
-  setTimeout(()=>go('servicios'),1500);
+  setTimeout(()=>go('pasajero'),1500);
 }
 
 
@@ -7893,7 +7890,7 @@ async function abrirPromosMovil(){
       </div>`;
     }).join('')}</div>
     <div onclick="verMisCupones()" class="promo-alert-btn" style="text-align:center;margin-top:12px;padding:11px;border:1.5px solid rgba(255,213,79,0.7);border-radius:10px;color:#ffd54f;font-size:13px;font-weight:700;cursor:pointer">🎁 Mis cupones</div>
-    <div onclick="document.getElementById('promos-movil-ov').remove();go('servicios')" style="text-align:center;margin-top:10px;padding:11px;border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-size:13px;cursor:pointer">✨ Ver todos los servicios</div>
+    <div onclick="document.getElementById('promos-movil-ov').remove();go('pasajero')" style="text-align:center;margin-top:10px;padding:11px;border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-size:13px;cursor:pointer">✨ Ver todos los servicios</div>
     <div style="font-size:11px;color:var(--mt);text-align:center;margin-top:12px;padding-bottom:20px">¿Tenés un negocio en Atenas? Sumate como comercio y aparecé aquí.</div>`;
   document.body.appendChild(ov);
 }
@@ -8985,7 +8982,7 @@ async function enviarResena(){
     toast('Elegí cuántas estrellas');
     return;
   }
-  if(!db){toast('Sin conexión'); go('servicios'); return;}
+  if(!db){toast('Sin conexión'); go('pasajero'); return;}
   const comentario = document.getElementById('resena-comentario').value.trim();
   try {
     await db.from('resenas_negocios').insert({
@@ -9009,7 +9006,7 @@ async function enviarResena(){
     }
     toast('⭐ ¡Gracias por tu reseña!');
   } catch(e){ console.warn(e); }
-  go('servicios');
+  go('pasajero');
 }
 
 function omitirResena(){
@@ -9017,7 +9014,7 @@ function omitirResena(){
     // Marcar el pedido como ya reseñado para no preguntar otra vez
     try { localStorage.setItem('resena-omitida-' + resenaActual.pedido_id, '1'); } catch(e){}
   }
-  go('servicios');
+  go('pasajero');
 }
 
 // Hook: cuando un pedido pasa a "entregado" en el tracking, abrir reseña
