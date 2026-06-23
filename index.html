@@ -1325,10 +1325,11 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     </div>
     <div class="sbg"><div class="sfill"></div></div>
     <div id="cond-recarga-pend"></div>
+    <div style="font-size:11px;color:var(--mt);margin:10px 0 4px">Recargar saldo · precio con IVA del gobierno incluido</div>
     <div class="rchips">
-      <div class="rchip" onclick="abrirSINPE(5000)">₡5.000</div>
-      <div class="rchip" onclick="abrirSINPE(10000)">₡10.000</div>
-      <div class="rchip" onclick="abrirSINPE(20000)">₡20.000</div>
+      <div class="rchip" onclick="abrirSINPE(5000)">₡5.650</div>
+      <div class="rchip" onclick="abrirSINPE(10000)">₡11.300</div>
+      <div class="rchip" onclick="abrirSINPE(20000)">₡22.600</div>
     </div>
   </div>
   <div class="scrd" id="cond-stats" style="display:flex;justify-content:space-around;text-align:center;gap:8px">
@@ -1391,7 +1392,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
 <div class="screen" id="sinpe">
   <div style="padding:48px 24px 32px;display:flex;flex-direction:column;gap:16px;height:100%;overflow-y:auto">
     <div style="display:flex;align-items:center;gap:12px"><button onclick="go('conductor')" style="background:transparent;border:none;color:var(--g);font-size:20px;cursor:pointer">←</button><div style="font-family:var(--font-d);font-size:20px;font-weight:700">Recarga de Saldo AVS</div></div>
-    <div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:20px;text-align:center"><div style="font-size:12px;color:var(--mt);margin-bottom:6px">Crédito utilizable</div><div style="font-family:var(--font-d);font-size:36px;font-weight:700;color:var(--g)" id="sinpe-monto">₡0</div><div style="font-size:13px;color:var(--mt);margin-top:10px;line-height:1.7;border-top:1px solid var(--bd);padding-top:10px">+ IVA 13%: <strong id="sinpe-iva" style="color:var(--tx)">₡0</strong><br>Total a pagar por SINPE: <strong id="sinpe-total" style="color:var(--g);font-size:16px">₡0</strong></div></div>
+    <div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:20px;text-align:center"><div style="font-size:12px;color:var(--mt);margin-bottom:6px">Gastables</div><div style="font-family:var(--font-d);font-size:36px;font-weight:700;color:var(--g)" id="sinpe-monto">₡0</div><div style="font-size:13px;color:var(--mt);margin-top:10px;line-height:1.7;border-top:1px solid var(--bd);padding-top:10px">+ IVA del gobierno (13%): <strong id="sinpe-iva" style="color:var(--tx)">₡0</strong><br>Total a pagar por SINPE: <strong id="sinpe-total" style="color:var(--g);font-size:16px">₡0</strong><div style="font-size:11px;color:var(--mt);margin-top:8px">El IVA lo cobra el gobierno, no AVS.</div></div></div>
     <div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:20px">
       <div style="font-size:12px;color:var(--mt);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px">Instrucciones de pago</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:28px;height:28px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--bg);flex-shrink:0">1</div><div style="font-size:13px">Abrí tu app bancaria o SINPE Móvil</div></div>
@@ -1639,10 +1640,11 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Saldo AVS disponible</div>
     <div style="font-family:var(--font-d);font-size:28px;font-weight:800;background:var(--grad-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" id="neg-saldo">₡0</div>
     <button class="btno" onclick="canjearCuponNegocio()" style="margin-top:8px;border-color:rgba(255,213,79,0.5);color:#ffd54f;font-size:13px">🎁 Canjear cupón de cliente</button>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <div class="rchip" onclick="abrirSINPENegocio(10000)" style="flex:1">₡10.000</div>
-      <div class="rchip" onclick="abrirSINPENegocio(25000)" style="flex:1">₡25.000</div>
-      <div class="rchip" onclick="abrirSINPENegocio(50000)" style="flex:1">₡50.000</div>
+    <div style="font-size:11px;color:var(--mt);margin:12px 0 4px">Recargar saldo · precio con IVA del gobierno incluido</div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <div class="rchip" onclick="abrirSINPENegocio(10000)" style="flex:1">₡11.300</div>
+      <div class="rchip" onclick="abrirSINPENegocio(25000)" style="flex:1">₡28.250</div>
+      <div class="rchip" onclick="abrirSINPENegocio(50000)" style="flex:1">₡56.500</div>
     </div>
   </div>
   <!-- Tabs -->
@@ -3202,7 +3204,7 @@ function abrirSINPENegocio(monto){
   var num=(typeof SINPE_AVS!=='undefined'?SINPE_AVS:'el número AVS');
   var iva=Math.round(monto*0.13), total=monto+iva;
   var conf='AVS-'+(negocioActual.telefono||negocioActual.id)+'-'+total;
-  if(!confirm('Crédito utilizable: ₡'+monto.toLocaleString('es-CR')+'\n+ IVA 13%: ₡'+iva.toLocaleString('es-CR')+'\nTotal a pagar por SINPE a '+num+': ₡'+total.toLocaleString('es-CR')+'\nConcepto: '+conf+'\n\n¿Registrar la recarga?'))return;
+  if(!confirm('Gastables: ₡'+monto.toLocaleString('es-CR')+'\n+ IVA del gobierno 13%: ₡'+iva.toLocaleString('es-CR')+'\nTotal a pagar por SINPE a '+num+': ₡'+total.toLocaleString('es-CR')+'\nConcepto: '+conf+'\n\n¿Registrar la recarga?'))return;
   confirmarRecargaNegocio(monto,conf,iva,total);
 }
 async function confirmarRecargaNegocio(monto,concepto,iva,total){
@@ -4864,7 +4866,7 @@ async function marcarFalsaEmergencia(id){
 }
 let recargasFiltro='pendiente';
 function filtrarRecargas(estado){recargasFiltro=estado;document.querySelectorAll('[id^="recbtn-"]').forEach(b=>b.classList.remove('on'));document.getElementById('recbtn-'+estado).classList.add('on');cargarRecargas();}
-async function cargarRecargas(){if(!db)return;const{data}=await db.from('recargas').select('*').eq('estado',recargasFiltro).order('fecha',{ascending:false});const lista=document.getElementById('recargaslist');if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin recargas en este estado</div>';return;}lista.innerHTML=data.map(r=>`<div class="adcard" style="margin:8px 20px"><div class="adname">${r.conductor_nombre||r.negocio_nombre||r.usuario_nombre||'Recarga'}</div><div class="adinfo">${r.conductor_telefono?('📱 '+r.conductor_telefono):(r.usuario_telefono?('📱 '+r.usuario_telefono):(r.negocio_nombre?('🏪 '+r.negocio_nombre):''))} · 🕒 ${new Date(r.fecha).toLocaleString('es-CR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div><div class="adinfo">💬 Concepto: <strong>${r.concepto}</strong></div>${r.total?`<div class="adinfo">💵 Pagó: <strong>₡${parseInt(r.total).toLocaleString('es-CR')}</strong> (crédito ₡${parseInt(r.monto).toLocaleString('es-CR')} + IVA 13% ₡${parseInt(r.iva||0).toLocaleString('es-CR')})</div>`:''}<div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0"><div style="font-family:var(--font-d);font-size:24px;font-weight:700;color:var(--g)">₡${parseInt(r.monto).toLocaleString('es-CR')}</div><div class="adbadge ${r.estado}">${r.estado.toUpperCase()}</div></div>${recargasFiltro==='pendiente'?`<div class="adacts"><button class="adaprob" onclick="acreditarRecarga('${r.id}','${r.conductor_telefono}',${r.monto})">✅ Acreditar saldo</button><button class="adrech" onclick="rechazarRecarga('${r.id}')">❌ Rechazar</button></div>`:''}</div>`).join('');}
+async function cargarRecargas(){if(!db)return;const{data}=await db.from('recargas').select('*').eq('estado',recargasFiltro).order('fecha',{ascending:false});const lista=document.getElementById('recargaslist');if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin recargas en este estado</div>';return;}lista.innerHTML=data.map(r=>`<div class="adcard" style="margin:8px 20px"><div class="adname">${r.conductor_nombre||r.negocio_nombre||r.usuario_nombre||'Recarga'}</div><div class="adinfo">${r.conductor_telefono?('📱 '+r.conductor_telefono):(r.usuario_telefono?('📱 '+r.usuario_telefono):(r.negocio_nombre?('🏪 '+r.negocio_nombre):''))} · 🕒 ${new Date(r.fecha).toLocaleString('es-CR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div><div class="adinfo">💬 Concepto: <strong>${r.concepto}</strong></div>${r.total?`<div class="adinfo">💵 Pagó: <strong>₡${parseInt(r.total).toLocaleString('es-CR')}</strong> (gastable ₡${parseInt(r.monto).toLocaleString('es-CR')} + IVA gobierno ₡${parseInt(r.iva||0).toLocaleString('es-CR')})</div>`:''}<div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0"><div style="font-family:var(--font-d);font-size:24px;font-weight:700;color:var(--g)">₡${parseInt(r.monto).toLocaleString('es-CR')}</div><div class="adbadge ${r.estado}">${r.estado.toUpperCase()}</div></div>${recargasFiltro==='pendiente'?`<div class="adacts"><button class="adaprob" onclick="acreditarRecarga('${r.id}','${r.conductor_telefono}',${r.monto})">✅ Acreditar saldo</button><button class="adrech" onclick="rechazarRecarga('${r.id}')">❌ Rechazar</button></div>`:''}</div>`).join('');}
 async function acreditarRecarga(id,telefono,monto){if(!db)return;try{const{data:r}=await db.functions.invoke('avs-saldo',{body:{accion:'acreditar_recarga',recargaId:id}});if(r&&r.ok){toast('✅ ₡'+(parseInt(monto)||0).toLocaleString('es-CR')+' acreditados');}else{toast('No se pudo acreditar');}cargarRecargas();}catch(e){toast('No se pudo acreditar');}}
 async function rechazarRecarga(id){if(!db)return;await db.from('recargas').update({estado:'rechazado'}).eq('id',id);toast('Recarga rechazada');cargarRecargas();}
 let adminFiltro='pendiente';
