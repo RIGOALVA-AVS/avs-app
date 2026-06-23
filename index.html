@@ -1188,13 +1188,11 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <style>.svc-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 6px;background:var(--sf);border:1px solid var(--bd);border-radius:14px;cursor:pointer;font-size:24px;color:var(--tx);text-align:center;line-height:1}.svc-tile span{font-size:11px;color:var(--mt);font-weight:600;line-height:1.1}.svc-tile:active{border-color:var(--g);background:rgba(0,229,184,0.06)}</style>
     <div class="servicios-movil">
     <div class="plabel" style="margin-top:14px">Servicios en Atenas</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
       <div class="svc-tile" onclick="verNegocios('restaurantes')">🍽️<span>Restaurantes</span></div>
-      <div class="svc-tile" onclick="verNegocios('salud')">🏥<span>Salud</span></div>
-      <div class="svc-tile" onclick="verNegocios('supermercado')">🛒<span>Súper</span></div>
+      <div class="svc-tile" onclick="verNegocios('tramos')">🥬<span>Verdulerías</span></div>
+      <div class="svc-tile" onclick="verNegocios('carniceria')">🥩<span>Carnicerías</span></div>
       <div class="svc-tile" onclick="abrirPortalMunicipal()">🏛️<span>Municipal</span></div>
-      <div class="svc-tile" onclick="abrirPromosMovil()">🎁<span>Promos</span></div>
-      <div class="svc-tile" onclick="go('flete')">🚚<span>Flete</span></div>
     </div>
     </div><!-- /servicios-movil -->
 
@@ -1552,6 +1550,8 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
     <div style="font-size:11px;color:var(--mt);letter-spacing:1.5px;text-transform:uppercase;margin:14px 0 10px">Categoría</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px" id="neg-cats">
       <div class="vchip" onclick="selNegCat(this,'restaurantes')">🍽️ Restaurantes</div>
+      <div class="vchip" onclick="selNegCat(this,'tramos')">🥬 Verdulería / Tramo</div>
+      <div class="vchip" onclick="selNegCat(this,'carniceria')">🥩 Carnicería</div>
       <div class="vchip" onclick="selNegCat(this,'salud')">🏥 Salud</div>
       <div class="vchip" onclick="selNegCat(this,'hospedaje')">🏨 Hospedaje</div>
       <div class="vchip" onclick="selNegCat(this,'supermercado')">🛒 Supermercado</div>
@@ -5249,7 +5249,9 @@ function _ruteoPorPalabras(t){
   function has(arr){ return arr.some(function(w){return t.indexOf(w)>=0;}); }
   if(has(['pizza','comida','restaurante','soda','almuerzo','cena','hambre','pollo','casado','hamburguesa','taco'])) return {accion:'servicio',valor:'restaurantes'};
   if(has(['farmacia','medicina','medicamento','doctor','dentista','odonto','optica','clinica','medico','salud','emergencia','consulta'])) return {accion:'servicio',valor:'salud'};
-  if(has(['super','supermercado','abarrotes','mercado','verduleria','carniceria','tramo'])) return {accion:'servicio',valor:'supermercado'};
+  if(has(['verduleria','verdura','fruta','tramo','vegetal','feria'])) return {accion:'servicio',valor:'tramos'};
+  if(has(['carniceria','carne','carnicero','res','cerdo'])) return {accion:'servicio',valor:'carniceria'};
+  if(has(['super','supermercado','abarrotes','mercado'])) return {accion:'servicio',valor:'supermercado'};
   if(has(['patente','tramite','impuesto','municipal','permiso','bienes inmuebles'])) return {accion:'municipalidad'};
   if(has(['promo','promocion','oferta','descuento','rebaja'])) return {accion:'promos'};
   if(has(['flete','mudanza','carga','camion','transportar','mueble'])) return {accion:'flete'};
@@ -5645,6 +5647,8 @@ var AVS_BASE_DOCS=[
 var AVS_DOCS_CAT={
   restaurantes:[{k:'permiso_sanitario',label:'Permiso Sanitario de Funcionamiento',exp:true},{k:'manip_alimentos',label:'Manipulación de alimentos',exp:true}],
   supermercado:[{k:'permiso_sanitario',label:'Permiso Sanitario de Funcionamiento',exp:true},{k:'senasa',label:'SENASA (si vende carnes/lácteos)',exp:true},{k:'manip_alimentos',label:'Manipulación de alimentos',exp:true}],
+  tramos:[{k:'permiso_sanitario',label:'Permiso Sanitario de Funcionamiento',exp:true},{k:'manip_alimentos',label:'Manipulación de alimentos',exp:true}],
+  carniceria:[{k:'permiso_sanitario',label:'Permiso Sanitario de Funcionamiento',exp:true},{k:'senasa',label:'Registro / habilitación SENASA',exp:true},{k:'manip_alimentos',label:'Manipulación de alimentos',exp:true}],
   hospedaje:[{k:'permiso_sanitario',label:'Permiso Sanitario (hospedaje)',exp:true},{k:'poliza',label:'Póliza del establecimiento',exp:true}],
   salud:[{k:'habilitacion',label:'Habilitación del establecimiento (Min. Salud)',exp:true},{k:'idoneidad',label:'Idoneidad profesional (colegio)',exp:false},{k:'desechos',label:'Manejo de desechos bioinfecciosos',exp:true}],
   negocios:[{k:'permiso_sanitario',label:'Permiso Sanitario (si aplica)',exp:true}],
