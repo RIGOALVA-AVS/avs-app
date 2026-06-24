@@ -5411,16 +5411,20 @@ function _itemCardHTML(item){
 function abrirSeccionMenu(cat){
   var items=(window._menuCats||{})[cat]||[];
   cerrarSeccionMenu();
+  window._seccionOpen=true;
   var m=document.createElement('div'); m.id='seccion-menu-modal';
   m.style.cssText='position:fixed;inset:0;background:var(--bg);z-index:99940;display:flex;flex-direction:column';
-  m.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--bd);background:var(--bg);flex-shrink:0">'
-    +'<button onclick="cerrarSeccionMenu()" style="background:var(--cd);border:1px solid var(--bd);color:var(--tx);border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;cursor:pointer">\u2039 Volver</button>'
-    +'<div style="font-size:18px;font-weight:800;display:flex;align-items:center;gap:7px">'+_secIco(cat)+' '+cat+'</div></div>'
-    +'<div style="flex:1;overflow-y:auto;padding:14px 16px 110px">'+items.map(_itemCardHTML).join('')+'</div>';
+  m.innerHTML='<div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:15px 14px;border-bottom:1px solid var(--bd);background:var(--bg);flex-shrink:0;font-size:18px;font-weight:800">'+_secIco(cat)+' '+cat+'</div>'
+    +'<div style="flex:1;overflow-y:auto;padding:14px 16px 16px">'+items.map(_itemCardHTML).join('')+'</div>'
+    +'<div style="display:flex;gap:10px;padding:12px 14px;background:var(--bg);border-top:1px solid var(--bd);flex-shrink:0">'
+    +'<button onclick="cerrarSeccionMenu()" style="flex:1;background:var(--cd);border:1px solid var(--bd);color:var(--tx);border-radius:12px;padding:15px;font-size:15px;font-weight:700;cursor:pointer">Seguir escogiendo</button>'
+    +'<button onclick="finDeOrden()" style="flex:1.3;background:linear-gradient(135deg,#00e5b8,#00b894);border:none;color:#04231a;border-radius:12px;padding:15px;font-size:15px;font-weight:800;cursor:pointer">Fin de orden \u00b7 <span id="sec-bar-total">\u20a10</span></button>'
+    +'</div>';
   document.body.appendChild(m);
   actualizarResumenCarrito();
 }
-function cerrarSeccionMenu(){ var m=document.getElementById('seccion-menu-modal'); if(m)m.remove(); }
+function finDeOrden(){ if(carritoItems.length===0){ toast('Agreg\u00e1 algo primero'); return; } cerrarSeccionMenu(); abrirHojaPedido(); }
+function cerrarSeccionMenu(){ window._seccionOpen=false; var m=document.getElementById('seccion-menu-modal'); if(m)m.remove(); var b=document.getElementById('carrito-pedido-bar'); if(b && carritoItems.length>0) b.style.display='block'; }
 
 
 
@@ -5591,7 +5595,7 @@ function actualizarResumenCarrito() {
       <span style="color:var(--g)">₡${(i.precio*i.cantidad).toLocaleString('es-CR')}</span>
     </div>`).join('');
   actualizarTotalCarrito();
-  if(bar){ bar.style.display='block'; var n=carritoItems.reduce(function(s,i){return s+i.cantidad;},0); var st=carritoItems.reduce(function(s,i){return s+i.precio*i.cantidad;},0); var bc=document.getElementById('bar-count'); if(bc)bc.textContent=n; var bt=document.getElementById('bar-total'); if(bt)bt.textContent='₡'+st.toLocaleString('es-CR'); }
+  if(bar){ var n=carritoItems.reduce(function(s,i){return s+i.cantidad;},0); var st=carritoItems.reduce(function(s,i){return s+i.precio*i.cantidad;},0); var bc=document.getElementById('bar-count'); if(bc)bc.textContent=n; var bt=document.getElementById('bar-total'); if(bt)bt.textContent='₡'+st.toLocaleString('es-CR'); var sbt=document.getElementById('sec-bar-total'); if(sbt)sbt.textContent='₡'+st.toLocaleString('es-CR'); bar.style.display = window._seccionOpen ? 'none' : 'block'; }
 }
 
 let _negociosCache = [];
