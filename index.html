@@ -1749,7 +1749,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
 <div id="carrito-pedido-bar" onclick="abrirHojaPedido()">🛒 Ver mi pedido · <span id="bar-count">0</span> · <span id="bar-total">₡0</span></div>
 <div id="carrito-resumen" style="display:none;flex-shrink:0;max-height:50vh;overflow-y:auto;background:var(--sf);border:1px solid var(--bd2);border-radius:16px;padding:16px;margin-top:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:14px;font-weight:700;color:var(--tx)">🛒 Tu pedido</div><button onclick="cerrarHojaPedido()" style="background:none;border:none;color:#aaa;font-size:24px;cursor:pointer;line-height:1;padding:0">✕</button></div>
-      <div id="carrito-items-lista"></div>
+      <div id="paso-resumen"><div id="carrito-items-lista"></div>
       <div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:14px;color:var(--mt)">Subtotal</span>
         <span style="font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--tx)" id="carrito-subtotal">₡0</span>
@@ -1766,6 +1766,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
           <span style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:700;color:#ffd54f" id="cupon-aplicado-monto">−₡0</span><a onclick="quitarCuponCarrito()" style="font-size:11px;color:var(--mt);cursor:pointer;text-decoration:underline">quitar</a></span>
         </div>
       </div>
+      </div><!-- /paso-resumen -->
       <!-- Opción entrega -->
       <div style="margin-top:12px" id="bloque-entrega">
         <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">¿Cómo recibís el pedido?</div>
@@ -1836,7 +1837,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
         <div style="font-size:11px;color:var(--mt);margin-top:7px;line-height:1.4;border-top:1px dashed var(--bd);padding-top:7px">🛵 El envío lo coordina y lo cobra el comercio (con repartidor AVS o su propio vehículo). Este monto es una referencia de AVS. ⏱️ El tiempo corre cuando el comercio confirma el pago.</div>
       </div>
       <!-- Total final -->
-      <div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+      <div id="total-row" style="border-top:1px solid var(--bd);padding-top:10px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">
         <div>
           <span style="font-size:14px;color:var(--mt)">Total</span>
           <div style="font-size:10px;color:var(--mt)" id="comision-label">Total a pagar</div>
@@ -1844,7 +1845,11 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
         <span style="font-family:var(--font-d);font-size:22px;font-weight:800;color:var(--g)" id="carrito-total">₡0</span>
       </div>
       <textarea class="ifield" placeholder="Notas para el negocio (opcional)" id="carrito-notas" rows="2" style="margin-top:10px;resize:none"></textarea>
-      <button class="btnp" onclick="confirmarPedido()" style="margin-top:10px" id="btn-confirmar-pedido">✅ Confirmar y pagar</button>
+      <button class="btnp" onclick="confirmarPedido()" style="margin-top:10px;display:none" id="btn-confirmar-pedido">✅ Confirmar pedido</button>
+      <div id="paso-nav" style="display:flex;gap:8px;margin-top:10px">
+        <button id="btn-paso-atras" class="btno" style="display:none;flex:1;margin:0" onclick="_pasoPedido(_pasoActual-1)">← Atrás</button>
+        <button id="btn-paso-cont" class="btnp" style="flex:2;margin:0" onclick="_pasoPedido(_pasoActual+1)">Aceptar →</button>
+      </div>
     </div>
     <div id="carrito-vacio" style="text-align:center;padding:40px 20px 20px;color:var(--mt)">
       <div style="font-size:48px;margin-bottom:12px">🛒</div>
@@ -5529,7 +5534,25 @@ function quitarDelCarrito(id) {
   actualizarResumenCarrito();
 }
 
-function abrirHojaPedido(){ if(carritoItems.length===0)return; var r=document.getElementById('carrito-resumen'); var ov=document.getElementById('pedido-sheet-ov'); if(r){r.style.display='block'; r.classList.add('sheet-open');} if(ov)ov.classList.add('on'); }
+var _pasoActual=1;
+function _pasoPedido(n){
+  var salud=(typeof carritoNegocioCat!=='undefined' && carritoNegocioCat==='salud');
+  if(salud) n=1; if(n<1)n=1; if(n>3)n=3; _pasoActual=n;
+  function show(id,on){ var e=document.getElementById(id); if(e)e.style.display=on?(id==='total-row'?'flex':(id==='carrito-notas'?'block':'block')):'none'; }
+  show('paso-resumen', n===1);
+  show('bloque-pago', !salud && n===2);
+  show('bloque-entrega', !salud && n===3);
+  show('bloque-contacto-salud', salud);
+  var D=document.getElementById('delivery-info'); if(D){ D.style.display=(!salud && n===3 && tipoEntrega==='delivery')?'block':'none'; }
+  show('total-row', n===3 || salud);
+  show('carrito-notas', n===3 || salud);
+  show('btn-confirmar-pedido', n===3 || salud);
+  var BA=document.getElementById('btn-paso-atras'), BC=document.getElementById('btn-paso-cont');
+  if(salud){ if(BA)BA.style.display='none'; if(BC)BC.style.display='none'; }
+  else { if(BA)BA.style.display=(n>1)?'block':'none'; if(BC){ BC.style.display=(n<3)?'block':'none'; BC.textContent=(n===1)?'Aceptar →':'Continuar →'; } }
+  var sh=document.getElementById('carrito-resumen'); if(sh)sh.scrollTop=0;
+}
+function abrirHojaPedido(){ if(carritoItems.length===0)return; var r=document.getElementById('carrito-resumen'); var ov=document.getElementById('pedido-sheet-ov'); if(r){r.style.display='block'; r.classList.add('sheet-open');} if(ov)ov.classList.add('on'); _pasoPedido(1); }
 function cerrarHojaPedido(){ var r=document.getElementById('carrito-resumen'); var ov=document.getElementById('pedido-sheet-ov'); if(r){r.classList.remove('sheet-open'); r.style.display='none';} if(ov)ov.classList.remove('on'); }
 function actualizarResumenCarrito() {
   const resumen = document.getElementById('carrito-resumen');
