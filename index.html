@@ -80,7 +80,8 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
 .avs-thumb-btn{transition:transform .2s ease;}
 .avs-thumb-btn:hover{transform:scale(2.4);z-index:60;position:relative;box-shadow:0 8px 24px rgba(0,0,0,0.6);}
 @keyframes avsPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,179,0,0);border-color:rgba(255,179,0,0.45);background:var(--sf)}50%{box-shadow:0 0 0 9px rgba(255,179,0,0.30);border-color:#FFB300;background:rgba(255,179,0,0.14)}}
-.promo-alert-btn{animation:avsPulse 1.6s infinite;}
+.promo-alert-btn{animation:avsPulseGreen 1.8s infinite;}
+@keyframes avsPulseGreen{0%,100%{box-shadow:0 0 8px rgba(0,229,184,0.35)}50%{box-shadow:0 0 20px rgba(0,229,184,0.75)}}
 
 .lhero{height:calc(var(--real-vh, 1vh) * 44);width:100%;flex-shrink:0;background:url('https://rigoalva-avs.github.io/avs-app/bg-login.jpg') center center/contain no-repeat;background-color:#080f1e;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0;position:relative;overflow:hidden;}
 
@@ -1730,12 +1731,24 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
       <button id="carrito-back" onclick="go('lista-negocios')" style="width:36px;height:36px;background:rgba(0,229,184,0.1);border:1px solid var(--bd2);border-radius:50%;color:var(--g);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">←</button>
       <div style="font-family:var(--font-d);font-size:20px;font-weight:700" id="carrito-negocio-nombre">Negocio</div>
     </div>
-    <div style="padding:0 20px 8px;flex-shrink:0"><button class="btno" onclick="openEnvioSolo()" style="width:100%;margin:0;border-color:rgba(0,229,184,0.4);font-size:13px;padding:11px">📞 ¿Pediste por llamada? Solicitar solo el envío 🛵</button></div>
     <div id="carrito-horario-aviso" style="display:none;margin:0 20px 8px;padding:10px 12px;background:rgba(255,77,77,0.1);border:1px solid rgba(255,77,77,0.4);border-radius:12px;color:#ff8585;font-size:13px;font-weight:600;flex-shrink:0"></div>
     <div id="carrito-menu" style="flex:1;overflow-y:auto;padding:0 20px"></div>
     <!-- Resumen pedido -->
-    <div id="carrito-resumen" style="display:none;flex-shrink:0;max-height:50vh;overflow-y:auto;background:var(--sf);border:1px solid var(--bd2);border-radius:16px;padding:16px;margin-top:12px">
-      <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Tu pedido</div>
+    <style>
+  #carrito-menu{padding-bottom:84px}
+  #pedido-sheet-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99995}
+  #pedido-sheet-ov.on{display:block}
+  #carrito-resumen.sheet-open{position:fixed!important;left:0;right:0;bottom:0;top:auto;z-index:99996;max-height:90vh;border-radius:18px 18px 0 0;margin:0!important}
+  #carrito-pedido-bar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:99990;padding:15px 18px;background:linear-gradient(135deg,#00e5b8,#00b894);color:#04231a;font-weight:800;font-size:16px;text-align:center;cursor:pointer;box-shadow:0 -6px 20px rgba(0,0,0,.4)}
+  @media(min-width:1024px){
+    #carrito-resumen.sheet-open{left:auto;right:0;width:440px;max-height:100vh;height:100vh;border-radius:0;top:0;bottom:0;box-shadow:-12px 0 40px rgba(0,0,0,.5)}
+    #carrito-pedido-bar{left:auto;right:0;width:440px}
+  }
+</style>
+<div id="pedido-sheet-ov" onclick="cerrarHojaPedido()"></div>
+<div id="carrito-pedido-bar" onclick="abrirHojaPedido()">🛒 Ver mi pedido · <span id="bar-count">0</span> · <span id="bar-total">₡0</span></div>
+<div id="carrito-resumen" style="display:none;flex-shrink:0;max-height:50vh;overflow-y:auto;background:var(--sf);border:1px solid var(--bd2);border-radius:16px;padding:16px;margin-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:14px;font-weight:700;color:var(--tx)">🛒 Tu pedido</div><button onclick="cerrarHojaPedido()" style="background:none;border:none;color:#aaa;font-size:24px;cursor:pointer;line-height:1;padding:0">✕</button></div>
       <div id="carrito-items-lista"></div>
       <div style="border-top:1px solid var(--bd);padding-top:10px;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:14px;color:var(--mt)">Subtotal</span>
@@ -5435,7 +5448,7 @@ async function confirmarPedido() {
     const telUser = ('506' + user.phone.replace(/[^0-9]/g,'')).replace(/^506506/,'506');
     window._waPrefactura = 'https://wa.me/' + telUser + '?text=' + encodeURIComponent(txt);
     mostrarConfirmacionPedido(total, sinpeNeg, tipoEntrega, pedidoData.id, metodoPago, pagaCon, vuelto);
-    carritoItems = []; tipoEntrega = 'recoger'; tarifaDelivery = 0; tipoVehiculoDelivery = 'moto'; window._cuponAplicado = null; window._metodoPago='sinpe'; window._pagaCon=0; window._vuelto=0; var _pcr=document.getElementById('paga-con'); if(_pcr)_pcr.value='';
+    cerrarHojaPedido(); carritoItems = []; tipoEntrega = 'recoger'; tarifaDelivery = 0; tipoVehiculoDelivery = 'moto'; window._cuponAplicado = null; window._metodoPago='sinpe'; window._pagaCon=0; window._vuelto=0; var _pcr=document.getElementById('paga-con'); if(_pcr)_pcr.value='';
     cargarCuponesCarrito();
   }
 }
@@ -5516,12 +5529,15 @@ function quitarDelCarrito(id) {
   actualizarResumenCarrito();
 }
 
+function abrirHojaPedido(){ if(carritoItems.length===0)return; var r=document.getElementById('carrito-resumen'); var ov=document.getElementById('pedido-sheet-ov'); if(r){r.style.display='block'; r.classList.add('sheet-open');} if(ov)ov.classList.add('on'); }
+function cerrarHojaPedido(){ var r=document.getElementById('carrito-resumen'); var ov=document.getElementById('pedido-sheet-ov'); if(r){r.classList.remove('sheet-open'); r.style.display='none';} if(ov)ov.classList.remove('on'); }
 function actualizarResumenCarrito() {
   const resumen = document.getElementById('carrito-resumen');
   const vacio = document.getElementById('carrito-vacio');
+  const bar = document.getElementById('carrito-pedido-bar');
   if (!resumen) return;
-  if (carritoItems.length === 0) { resumen.style.display = 'none'; if(vacio)vacio.style.display = 'block'; return; }
-  resumen.style.display = 'block'; if(vacio)vacio.style.display = 'none';
+  if (carritoItems.length === 0) { if(bar)bar.style.display='none'; cerrarHojaPedido(); if(vacio)vacio.style.display='block'; return; }
+  if(vacio)vacio.style.display = 'none';
   const lista = document.getElementById('carrito-items-lista');
   if (lista) lista.innerHTML = carritoItems.map(i => `
     <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
@@ -5529,6 +5545,7 @@ function actualizarResumenCarrito() {
       <span style="color:var(--g)">₡${(i.precio*i.cantidad).toLocaleString('es-CR')}</span>
     </div>`).join('');
   actualizarTotalCarrito();
+  if(bar){ bar.style.display='block'; var n=carritoItems.reduce(function(s,i){return s+i.cantidad;},0); var st=carritoItems.reduce(function(s,i){return s+i.precio*i.cantidad;},0); var bc=document.getElementById('bar-count'); if(bc)bc.textContent=n; var bt=document.getElementById('bar-total'); if(bt)bt.textContent='₡'+st.toLocaleString('es-CR'); }
 }
 
 let _negociosCache = [];
