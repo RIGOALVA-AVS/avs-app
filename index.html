@@ -942,6 +942,16 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
   <div id="admin-resumen">
     <div style="font-family:var(--font-d);font-size:15px;font-weight:700;margin:6px 0 12px">📊 Centro de mando</div>
     <div id="resumen-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px"><div class="nolist">Cargando…</div></div>
+    <div id="tc-card" style="margin-top:16px;background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:14px 16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:3px">💵 Dólar de referencia (BCCR compra)</div>
+      <div style="font-size:11px;color:var(--mt);margin-bottom:10px">Solo referencia "≈ $X" junto a los montos. <span id="tc-update"></span></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="color:var(--mt);font-size:14px">₡</span>
+        <input id="tc-input" class="ifield" type="number" step="0.01" style="max-width:120px;margin:0" placeholder="446">
+        <span style="color:var(--mt);font-size:13px">por $1</span>
+        <button class="btnp" onclick="guardarTipoCambio()" style="margin:0;max-width:140px">Guardar</button>
+      </div>
+    </div>
   </div>
   <div id="admin-rendimientos" style="display:none">
     <div style="font-family:var(--font-d);font-size:15px;font-weight:700;margin-bottom:12px">📊 Rendimientos del mes por plataforma</div>
@@ -4433,6 +4443,26 @@ async function filtrarHistorial(estado){historialEstado=estado;document.querySel
 async function cargarHistorial(){if(!db){document.getElementById('histlist').innerHTML='<div class="nolist">Sin conexión</div>';return;}const lista=document.getElementById('histlist');lista.innerHTML='<div class="nolist">Cargando...</div>';const{data}=await db.from('viajes').select('*').eq('estado',historialEstado).order('fecha_solicitud',{ascending:false}).limit(20);if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin viajes en este estado</div>';return;}const iconos={completado:'✅',cancelado:'❌',rechazado:'🚫'};lista.innerHTML=data.map(v=>{const tarifa=parseInt(v.tarifa_estimada||0),conductor=parseInt(v.total_conductor||Math.round(tarifa*0.88));const fecha=v.fecha_solicitud?new Date(v.fecha_solicitud).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'}):'—';return`<div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:12px;color:var(--mt)">${fecha}</div><div style="font-size:11px;padding:3px 10px;border-radius:20px;background:${historialEstado==='completado'?'rgba(0,212,170,0.1)':'rgba(226,75,74,0.1)'};color:${historialEstado==='completado'?'var(--g)':'var(--rd)'}">${iconos[historialEstado]} ${historialEstado.toUpperCase()}</div></div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mt)"><span style="color:var(--g)">●</span>${v.origen_descripcion||'—'}</div><div style="width:2px;height:8px;background:var(--mt);margin-left:4px"></div><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mt)"><span style="color:var(--rd)">●</span>${v.destino_descripcion||'—'}</div></div>${historialEstado==='completado'?`<div style="display:flex;justify-content:space-between;border-top:1px solid var(--bd);padding-top:10px"><div style="font-size:12px;color:var(--mt)">${historialRol==='conductor'?'Recibiste':'Pagaste'}</div><div style="font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--g)">₡${(historialRol==='conductor'?conductor:tarifa).toLocaleString('es-CR')}</div></div>`:''}</div>`;}).join('');}
 var AVS_TC_USD=446; /* BCCR compra · solo referencia, editable */
 function refUSD(c){ c=parseInt(c)||0; if(!AVS_TC_USD)return ''; return ' <span style="color:var(--mt);font-weight:400;font-size:.78em">≈ $'+(c/AVS_TC_USD).toFixed(2)+' ref.</span>'; }
+async function cargarTipoCambio(){
+  try{ if(!db) return;
+    const {data} = await db.from('config_avs').select('valor,actualizado').eq('clave','tipo_cambio_usd').maybeSingle();
+    if(data && data.valor){ var v=parseFloat(data.valor); if(v>0) AVS_TC_USD=v;
+      var u=document.getElementById('tc-update'); if(u && data.actualizado){ u.textContent='· últ. act: '+new Date(data.actualizado).toLocaleString('es-CR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+    }
+    var inp=document.getElementById('tc-input'); if(inp) inp.value=AVS_TC_USD;
+  }catch(e){}
+}
+async function guardarTipoCambio(){
+  var inp=document.getElementById('tc-input'); if(!inp) return;
+  var v=parseFloat(inp.value);
+  if(!(v>0)){ toast('Ingresá un valor válido'); return; }
+  if(!db){ AVS_TC_USD=v; toast('Guardado (local)'); return; }
+  try{
+    const {error} = await db.from('config_avs').upsert({clave:'tipo_cambio_usd', valor:String(v), actualizado:new Date().toISOString()},{onConflict:'clave'});
+    if(error){ toast('No se pudo guardar'); return; }
+    AVS_TC_USD=v; toast('Dólar actualizado: ₡'+v); cargarTipoCambio();
+  }catch(e){ toast('Error al guardar'); }
+}
 const SINPE_AVS='88915166';let sinpeMonto=0,sinpeIva=0,sinpeTotal=0;var comprobantePath=null;
 function abrirSINPE(monto){sinpeMonto=monto;comprobantePath=null;var _cs0=document.getElementById('comp-status-cond');if(_cs0)_cs0.textContent='';sinpeIva=Math.round(monto*0.13);sinpeTotal=monto+sinpeIva;const fu='₡'+monto.toLocaleString('es-CR');const fi='₡'+sinpeIva.toLocaleString('es-CR');const ft='₡'+sinpeTotal.toLocaleString('es-CR');const c='AVS-'+user.phone+'-'+sinpeTotal;document.getElementById('sinpe-monto').textContent=fu;var _ei=document.getElementById('sinpe-iva');if(_ei)_ei.textContent=fi;var _et=document.getElementById('sinpe-total');if(_et)_et.textContent=ft;document.getElementById('sinpe-monto2').textContent=ft;document.getElementById('sinpe-concepto').textContent=c;go('sinpe');}
 function copiarSINPE(){navigator.clipboard.writeText(SINPE_AVS).then(()=>toast('Número copiado: '+SINPE_AVS)).catch(()=>toast('Número AVS: '+SINPE_AVS));}
@@ -8346,6 +8376,7 @@ function avisarRegistroPendiente(){
 }
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
+  cargarTipoCambio();
   initCarruselComercios();
   // Conectar el selector de fotos de documentos del conductor
   const _docInput = document.getElementById('docFileInput');
