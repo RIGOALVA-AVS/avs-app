@@ -950,6 +950,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
         <input id="tc-input" class="ifield" type="number" step="0.01" style="max-width:120px;margin:0" placeholder="446">
         <span style="color:var(--mt);font-size:13px">por $1</span>
         <button class="btnp" onclick="guardarTipoCambio()" style="margin:0;max-width:140px">Guardar</button>
+        <button class="btno" onclick="actualizarTipoCambioBCCR()" style="margin:0;max-width:170px">🔄 Traer del BCCR</button>
       </div>
     </div>
   </div>
@@ -4436,7 +4437,7 @@ function calcRoute(){
     document.getElementById('matchUberBtn').style.display = 'block';
   });
 }
-function mstyle(){return[{elementType:'geometry',stylers:[{color:'#0d1f14'}]},{elementType:'labels.text.stroke',stylers:[{color:'#0d1f14'}]},{elementType:'labels.text.fill',stylers:[{color:'#7a8fa6'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#172040'}]},{featureType:'road',elementType:'geometry.stroke',stylers:[{color:'#0a1628'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#0a1628'}]},{featureType:'poi',stylers:[{visibility:'off'}]}];}
+function mstyle(){return[{elementType:'geometry',stylers:[{color:'#eef1f4'}]},{elementType:'labels.text.fill',stylers:[{color:'#5b6b7b'}]},{elementType:'labels.text.stroke',stylers:[{color:'#ffffff'}]},{featureType:'poi',stylers:[{visibility:'off'}]},{featureType:'transit',stylers:[{visibility:'off'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#ffffff'}]},{featureType:'road',elementType:'geometry.stroke',stylers:[{color:'#d7dde3'}]},{featureType:'road.arterial',elementType:'geometry',stylers:[{color:'#ffffff'}]},{featureType:'road.highway',elementType:'geometry',stylers:[{color:'#fbeec2'}]},{featureType:'road.highway',elementType:'geometry.stroke',stylers:[{color:'#e6d59a'}]},{featureType:'landscape.natural',elementType:'geometry',stylers:[{color:'#e7ebe4'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#aacbf2'}]}];}
 let historialRol='usuario',historialEstado='completado';
 function abrirHistorial(rol){historialRol=rol;historialEstado='completado';document.getElementById('hist-back').setAttribute('onclick',`go('${rol==='conductor'?'conductor':'pasajero'}')`);const tab2=document.getElementById('hbtn-cancelado');if(rol==='conductor'){tab2.textContent='❌ Rechazados';tab2.setAttribute('onclick',"filtrarHistorial('rechazado')");tab2.id='hbtn-rechazado';}else{tab2.textContent='❌ Cancelados';tab2.setAttribute('onclick',"filtrarHistorial('cancelado')");tab2.id='hbtn-cancelado';}document.querySelectorAll('[id^="hbtn-"]').forEach(b=>b.classList.remove('on'));document.getElementById('hbtn-completado').classList.add('on');go('historial');cargarHistorial();}
 async function filtrarHistorial(estado){historialEstado=estado;document.querySelectorAll('[id^="hbtn-"]').forEach(b=>b.classList.remove('on'));const btn=document.getElementById(estado==='rechazado'?'hbtn-rechazado':'hbtn-'+estado);if(btn)btn.classList.add('on');cargarHistorial();}
@@ -4462,6 +4463,16 @@ async function guardarTipoCambio(){
     if(error){ toast('No se pudo guardar'); return; }
     AVS_TC_USD=v; toast('Dólar actualizado: ₡'+v); cargarTipoCambio();
   }catch(e){ toast('Error al guardar'); }
+}
+async function actualizarTipoCambioBCCR(){
+  if(!db){ toast('Sin conexión'); return; }
+  toast('Consultando BCCR…');
+  try{
+    const {data,error} = await db.functions.invoke('avs-tipocambio',{body:{}});
+    if(error){ toast('No se pudo (revisá la función avs-tipocambio)'); return; }
+    if(data && data.valor){ toast('BCCR: ₡'+data.valor); } else { toast('BCCR sin dato disponible hoy'); }
+    cargarTipoCambio();
+  }catch(e){ toast('Error consultando BCCR'); }
 }
 const SINPE_AVS='88915166';let sinpeMonto=0,sinpeIva=0,sinpeTotal=0;var comprobantePath=null;
 function abrirSINPE(monto){sinpeMonto=monto;comprobantePath=null;var _cs0=document.getElementById('comp-status-cond');if(_cs0)_cs0.textContent='';sinpeIva=Math.round(monto*0.13);sinpeTotal=monto+sinpeIva;const fu='₡'+monto.toLocaleString('es-CR');const fi='₡'+sinpeIva.toLocaleString('es-CR');const ft='₡'+sinpeTotal.toLocaleString('es-CR');const c='AVS-'+user.phone+'-'+sinpeTotal;document.getElementById('sinpe-monto').textContent=fu;var _ei=document.getElementById('sinpe-iva');if(_ei)_ei.textContent=fi;var _et=document.getElementById('sinpe-total');if(_et)_et.textContent=ft;document.getElementById('sinpe-monto2').textContent=ft;document.getElementById('sinpe-concepto').textContent=c;go('sinpe');}
