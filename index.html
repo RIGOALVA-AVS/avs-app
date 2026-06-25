@@ -1862,6 +1862,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
         <button id="btn-paso-atras" class="btno" style="display:none;flex:1;margin:0" onclick="_pasoPedido(_pasoActual-1)">← Atrás</button>
         <button id="btn-paso-cont" class="btnp" style="flex:2;margin:0" onclick="_pasoPedido(_pasoActual+1)">Aceptar →</button>
       </div>
+      <button id="btn-cancelar-pedido" onclick="cancelarPedido()" style="width:100%;margin-top:8px;background:transparent;border:1px solid rgba(226,75,74,0.5);color:#e24b4a;border-radius:12px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">✕ Cancelar pedido</button>
     </div>
     <div id="carrito-vacio" style="text-align:center;padding:40px 20px 20px;color:var(--mt)">
       <div style="font-size:48px;margin-bottom:12px">🛒</div>
@@ -5607,19 +5608,29 @@ var _pasoActual=1;
 function _pasoPedido(n){
   var salud=(typeof carritoNegocioCat!=='undefined' && carritoNegocioCat==='salud');
   if(salud) n=1; if(n<1)n=1; if(n>3)n=3; _pasoActual=n;
-  function show(id,on){ var e=document.getElementById(id); if(e)e.style.display=on?(id==='total-row'?'flex':(id==='carrito-notas'?'block':'block')):'none'; }
+  function show(id,on){ var e=document.getElementById(id); if(e)e.style.display=on?(id==='total-row'?'flex':'block'):'none'; }
   show('paso-resumen', n===1);
-  show('bloque-pago', !salud && n===2);
-  show('bloque-entrega', !salud && n===3);
+  show('bloque-entrega', !salud && n===2);
+  var D=document.getElementById('delivery-info'); if(D){ D.style.display=(!salud && n===2 && tipoEntrega==='delivery')?'block':'none'; }
+  show('bloque-pago', !salud && n===3);
   show('bloque-contacto-salud', salud);
-  var D=document.getElementById('delivery-info'); if(D){ D.style.display=(!salud && n===3 && tipoEntrega==='delivery')?'block':'none'; }
-  show('total-row', n===3 || salud);
+  show('total-row', n===2 || n===3 || salud);
   show('carrito-notas', n===3 || salud);
   show('btn-confirmar-pedido', n===3 || salud);
+  if(n===3 && window._metodoPago==='efectivo') calcVuelto();
   var BA=document.getElementById('btn-paso-atras'), BC=document.getElementById('btn-paso-cont');
   if(salud){ if(BA)BA.style.display='none'; if(BC)BC.style.display='none'; }
   else { if(BA)BA.style.display=(n>1)?'block':'none'; if(BC){ BC.style.display=(n<3)?'block':'none'; BC.textContent=(n===1)?'Aceptar →':'Continuar →'; } }
   var sh=document.getElementById('carrito-resumen'); if(sh)sh.scrollTop=0;
+}
+function cancelarPedido(){
+  if(!confirm('¿Cancelar el pedido y vaciar el carrito?')) return;
+  carritoItems=[];
+  window._cuponAplicado=null; tarifaDelivery=0; tipoEntrega='recoger';
+  cerrarHojaPedido();
+  if(typeof cerrarSeccionMenu==='function') cerrarSeccionMenu();
+  actualizarResumenCarrito();
+  toast('Pedido cancelado');
 }
 function abrirHojaPedido(){ if(carritoItems.length===0)return; var r=document.getElementById('carrito-resumen'); var ov=document.getElementById('pedido-sheet-ov'); if(r){r.style.display='block'; r.classList.add('sheet-open');} if(ov)ov.classList.add('on'); _pasoPedido(1); }
 function cerrarHojaPedido(){ var r=document.getElementById('carrito-resumen'); var ov=document.getElementById('pedido-sheet-ov'); if(r){r.classList.remove('sheet-open'); r.style.display='none';} if(ov)ov.classList.remove('on'); }
