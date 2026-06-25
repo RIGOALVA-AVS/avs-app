@@ -1618,7 +1618,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
       <div style="font-size:12px;color:var(--mt)" id="neg-panel-cat">Categoría</div>
       <div style="font-size:11px;margin-top:2px" id="neg-online"></div>
     </div>
-    <button onclick="cambiarPINNegocio()" style="margin-left:auto;background:transparent;border:1px solid var(--bd2);color:var(--g);border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer">🔑 PIN</button><button onclick="logout()" style="margin-left:8px;background:transparent;border:1px solid var(--bd2);color:var(--tx);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer">Cerrar sesión</button>
+    <button onclick="cambiarPINNegocio()" style="margin-left:auto;background:transparent;border:1px solid var(--bd2);color:var(--g);border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer">🔑 PIN</button><button onclick="cerrarSesionNegocioPIN()" style="margin-left:8px;background:transparent;border:1px solid var(--bd2);color:var(--tx);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer">Cerrar sesión</button>
   </div>
   <div id="neg-nuevo-banner" onclick="switchNegTab('pedidos')" style="display:none;cursor:pointer;background:linear-gradient(135deg,#00e5b8,#00b894);color:#04121a;border-radius:12px;padding:16px;margin-bottom:12px;font-weight:800;font-size:16px;text-align:center">🔔 ¡NUEVO PEDIDO! <span id="neg-nuevo-n"></span> — Tocá para ver los pedidos</div>
   <div id="neg-estado-bar" style="background:var(--sf);border:1px solid var(--bd2);border-radius:14px;padding:14px;margin-bottom:14px">
@@ -6195,6 +6195,26 @@ async function resetPinNegocioAdmin(id,nombre){
   if(!confirm('¿Reiniciar el PIN de '+(nombre||'este negocio')+'?\nTendrá que crear uno nuevo la próxima vez que entre.')) return;
   if(!db){ toast('Sin conexión'); return; }
   try{ var u=await db.from('negocios').update({pin_hash:null, sesion_token:null}).eq('id',id); if(u&&u.error){ toast('No se pudo'); return; } toast('🔑 PIN reiniciado'); }catch(e){ toast('No se pudo'); }
+}
+function cerrarSesionNegocioPIN(){
+  if(!_authCuenta || !_authCuenta.pin_hash){ logout(); return; }
+  var inp='style="margin:0 0 8px;text-align:center;letter-spacing:6px;font-size:20px" type="password" inputmode="numeric" maxlength="6" autocomplete="off"';
+  var body='<div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:4px">Cerrar sesión del comercio</div>'
+    +'<div style="font-size:12px;color:var(--mt);margin-bottom:14px">Solo el dueño puede cerrar la sesión. Ingresá el PIN.</div>'
+    +'<input class="ifield" id="pin-cierre" placeholder="••••••" '+inp+'>'
+    +'<button class="btnp" style="margin:6px 0 8px" onclick="confirmarCierreNegocio()">Cerrar sesión</button>'
+    +'<button class="brec" style="width:100%;margin:0;padding:12px" onclick="cerrarPIN()">Cancelar</button>';
+  var b=document.getElementById('pin-body'); if(b)b.innerHTML=body;
+  var m=document.getElementById('pin-modal'); if(m)m.style.display='flex';
+  setTimeout(function(){ var x=document.getElementById('pin-cierre'); if(x)x.focus(); },100);
+}
+async function confirmarCierreNegocio(){
+  if(!_authCuenta){ cerrarPIN(); logout(); return; }
+  var a=(document.getElementById('pin-cierre')||{}).value||'';
+  if(!/^[0-9]{6}$/.test(a)){ toast('El PIN debe ser de 6 dígitos'); return; }
+  var h=await _sha6(_authCuenta.telefono,a);
+  if(h!==_authCuenta.pin_hash){ toast('PIN incorrecto'); return; }
+  cerrarPIN(); logout();
 }
 async function finalizarEntradaComercio(){
   cerrarPIN();
