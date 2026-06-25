@@ -1618,7 +1618,7 @@ html,body{height:100%;overflow:hidden;background:radial-gradient(125% 70% at 50%
       <div style="font-size:12px;color:var(--mt)" id="neg-panel-cat">Categoría</div>
       <div style="font-size:11px;margin-top:2px" id="neg-online"></div>
     </div>
-    <button onclick="logout()" style="margin-left:auto;background:transparent;border:1px solid var(--bd2);color:var(--tx);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer">Cerrar sesión</button>
+    <button onclick="cambiarPINNegocio()" style="margin-left:auto;background:transparent;border:1px solid var(--bd2);color:var(--g);border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer">🔑 PIN</button><button onclick="logout()" style="margin-left:8px;background:transparent;border:1px solid var(--bd2);color:var(--tx);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer">Cerrar sesión</button>
   </div>
   <div id="neg-nuevo-banner" onclick="switchNegTab('pedidos')" style="display:none;cursor:pointer;background:linear-gradient(135deg,#00e5b8,#00b894);color:#04121a;border-radius:12px;padding:16px;margin-bottom:12px;font-weight:800;font-size:16px;text-align:center">🔔 ¡NUEVO PEDIDO! <span id="neg-nuevo-n"></span> — Tocá para ver los pedidos</div>
   <div id="neg-estado-bar" style="background:var(--sf);border:1px solid var(--bd2);border-radius:14px;padding:14px;margin-bottom:14px">
@@ -5881,7 +5881,7 @@ async function cargarNegociosAdmin(){
       '<div class="adinfo">📑 '+(_docVerificado(n)?'<b style="color:var(--g)">✓ Verificado AVS</b>':'<span style="color:#f5a623">Documentación pendiente</span>')+'</div>'+
       '<div class="adbadge '+n.estado+'">'+(n.estado||'').toUpperCase()+'</div>'+
       (negociosFiltro==='pendiente'?('<div class="adacts"><button class="adaprob" onclick="accionNegocio(\''+n.id+'\',\'aprobado\')">✅ Aprobar</button><button class="adrech" onclick="accionNegocio(\''+n.id+'\',\'rechazado\')">❌ Rechazar</button></div>'):'')+
-      '<div class="adacts"><button onclick="abrirDocsNegocio(\''+n.id+'\')" style="background:transparent;border:1px solid var(--bd);color:var(--g);border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer">📑 Documentos</button></div>'+
+      '<div class="adacts"><button onclick="abrirDocsNegocio(\''+n.id+'\')" style="background:transparent;border:1px solid var(--bd);color:var(--g);border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer">📑 Documentos</button><button onclick="resetPinNegocioAdmin(\''+n.id+'\',\''+String(n.nombre||'').replace(/'+chr(39)+'/g,'')+'\')" style="background:transparent;border:1px solid rgba(245,166,35,0.5);color:#f5a623;border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer">🔑 Reiniciar PIN</button></div>'+
       '</div>';
   }).join('');
   const _bn=document.getElementById('buscar-negocio');if(_bn&&_bn.value)buscarEnLista('negocioslist',_bn.value);
@@ -6156,6 +6156,41 @@ async function confirmarPIN(crear){
     if(h2!==_authCuenta.pin_hash){ _pinFails++; if(_pinFails>=5){ toast('Demasiados intentos. Probá más tarde.'); cerrarPIN(); } else { toast('PIN incorrecto ('+_pinFails+'/5)'); } return; }
     await finalizarEntradaComercio();
   }
+}
+function cambiarPINNegocio(){
+  if(!_authCuenta){ toast('Iniciá sesión primero'); return; }
+  var inp='style="margin:0 0 8px;text-align:center;letter-spacing:6px;font-size:20px" type="password" inputmode="numeric" maxlength="6" autocomplete="off"';
+  var tieneActual=!!(_authCuenta.pin_hash);
+  var body='<div style="font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:4px">Cambiar PIN</div>'
+    +'<div style="font-size:12px;color:var(--mt);margin-bottom:14px">'+(tieneActual?'Ingresá tu PIN actual y el nuevo (6 dígitos).':'Definí tu PIN nuevo (6 dígitos).')+'</div>'
+    +(tieneActual?'<input class="ifield" id="pin-old" placeholder="PIN actual" '+inp+'>':'')
+    +'<input class="ifield" id="pin-n1" placeholder="PIN nuevo" '+inp+'>'
+    +'<input class="ifield" id="pin-n2" placeholder="Repetí el nuevo" '+inp+'>'
+    +'<button class="btnp" style="margin:6px 0 8px" onclick="confirmarCambioPIN()">Guardar PIN</button>'
+    +'<button class="brec" style="width:100%;margin:0;padding:12px" onclick="cerrarPIN()">Cancelar</button>';
+  var b=document.getElementById('pin-body'); if(b)b.innerHTML=body;
+  var m=document.getElementById('pin-modal'); if(m)m.style.display='flex';
+  setTimeout(function(){ var x=document.getElementById(tieneActual?'pin-old':'pin-n1'); if(x)x.focus(); },100);
+}
+async function confirmarCambioPIN(){
+  if(!_authCuenta){ cerrarPIN(); return; }
+  var n1=(document.getElementById('pin-n1')||{}).value||'';
+  var n2=(document.getElementById('pin-n2')||{}).value||'';
+  if(!/^[0-9]{6}$/.test(n1)){ toast('El PIN nuevo debe ser de 6 dígitos'); return; }
+  if(n1!==n2){ toast('Los PIN nuevos no coinciden'); return; }
+  if(_authCuenta.pin_hash){
+    var old=(document.getElementById('pin-old')||{}).value||'';
+    var ho=await _sha6(_authCuenta.telefono,old);
+    if(ho!==_authCuenta.pin_hash){ toast('PIN actual incorrecto'); return; }
+  }
+  var hn=await _sha6(_authCuenta.telefono,n1);
+  try{ var u=await db.from(_authCuenta.tabla).update({pin_hash:hn}).eq('id',_authCuenta.id); if(u&&u.error){ toast('No se pudo guardar el PIN'); return; } }catch(e){ toast('No se pudo guardar el PIN'); return; }
+  _authCuenta.pin_hash=hn; cerrarPIN(); toast('✅ PIN actualizado');
+}
+async function resetPinNegocioAdmin(id,nombre){
+  if(!confirm('¿Reiniciar el PIN de '+(nombre||'este negocio')+'?\nTendrá que crear uno nuevo la próxima vez que entre.')) return;
+  if(!db){ toast('Sin conexión'); return; }
+  try{ var u=await db.from('negocios').update({pin_hash:null, sesion_token:null}).eq('id',id); if(u&&u.error){ toast('No se pudo'); return; } toast('🔑 PIN reiniciado'); }catch(e){ toast('No se pudo'); }
 }
 async function finalizarEntradaComercio(){
   cerrarPIN();
