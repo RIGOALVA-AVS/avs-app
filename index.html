@@ -4461,6 +4461,25 @@ function abrirHistorial(rol){historialRol=rol;historialEstado='completado';docum
 async function filtrarHistorial(estado){historialEstado=estado;document.querySelectorAll('[id^="hbtn-"]').forEach(b=>b.classList.remove('on'));const btn=document.getElementById(estado==='rechazado'?'hbtn-rechazado':'hbtn-'+estado);if(btn)btn.classList.add('on');cargarHistorial();}
 async function cargarHistorial(){if(!db){document.getElementById('histlist').innerHTML='<div class="nolist">Sin conexión</div>';return;}const lista=document.getElementById('histlist');lista.innerHTML='<div class="nolist">Cargando...</div>';const{data}=await db.from('viajes').select('*').eq('estado',historialEstado).order('fecha_solicitud',{ascending:false}).limit(20);if(!data||data.length===0){lista.innerHTML='<div class="nolist">Sin viajes en este estado</div>';return;}const iconos={completado:'✅',cancelado:'❌',rechazado:'🚫'};lista.innerHTML=data.map(v=>{const tarifa=parseInt(v.tarifa_estimada||0),conductor=parseInt(v.total_conductor||Math.round(tarifa*0.88));const fecha=v.fecha_solicitud?new Date(v.fecha_solicitud).toLocaleDateString('es-CR',{day:'2-digit',month:'short',year:'numeric'}):'—';return`<div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:12px;color:var(--mt)">${fecha}</div><div style="font-size:11px;padding:3px 10px;border-radius:20px;background:${historialEstado==='completado'?'rgba(0,212,170,0.1)':'rgba(226,75,74,0.1)'};color:${historialEstado==='completado'?'var(--g)':'var(--rd)'}">${iconos[historialEstado]} ${historialEstado.toUpperCase()}</div></div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mt)"><span style="color:var(--g)">●</span>${v.origen_descripcion||'—'}</div><div style="width:2px;height:8px;background:var(--mt);margin-left:4px"></div><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mt)"><span style="color:var(--rd)">●</span>${v.destino_descripcion||'—'}</div></div>${historialEstado==='completado'?`<div style="display:flex;justify-content:space-between;border-top:1px solid var(--bd);padding-top:10px"><div style="font-size:12px;color:var(--mt)">${historialRol==='conductor'?'Recibiste':'Pagaste'}</div><div style="font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--g)">₡${(historialRol==='conductor'?conductor:tarifa).toLocaleString('es-CR')}</div></div>`:''}</div>`;}).join('');}
 var AVS_TC_USD=446; /* BCCR compra · solo referencia, editable */
+// Enter (INTRO) confirma en los formularios/modales clave (PC)
+document.addEventListener('keydown', function(e){
+  if(e.key!=='Enter' || e.shiftKey || e.ctrlKey || e.altKey) return;
+  var el=document.activeElement; if(!el) return;
+  if((el.tagName||'').toLowerCase()!=='input') return; // textarea conserva salto de línea
+  var t=(el.type||'text').toLowerCase();
+  if(['button','submit','reset','checkbox','radio','file'].indexOf(t)>=0) return;
+  function vis(b){ return !!(b && b.offsetParent!==null && b.style.display!=='none'); }
+  function primerBtn(scope){ if(!scope) return null; var bs=scope.querySelectorAll('.btnp'); for(var i=0;i<bs.length;i++){ if(vis(bs[i])) return bs[i]; } return null; }
+  // 1) Modal de PIN (crear/ingresar/cambiar/cerrar)
+  var pin=document.getElementById('pin-modal');
+  if(pin && vis(pin)){ var pb=primerBtn(document.getElementById('pin-body')||pin); if(pb){ e.preventDefault(); pb.click(); return; } }
+  // 2) Hoja del pedido: confirmar tiene prioridad, si no avanzar de paso
+  var cb=document.getElementById('btn-confirmar-pedido'); if(vis(cb)){ e.preventDefault(); cb.click(); return; }
+  var pc=document.getElementById('btn-paso-cont'); if(vis(pc)){ e.preventDefault(); pc.click(); return; }
+  // 3) Formulario de item del menú
+  var fi=document.getElementById('form-item');
+  if(fi && vis(fi)){ var gb=document.getElementById('item-guardar-btn'); if(vis(gb)){ e.preventDefault(); gb.click(); return; } }
+});
 function refUSD(c){ c=parseInt(c)||0; if(!AVS_TC_USD)return ''; return ' <span style="color:var(--mt);font-weight:400;font-size:.78em">≈ $'+(c/AVS_TC_USD).toFixed(2)+' ref.</span>'; }
 async function cargarTipoCambio(){
   try{ if(!db) return;
