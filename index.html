@@ -2812,7 +2812,7 @@ async function subirDocProveedor(key,input){
 async function setVencDocProveedor(key,val){
   if(!negocioActual)return; var venc=Object.assign({},negocioActual.documentos_venc||{}); venc[key]=val; try{ await db.from('negocios').update({documentos_venc:venc}).eq('id',negocioActual.id); negocioActual.documentos_venc=venc; cargarDocsNegocioProveedor(); }catch(e){ toast('No se pudo guardar la fecha'); }
 }
-function switchNegTab(tab){['menu','pedidos','stats','equipo','documentos'].forEach(function(t){var b=document.getElementById('negtab-'+t);var c=document.getElementById('neg-tab-'+t);if(b)b.classList.toggle('on',t===tab);if(c)c.style.display=(t===tab?'':'none');});if(tab==='pedidos')cargarPedidosNegocio();if(tab==='stats')cargarStatsNegocio();if(tab==='menu')cargarMenuNegocio();if(tab==='equipo')cargarAccesos();if(tab==='documentos')cargarDocsNegocioProveedor();}
+function switchNegTab(tab){['menu','pedidos','stats','equipo','documentos'].forEach(function(t){var b=document.getElementById('negtab-'+t);var c=document.getElementById('neg-tab-'+t);if(b)b.classList.toggle('on',t===tab);if(c)c.style.display=(t===tab?'':'none');});if(tab==='pedidos')cargarPedidosNegocio();if(tab==='stats')cargarStatsNegocio();if(tab==='menu'){window._menuNegSeccion=null;cargarMenuNegocio();}if(tab==='equipo')cargarAccesos();if(tab==='documentos')cargarDocsNegocioProveedor();}
 function _initVarEditor(variantes){
   var v=variantes||{}; var savedT=v.tamanos||[]; var savedS=v.sabores||[];
   var defT=[{nombre:'Pequeño',pct:0},{nombre:'Mediano',pct:30},{nombre:'Grande',pct:60}];
@@ -2904,6 +2904,18 @@ async function editarItem(id){
     try{ f.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){}
   }catch(e){ toast('No se pudo cargar el producto'); }
 }
+function _negItemCard(it){
+  var foto = it.foto_url ? '<img src="'+it.foto_url+'" style="width:58px;height:58px;border-radius:10px;object-fit:cover;flex-shrink:0;border:1px solid var(--bd)" onerror="this.outerHTML=\'<div style=&quot;width:58px;height:58px;border-radius:10px;background:var(--cd);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0&quot;>\ud83c\udf7d\ufe0f</div>\'">' : '<div style="width:58px;height:58px;border-radius:10px;background:var(--cd);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">\ud83c\udf7d\ufe0f</div>';
+  var oculto = it.disponible===false ? ' <span style="color:var(--rd);font-size:11px">(oculto)</span>' : '';
+  return '<div class="scard" style="display:flex;align-items:center;gap:10px;padding:10px">'+foto+
+    '<div style="flex:1;min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.nombre||'')+oculto+'</div>'+
+    '<div style="font-size:12px;color:var(--mt)">'+(it.categoria_item||'')+' \u00b7 \u20a1'+((parseInt(it.precio)||0).toLocaleString('es-CR'))+'</div></div>'+
+    '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">'+
+      '<button class="btnp" style="width:auto;margin:0;padding:6px 10px;font-size:12px" onclick="editarItem(\''+it.id+'\')">\u270f\ufe0f Editar</button>'+
+      '<button class="btno" style="width:auto;margin:0;padding:6px 10px;font-size:12px" onclick="cambiarFotoItem(\''+it.id+'\')">\ud83d\udcf7 Foto</button>'+
+      '<button class="brec" style="width:auto;margin:0;padding:6px 10px;font-size:12px" onclick="eliminarItem(\''+it.id+'\')">Quitar</button>'+
+    '</div></div>';
+}
 async function cargarMenuNegocio(){
   var cont=document.getElementById('neg-menu-lista');if(!cont)return;
   if(!db||!negocioActual){cont.innerHTML='<div class="nolist">Sin sesión</div>';return;}
@@ -2911,26 +2923,26 @@ async function cargarMenuNegocio(){
     var r=await db.from('menu_items').select('*').eq('negocio_id',negocioActual.id).order('categoria_item');
     var data=r.data;
     var _c=document.getElementById('neg-menu-count'); if(_c)_c.textContent=String((data||[]).length);
-    if(!data||data.length===0){cont.innerHTML='<div class="nolist">Sin items en el menú</div>';return;}
-    function _negItemCard(it){
-      var foto = it.foto_url ? '<img src="'+it.foto_url+'" style="width:58px;height:58px;border-radius:10px;object-fit:cover;flex-shrink:0;border:1px solid var(--bd)" onerror="this.outerHTML=\'<div style=&quot;width:58px;height:58px;border-radius:10px;background:var(--cd);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0&quot;>🍽️</div>\'">' : '<div style="width:58px;height:58px;border-radius:10px;background:var(--cd);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🍽️</div>';
-      var oculto = it.disponible===false ? ' <span style="color:var(--rd);font-size:11px">(oculto)</span>' : '';
-      return '<div class="scard" style="display:flex;align-items:center;gap:10px;padding:10px">'+foto+
-        '<div style="flex:1;min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(it.nombre||'')+oculto+'</div>'+
-        '<div style="font-size:12px;color:var(--mt)">'+(it.categoria_item||'')+' · ₡'+((parseInt(it.precio)||0).toLocaleString('es-CR'))+'</div></div>'+
-        '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">'+
-          '<button class="btnp" style="width:auto;margin:0;padding:6px 10px;font-size:12px" onclick="editarItem(\''+it.id+'\')">✏️ Editar</button>'+
-          '<button class="btno" style="width:auto;margin:0;padding:6px 10px;font-size:12px" onclick="cambiarFotoItem(\''+it.id+'\')">📷 Foto</button>'+
-          '<button class="brec" style="width:auto;margin:0;padding:6px 10px;font-size:12px" onclick="eliminarItem(\''+it.id+'\')">Quitar</button>'+
-        '</div></div>';
-    }
+    if(!data||data.length===0){cont.innerHTML='<div class="nolist">Sin items. Tocá \u201c+ Agregar item al menú\u201d.</div>';return;}
     var _cats={}; data.forEach(function(it){var c=it.categoria_item||'General'; if(!_cats[c])_cats[c]=[]; _cats[c].push(it);});
+    window._menuNegCats=_cats;
     var _ORDN=['Entradas','Entrada','Ensaladas','Plato Fuerte','Platos Fuertes','Platos principales','Pizzas','Pizza','Pastas','Pollo','Carnes','Del mar','Combos','Para Ni\u00f1os','Ni\u00f1os','Salsas','Extras','Postres','Bebidas'];
     var _ents=Object.keys(_cats).sort(function(a,b){var ia=_ORDN.indexOf(a);var ib=_ORDN.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);});
-    cont.innerHTML=_ents.map(function(cat){ return '<div style="grid-column:1/-1;width:100%;font-size:12px;font-weight:800;color:var(--g);text-transform:uppercase;letter-spacing:1px;margin:16px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--bd)">'+cat+' \u00b7 '+_cats[cat].length+'</div>'+_cats[cat].map(_negItemCard).join(''); }).join('');
+    cont.innerHTML='<div style="grid-column:1/-1;font-size:12px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin:2px 0 8px">Elegí una sección para ver y editar sus platos</div>'+_ents.map(function(cat){ return '<div onclick="abrirSeccionMenuNeg(&quot;'+String(cat).replace(/"/g,'')+'&quot;)" style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:16px 14px;cursor:pointer;display:flex;align-items:center;gap:10px"><span style="font-size:26px">'+_secIco(cat)+'</span><div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px">'+cat+'</div><div style="font-size:12px;color:var(--mt)">'+_cats[cat].length+' '+(_cats[cat].length===1?'plato':'platos')+'</div></div><span style="color:var(--mt);font-size:20px">\u203a</span></div>'; }).join('');
+    if(window._menuNegSeccion && _cats[window._menuNegSeccion]) abrirSeccionMenuNeg(window._menuNegSeccion);
   }catch(e){cont.innerHTML='<div class="nolist">Error al cargar el menú</div>';}
 }
-function abrirMenuModal(addNow){ var m=document.getElementById('menu-modal'); if(!m)return; m.style.display='block'; cargarMenuNegocio(); var f=document.getElementById('form-item'); if(f)f.style.display='none'; if(addNow) mostrarFormItem(); }
+function abrirSeccionMenuNeg(cat){
+  window._menuNegSeccion=cat;
+  var cont=document.getElementById('neg-menu-lista'); if(!cont)return;
+  var items=(window._menuNegCats||{})[cat]||[];
+  cont.innerHTML='<button onclick="_menuNegVolver()" style="grid-column:1/-1;background:#e8ff00;border:none;color:#1a1a00;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 0 12px rgba(232,255,0,.4)">\u2039 Volver a secciones</button>'
+    +'<div style="grid-column:1/-1;font-size:13px;font-weight:800;color:var(--g);text-transform:uppercase;letter-spacing:1px;margin:8px 0 2px">'+_secIco(cat)+' '+cat+' \u00b7 '+items.length+'</div>'
+    +items.map(_negItemCard).join('');
+}
+function _menuNegVolver(){ window._menuNegSeccion=null; cargarMenuNegocio(); }
+
+function abrirMenuModal(addNow){ var m=document.getElementById('menu-modal'); if(!m)return; m.style.display='block'; window._menuNegSeccion=null; cargarMenuNegocio(); var f=document.getElementById('form-item'); if(f)f.style.display='none'; if(addNow) mostrarFormItem(); }
 function cerrarMenuModal(){ var m=document.getElementById('menu-modal'); if(m)m.style.display='none'; }
 function cambiarFotoItem(id){
   var inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
