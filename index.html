@@ -7997,8 +7997,9 @@ function promoEntrarUsuario(i){
   window._promoPendiente=_promosActuales[i];
   const ov1=document.getElementById('ver-promo-ov'); if(ov1)ov1.remove();
   const ov2=document.getElementById('promos-movil-ov'); if(ov2)ov2.remove();
+  if(typeof cerrarPromosFiesta==='function') cerrarPromosFiesta();
   abrirIngreso('promo');
-  toast('🛍️ Entrá como usuario y tu promo te estará esperando');
+  toast('🛍️ Tu promo quedó guardada — entrá y aprovechala');
 }
 async function pedirPromo(i){
   const p=_promosActuales[i];
