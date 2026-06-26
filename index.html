@@ -4468,7 +4468,7 @@ document.addEventListener('keydown', function(e){
   if((el.tagName||'').toLowerCase()!=='input') return; // textarea conserva salto de línea
   var t=(el.type||'text').toLowerCase();
   if(['button','submit','reset','checkbox','radio','file'].indexOf(t)>=0) return;
-  function vis(b){ return !!(b && b.offsetParent!==null && b.style.display!=='none'); }
+  function vis(b){ if(!b) return false; if(b.style && b.style.display==='none') return false; return b.getClientRects().length>0; }
   function primerBtn(scope){ if(!scope) return null; var bs=scope.querySelectorAll('.btnp'); for(var i=0;i<bs.length;i++){ if(vis(bs[i])) return bs[i]; } return null; }
   // 1) Modal de PIN (crear/ingresar/cambiar/cerrar)
   var pin=document.getElementById('pin-modal');
