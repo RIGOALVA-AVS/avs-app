@@ -2807,6 +2807,19 @@ async function cobrarComisionViaje(viajeId){
   try{ await db.functions.invoke('avs-saldo', { body:{ accion:'cobrar_comision_viaje', viajeId: viajeId } }); }
   catch(e){console.error('cobrarComisionViaje',e);}
 }
+// Cierra un viaje y cobra el peaje UNA sola vez, sin importar el disparador (cliente, conductor, gps).
+async function finalizarViaje(viajeId, via){
+  if(!db||!viajeId) return;
+  try{
+    const {data:v}=await db.from('viajes').select('id,comision_cobrada').eq('id',viajeId).single();
+    if(!v || v.comision_cobrada) return;
+    // candado anti-doble: marcar cobrada SOLO si estaba en false
+    await db.from('viajes').update({estado:'completado',comision_cobrada:true,confirmada_por:via,fecha_completada:new Date().toISOString()}).eq('id',viajeId).eq('comision_cobrada',false);
+    const {data:chk}=await db.from('viajes').select('comision_cobrada,confirmada_por').eq('id',viajeId).single();
+    if(!chk || !chk.comision_cobrada || chk.confirmada_por!==via) return; // otra vía ganó la carrera
+    await db.functions.invoke('avs-saldo',{body:{accion:'cobrar_comision_viaje',viajeId:viajeId}});
+  }catch(e){console.error('finalizarViaje',e);}
+}
 async function confirmarSinpeNegocio(pedidoId, comisionAVS) {
   if (!db || !negocioActual) return;
   if (!confirm('¿Confirmás que recibiste el pago SINPE del cliente?')) return;
@@ -7405,7 +7418,7 @@ async function confirmarPagadoSatisfactorio(rol){
 
     if(ambosConfirmados){
       // Cerrar viaje y mostrar calificación opcional
-      cobrarComisionViaje(viajeId);
+      finalizarViaje(viajeId,'mutuo');
       detenerTracking();
       mostrarSOS(false);
       const vid = viajeId;
@@ -7502,7 +7515,7 @@ async function finalizar(){
   const vid = viajeId;
   const condNom = document.getElementById('cnom').textContent;
   const condPlate = document.getElementById('cplate').textContent;
-  if(vid&&db)await db.from('viajes').update({estado:'completado',tarifa_final:selFare}).eq('id',vid);
+  if(vid&&db){ await db.from('viajes').update({tarifa_final:selFare}).eq('id',vid); finalizarViaje(vid,'cliente'); }
   detenerTracking();
   viajeId=null;localStorage.removeItem('avs_viaje_id');mostrarSOS(false);
   toast('¡Viaje finalizado!');
@@ -7968,7 +7981,7 @@ function mostrarViajeActivoConductor(){
 }
 function conductorFinalizar(){
   const vid = viajeId;
-  if(vid&&db)db.from('viajes').update({estado:'completado'}).eq('id',vid);
+  if(vid&&db){ finalizarViaje(vid,'conductor'); }
   detenerTracking();
   viajeId=null;viajeData=null;localStorage.removeItem('avs_viaje_id');mostrarSOS(false);
   toast('¡Viaje completado!');
@@ -8629,7 +8642,7 @@ function avisarRegistroPendiente(){
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   cargarTipoCambio();
-  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b78'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
+  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b79'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
 
   initCarruselComercios();
   // Conectar el selector de fotos de documentos del conductor
