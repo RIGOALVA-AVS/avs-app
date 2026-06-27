@@ -7988,6 +7988,7 @@ function _avsCarruselSlides(){
   ];
 }
 // ===== Tablero de 8 promos en el login (PC). Editar aquí las ofertas. =====
+var AVS_PROMO_VIDEOS=['https://rigoalva-avs.github.io/avs-app/promo1.mp4'];
 const AVS_PROMOS=[
   {nombre:'La Finca Restaurante', img:'finca.jpg',  emoji:'🍕', promo:'2x1 en pizza hawaiana',           detalle:'Válido presentando la app AVS. Consultá días y condiciones en el local.'},
   {nombre:'Óptica Centro Visual', img:'optica.jpg', emoji:'👓', promo:'Descuento en aros seleccionados', detalle:'Dale el valor que tus ojos se merecen. Tel 7184-4532 · 2446-4581.'},
@@ -8052,7 +8053,8 @@ async function llenarPromosLogin(){
       <span style="color:var(--mt)">›</span>
     </div>`;
   }).join('');
-  cont.innerHTML=_phtml; var _cm=document.getElementById('login-promos-mobile'); if(_cm)_cm.innerHTML=_phtml;
+  var _vid=(typeof AVS_PROMO_VIDEOS!=='undefined'&&AVS_PROMO_VIDEOS.length)?'<video autoplay muted loop playsinline preload="auto" style="width:100%;border-radius:12px;margin-bottom:10px;border:1.5px solid rgba(0,229,184,0.35);display:block;background:#0a1525" src="'+AVS_PROMO_VIDEOS[0]+'"></video>':'';
+  cont.innerHTML=_vid+_phtml; var _cm=document.getElementById('login-promos-mobile'); if(_cm)_cm.innerHTML=_phtml;
 }
 async function abrirPromosFiesta(){
   var prev=document.getElementById('promos-fiesta-ov'); if(prev)prev.remove();
@@ -8627,17 +8629,8 @@ function avisarRegistroPendiente(){
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   cargarTipoCambio();
-  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b75'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
-  try{
-    var _sps=document.createElement('style');
-    _sps.textContent='#avs-splash{position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 38%,#0e4636,#06160f 72%);transition:opacity .55s ease}#avs-splash.out{opacity:0;pointer-events:none}#avs-splash .sl{position:relative;z-index:2;background:#fff;border-radius:22px;padding:16px 28px 12px;box-shadow:0 16px 38px rgba(0,0,0,.5);animation:avsCoin 1.25s cubic-bezier(.4,0,.3,1) infinite;transform-style:preserve-3d;display:inline-flex;flex-direction:column;align-items:center}#avs-splash .sl .t{font-family:Arial Black,Arial,sans-serif;font-weight:900;font-size:62px;letter-spacing:2px;line-height:1}#avs-splash .sl .t .a,#avs-splash .sl .t .s{color:#1f7d8c}#avs-splash .sl .t .v{color:#6cc24a}#avs-splash .ring{position:absolute;top:50%;left:50%;width:330px;height:330px;margin:-165px 0 0 -165px;border-radius:50%;background:conic-gradient(from 0deg,#1f7d8c,#6cc24a,#2aa9e0,rgba(0,0,0,0) 80%);-webkit-mask:radial-gradient(farthest-side,rgba(0,0,0,0) calc(100% - 12px),#000 calc(100% - 11px));mask:radial-gradient(farthest-side,rgba(0,0,0,0) calc(100% - 12px),#000 calc(100% - 11px));animation:avsRing 2.1s linear infinite}@keyframes avsRing{to{transform:rotate(360deg)}}@keyframes avsCoin{0%,12%{transform:rotateY(0)}88%,100%{transform:rotateY(360deg)}}';
-    document.head.appendChild(_sps);
-    var _sp=document.createElement('div'); _sp.id='avs-splash';
-    _sp.innerHTML='<div class="ring"></div><div class="sl"><div class="t"><span class="a">A</span><span class="v">V</span><span class="s">S</span></div><svg width="98" height="20" viewBox="0 0 98 20" style="margin-top:4px"><path d="M5 9 Q27 1 49 9 T93 9" stroke="#6cc24a" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M5 16 Q27 8 49 16 T93 16" stroke="#2aa9e0" stroke-width="4" fill="none" stroke-linecap="round"/></svg></div>';
-    document.body.appendChild(_sp);
-    setTimeout(function(){ _sp.classList.add('out'); }, 2100);
-    setTimeout(function(){ if(_sp.parentNode)_sp.remove(); }, 2700);
-  }catch(e){}
+  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b78'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
+
   initCarruselComercios();
   // Conectar el selector de fotos de documentos del conductor
   const _docInput = document.getElementById('docFileInput');
