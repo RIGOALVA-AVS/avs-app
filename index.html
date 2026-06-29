@@ -2124,6 +2124,7 @@ html,body{height:100%;overflow:hidden;background:var(--bgpat);font-family:var(--
     <div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:20px;margin-bottom:20px">
       <div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px">Progreso del pedido</div>
       <div id="track-timeline"></div>
+      <button id="track-confirmar" onclick="_confirmarRecibidoCliente()" style="display:none;width:100%;margin-top:14px;background:linear-gradient(135deg,#00e5b8,#00b894);border:none;color:#04231a;border-radius:12px;padding:14px;font-size:15px;font-weight:800;cursor:pointer">✅ Confirmar que recibí mi pedido</button>
     </div>
     <!-- Items del pedido -->
     <div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:16px">
@@ -2802,6 +2803,27 @@ async function cobrarComisionPedido(pedidoId){
     }
   }catch(e){console.error('cobrarComisionPedido',e);}
 }
+// Cierra un pedido y cobra el peaje UNA sola vez (cliente, comercio o gps).
+async function finalizarPedido(pedidoId, via){
+  if(!db||!pedidoId) return;
+  try{
+    const {data:p}=await db.from('pedidos').select('id,comision_cobrada').eq('id',pedidoId).single();
+    if(!p || p.comision_cobrada) return;
+    await db.from('pedidos').update({estado:'entregado',comision_cobrada:true,confirmada_por:via,fecha_completada:new Date().toISOString()}).eq('id',pedidoId).eq('comision_cobrada',false);
+    const {data:chk}=await db.from('pedidos').select('comision_cobrada,confirmada_por').eq('id',pedidoId).single();
+    if(!chk || !chk.comision_cobrada || chk.confirmada_por!==via) return; // otra via gano la carrera
+    await db.functions.invoke('avs-saldo',{body:{accion:'cobrar_comision_pedido',pedidoId:pedidoId}});
+  }catch(e){console.error('finalizarPedido',e);}
+}
+async function _confirmarRecibidoCliente(){
+  if(!trackingPedidoId) return;
+  if(!confirm('\u00bfConfirm\u00e1s que recibiste tu pedido? Esto cierra el pedido.')) return;
+  await finalizarPedido(trackingPedidoId,'cliente');
+  if(typeof renderTimeline==='function') renderTimeline('entregado');
+  toast('\u2705 \u00a1Gracias! Pedido confirmado');
+  var b=document.getElementById('track-confirmar'); if(b)b.style.display='none';
+  try{ const {data:p}=await db.from('pedidos').select('negocio_id,negocio_nombre').eq('id',trackingPedidoId).single(); if(p && typeof abrirResenaNegocio==='function') setTimeout(function(){abrirResenaNegocio(trackingPedidoId,p.negocio_id,p.negocio_nombre||'el negocio');},800); }catch(e){}
+}
 async function cobrarComisionViaje(viajeId){
   if(!db) return;
   try{ await db.functions.invoke('avs-saldo', { body:{ accion:'cobrar_comision_viaje', viajeId: viajeId } }); }
@@ -3269,7 +3291,7 @@ async function avanzarPedido(id,nuevo){
     if(nuevo==='preparacion') upd.fecha_inicio=new Date().toISOString();
     await db.from('pedidos').update(upd).eq('id',id);
     if(nuevo==='preparacion'){ try{ imprimirComanda(id); }catch(e){} }
-    if(nuevo==='entregado'){ await cobrarComisionPedido(id); }
+    if(nuevo==='entregado'){ await finalizarPedido(id,'comercio'); }
     toast('Pedido: '+nuevo);
     cargarPedidosNegocio();
   }catch(e){toast('No se pudo actualizar');}
@@ -3622,6 +3644,7 @@ async function abrirTracking(pedidoId) {
   </div>`;
 
   renderTimeline(p.estado || 'pendiente');
+  var _tc=document.getElementById('track-confirmar'); if(_tc){ var _st=p.estado||'pendiente'; _tc.style.display=(['preparacion','listo','en_camino'].indexOf(_st)>=0)?'block':'none'; }
 
   // Si el pedido ya está entregado y no se ha reseñado, abrir reseña
   if (p.estado === 'entregado') {
@@ -3689,7 +3712,7 @@ async function abrirTracking(pedidoId) {
 async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
   if (!db) return;
   await db.from('pedidos').update({ estado: nuevoEstado }).eq('id', pedidoId);
-  if (nuevoEstado === 'entregado') { await cobrarComisionPedido(pedidoId); }
+  if (nuevoEstado === 'entregado') { await finalizarPedido(pedidoId,'comercio'); }
   toast('Estado actualizado: ' + ESTADOS_PEDIDO.find(e=>e.id===nuevoEstado)?.label);
   cargarPedidosNegocio();
 }
@@ -8642,7 +8665,7 @@ function avisarRegistroPendiente(){
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   cargarTipoCambio();
-  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b720'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
+  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b722'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
 
   initCarruselComercios();
   // Conectar el selector de fotos de documentos del conductor
