@@ -2832,6 +2832,13 @@ async function _recalcAvgNegocio(negId){
 async function _auto45Pedido(pedidoId){
   try{ if(!db||!pedidoId)return; const {data:p}=await db.from('pedidos').select('negocio_id').eq('id',pedidoId).single(); var nid=p&&p.negocio_id; if(!nid)return; const {data:ya}=await db.from('resenas_negocios').select('id').eq('pedido_id',pedidoId).limit(1); if(ya&&ya.length)return; await db.from('resenas_negocios').insert({negocio_id:nid,pedido_id:pedidoId,estrellas:4.5,auto:true,comentario:'',tags:''}); _recalcAvgNegocio(nid); }catch(e){}
 }
+async function _recalcAvgUsuario(tel){
+  try{ const {data:cals}=await db.from('calificaciones').select('estrellas').eq('para_telefono',tel); if(cals&&cals.length){ const prom=Math.round((cals.reduce((s,c)=>s+Number(c.estrellas||0),0)/cals.length)*10)/10; await db.from('usuarios').update({calificacion_promedio:prom,total_calificaciones:cals.length}).eq('telefono',tel); } }catch(e){}
+}
+// Calificación automática 4.5 al cerrar un viaje (conductor y pasajero) si no calificaron
+async function _auto45Viaje(viajeId){
+  try{ if(!db||!viajeId)return; const {data:v}=await db.from('viajes').select('conductor_telefono,usuario_telefono').eq('id',viajeId).single(); if(!v)return; var tels=[v.conductor_telefono,v.usuario_telefono]; for(var i=0;i<tels.length;i++){ var tel=tels[i]; if(!tel)continue; const {data:ya}=await db.from('calificaciones').select('id').eq('viaje_id',viajeId).eq('para_telefono',tel).limit(1); if(ya&&ya.length)continue; await db.from('calificaciones').insert({viaje_id:viajeId,para_telefono:tel,estrellas:4.5,auto:true,de_rol:'auto',fecha:new Date().toISOString()}); await _recalcAvgUsuario(tel); } }catch(e){}
+}
 async function cobrarComisionViaje(viajeId){
   if(!db) return;
   try{ await db.functions.invoke('avs-saldo', { body:{ accion:'cobrar_comision_viaje', viajeId: viajeId } }); }
@@ -2848,6 +2855,7 @@ async function finalizarViaje(viajeId, via){
     const {data:chk}=await db.from('viajes').select('comision_cobrada,confirmada_por').eq('id',viajeId).single();
     if(!chk || !chk.comision_cobrada || chk.confirmada_por!==via) return; // otra vía ganó la carrera
     await db.functions.invoke('avs-saldo',{body:{accion:'cobrar_comision_viaje',viajeId:viajeId}});
+    _auto45Viaje(viajeId);
   }catch(e){console.error('finalizarViaje',e);}
 }
 async function confirmarSinpeNegocio(pedidoId, comisionAVS) {
@@ -7532,13 +7540,23 @@ function setEstrella(val){
 
 async function enviarCalificacion(vid, rol){
   if(!db || !vid){ go('pasajero'); return; }
-  const update = {};
-  if(rol === 'usuario') update.calificacion_usuario = estrellaSeleccionada;
-  else update.calificacion_conductor = estrellaSeleccionada;
-  await db.from('viajes').update(update).eq('id', vid);
-  document.getElementById('calif-modal').remove();
+  var est = estrellaSeleccionada || 0;
+  if(est < 1){ toast('Seleccioná al menos una estrella'); return; }
+  try{
+    const {data:v}=await db.from('viajes').select('conductor_telefono,usuario_telefono').eq('id',vid).single();
+    var para = (rol==='usuario') ? (v&&v.usuario_telefono) : (v&&v.conductor_telefono);
+    const update = {};
+    if(rol === 'usuario') update.calificacion_usuario = est; else update.calificacion_conductor = est;
+    await db.from('viajes').update(update).eq('id', vid);
+    if(para){
+      await db.from('calificaciones').delete().eq('viaje_id',vid).eq('para_telefono',para).eq('auto',true);
+      await db.from('calificaciones').insert({auto:false,viaje_id:vid,de_rol:rol,de_telefono:user.phone,de_nombre:user.name,para_telefono:para,estrellas:est,fecha:new Date().toISOString()});
+      await _recalcAvgUsuario(para);
+    }
+  }catch(e){console.error('enviarCalificacion',e);}
+  var m=document.getElementById('calif-modal'); if(m)m.remove();
   estrellaSeleccionada = 0;
-  toast(`⭐ Calificaste con ${estrellaSeleccionada || 'X'} estrellas`);
+  toast('⭐ ¡Gracias por tu calificación de '+est+' estrella'+(est===1?'':'s')+'!');
   setTimeout(() => go(rol === 'usuario' ? 'pasajero' : 'conductor'), 600);
 }
 
@@ -8684,7 +8702,7 @@ function avisarRegistroPendiente(){
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   cargarTipoCambio();
-  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b724'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
+  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b725'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
 
   initCarruselComercios();
   // Conectar el selector de fotos de documentos del conductor
