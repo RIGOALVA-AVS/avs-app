@@ -2813,6 +2813,7 @@ async function finalizarPedido(pedidoId, via){
     const {data:chk}=await db.from('pedidos').select('comision_cobrada,confirmada_por').eq('id',pedidoId).single();
     if(!chk || !chk.comision_cobrada || chk.confirmada_por!==via) return; // otra via gano la carrera
     await db.functions.invoke('avs-saldo',{body:{accion:'cobrar_comision_pedido',pedidoId:pedidoId}});
+    _auto45Pedido(pedidoId);
   }catch(e){console.error('finalizarPedido',e);}
 }
 async function _confirmarRecibidoCliente(){
@@ -2823,6 +2824,13 @@ async function _confirmarRecibidoCliente(){
   toast('\u2705 \u00a1Gracias! Pedido confirmado');
   var b=document.getElementById('track-confirmar'); if(b)b.style.display='none';
   try{ const {data:p}=await db.from('pedidos').select('negocio_id,negocio_nombre').eq('id',trackingPedidoId).single(); if(p && typeof abrirResenaNegocio==='function') setTimeout(function(){abrirResenaNegocio(trackingPedidoId,p.negocio_id,p.negocio_nombre||'el negocio');},800); }catch(e){}
+}
+async function _recalcAvgNegocio(negId){
+  try{ const {data:rs}=await db.from('resenas_negocios').select('estrellas').eq('negocio_id',negId); if(rs&&rs.length){ const avg=Math.round((rs.reduce((a,r)=>a+Number(r.estrellas||0),0)/rs.length)*10)/10; await db.from('negocios').update({calificacion_promedio:avg,total_resenas:rs.length}).eq('id',negId); } }catch(e){}
+}
+// Reseña automática 4.5 al cerrar un pedido, si el cliente no calificó
+async function _auto45Pedido(pedidoId){
+  try{ if(!db||!pedidoId)return; const {data:p}=await db.from('pedidos').select('negocio_id').eq('id',pedidoId).single(); var nid=p&&p.negocio_id; if(!nid)return; const {data:ya}=await db.from('resenas_negocios').select('id').eq('pedido_id',pedidoId).limit(1); if(ya&&ya.length)return; await db.from('resenas_negocios').insert({negocio_id:nid,pedido_id:pedidoId,estrellas:4.5,auto:true,comentario:'',tags:''}); _recalcAvgNegocio(nid); }catch(e){}
 }
 async function cobrarComisionViaje(viajeId){
   if(!db) return;
@@ -8676,7 +8684,7 @@ function avisarRegistroPendiente(){
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   cargarTipoCambio();
-  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b723'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
+  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b724'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
 
   initCarruselComercios();
   // Conectar el selector de fotos de documentos del conductor
@@ -9380,7 +9388,9 @@ async function enviarResena(){
   if(!db){toast('Sin conexión'); go('pasajero'); return;}
   const comentario = document.getElementById('resena-comentario').value.trim();
   try {
+    await db.from('resenas_negocios').delete().eq('pedido_id',resenaActual.pedido_id).eq('auto',true);
     await db.from('resenas_negocios').insert({
+      auto:false,
       negocio_id: resenaActual.negocio_id,
       pedido_id: resenaActual.pedido_id,
       usuario_telefono: user.phone,
