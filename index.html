@@ -7359,7 +7359,18 @@ let conductorTrackInterval=null,pasajeroTrackInterval=null,conductorMarker=null;
 function trazarRutaPasajero(){if(!destLoc||!dirRendR||!dirSvc)return;dirSvc.route({origin:userLoc,destination:destLoc,travelMode:google.maps.TravelMode.DRIVING},(r,s)=>{if(s==='OK'){dirRendR.setDirections(r);document.getElementById('etamin').textContent=Math.ceil(r.routes[0].legs[0].duration.value/60);rmapInst.setCenter(userLoc);}});iniciarTrackingConductor();}
 async function ponerFotoConductor(ruta){try{if(!db||!ruta||ruta.indexOf('/')<0)return;const{data}=await db.storage.from('documentos-conductores').createSignedUrl(ruta,3600);if(data&&data.signedUrl){const av=document.getElementById('cinit');if(av){av.innerHTML='<img src="'+data.signedUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="Foto del conductor">';av.style.overflow='hidden';av.style.padding='0';}}}catch(e){console.error('fotoConductor:',e);}}
 function iniciarTrackingConductor(){if(pasajeroTrackInterval)clearInterval(pasajeroTrackInterval);pasajeroTrackInterval=setInterval(async()=>{if(!db||!viajeId)return;const{data}=await db.from('viajes').select('conductor_lat,conductor_lng').eq('id',viajeId).single();if(!data||!data.conductor_lat||!data.conductor_lng)return;const condPos={lat:data.conductor_lat,lng:data.conductor_lng};if(!conductorMarker){conductorMarker=new google.maps.Marker({position:condPos,map:rmapInst,icon:{path:google.maps.SymbolPath.FORWARD_CLOSED_ARROW,scale:5,fillColor:'#f5a623',fillOpacity:1,strokeColor:'#fff',strokeWeight:1,rotation:0},title:'Conductor'});}else{conductorMarker.setPosition(condPos);}const dist=google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(condPos),new google.maps.LatLng(userLoc));if(dist<200){document.querySelector('#casignado .ahdr div:last-child').innerHTML='🚗 Conductor en tu ubicación';document.getElementById('etamin').textContent='0';}else{document.querySelector('#casignado .ahdr div:last-child').innerHTML=`✅ En camino · ${(dist/1000).toFixed(1)} km`;}},5000);}
-function iniciarCompartirUbicacion(){if(!navigator.geolocation||!viajeId)return;conductorTrackInterval=setInterval(()=>{navigator.geolocation.getCurrentPosition(pos=>{if(!db||!viajeId)return;db.from('viajes').update({conductor_lat:pos.coords.latitude,conductor_lng:pos.coords.longitude,conductor_updated_at:new Date().toISOString()}).eq('id',viajeId).then(()=>{});},()=>{});},5000);}
+function iniciarCompartirUbicacion(){
+  if(!navigator.geolocation||!viajeId)return;
+  var _dest=null;
+  try{ if(db&&viajeId){ db.from('viajes').select('destino_lat,destino_lng').eq('id',viajeId).single().then(function(r){ if(r&&r.data){ _dest={la:r.data.destino_lat,ln:r.data.destino_lng}; } }); } }catch(e){}
+  conductorTrackInterval=setInterval(()=>{
+    navigator.geolocation.getCurrentPosition(pos=>{
+      if(!db||!viajeId)return;
+      db.from('viajes').update({conductor_lat:pos.coords.latitude,conductor_lng:pos.coords.longitude,conductor_updated_at:new Date().toISOString()}).eq('id',viajeId).then(()=>{});
+      try{ if(_dest && _dest.la!=null && _dest.ln!=null){ var d=_distMflete(pos.coords.latitude,pos.coords.longitude,_dest.la,_dest.ln); if(d<200){ finalizarViaje(viajeId,'gps'); } } }catch(e){}
+    },()=>{});
+  },5000);
+}
 function detenerTracking(){if(conductorTrackInterval){clearInterval(conductorTrackInterval);conductorTrackInterval=null;}if(pasajeroTrackInterval){clearInterval(pasajeroTrackInterval);pasajeroTrackInterval=null;}if(conductorMarker){conductorMarker.setMap(null);conductorMarker=null;}}
 function cancelar(){if(viajeId&&db)db.from('viajes').update({estado:'cancelado'}).eq('id',viajeId);if(pasajeroWaitInterval){clearInterval(pasajeroWaitInterval);pasajeroWaitInterval=null;}viajeId=null;localStorage.removeItem('avs_viaje_id');if(typeof salirEncomienda==='function')salirEncomienda();go('pasajero');toast('Cancelado');}
 function confirmarFinalizar(){
@@ -8665,7 +8676,7 @@ function avisarRegistroPendiente(){
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   cargarTipoCambio();
-  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b722'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
+  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b723'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
 
   initCarruselComercios();
   // Conectar el selector de fotos de documentos del conductor
