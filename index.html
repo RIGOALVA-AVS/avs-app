@@ -103,11 +103,11 @@ html,body{height:100%;overflow:hidden;background:var(--bgpat);font-family:var(--
 .secmodal-head{display:flex;align-items:center;justify-content:center;gap:8px;padding:15px 14px;border-bottom:1px solid var(--bd);flex-shrink:0;font-size:18px;font-weight:800}
 .secmodal-foot{display:flex;gap:10px;padding:12px 14px;border-top:1px solid var(--bd);flex-shrink:0}
 @media(min-width:1024px){#seccion-menu-modal{background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:24px}#seccion-menu-modal .secmodal-card{flex:none;width:100%;max-width:860px;max-height:88vh;background:var(--bgpat);border:1px solid rgba(0,229,184,0.3);border-radius:22px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55)}}
-.avs-bubble{animation:bubbleIn .34s cubic-bezier(.34,1.56,.64,1)}
-.avs-panelin{animation:panelIn .30s ease}
-@keyframes panelIn{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:none}}
-#pedido-conf-modal>div,#encomienda-modal>div,#envio-solo-modal>div,#pin-modal>div,#horario-modal>div,#ped-cancel-modal>div,#menu-modal>div,#veh-picker-modal>div,#var-modal>div,#docneg-modal>div,#recarga-neg-modal>div{animation:bubbleIn .34s cubic-bezier(.34,1.56,.64,1)}
-@keyframes bubbleIn{0%{transform:scale(.7);opacity:0}60%{transform:scale(1.03)}100%{transform:scale(1);opacity:1}}
+.avs-bubble{animation:bubbleIn .58s cubic-bezier(.34,1.7,.5,1)}
+.avs-panelin{animation:panelIn .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes panelIn{0%{opacity:0;transform:translateY(46px) scale(.96)}55%{opacity:1;transform:translateY(-10px) scale(1.01)}72%{transform:translateY(5px) scale(.998)}86%{transform:translateY(-3px)}100%{transform:translateY(0) scale(1)}}
+#pedido-conf-modal>div,#encomienda-modal>div,#envio-solo-modal>div,#pin-modal>div,#horario-modal>div,#ped-cancel-modal>div,#menu-modal>div,#veh-picker-modal>div,#var-modal>div,#docneg-modal>div,#recarga-neg-modal>div{animation:bubbleIn .58s cubic-bezier(.34,1.7,.5,1)}
+@keyframes bubbleIn{0%{transform:scale(.3) rotate(-7deg);opacity:0}35%{transform:scale(1.18) rotate(4deg);opacity:1}52%{transform:scale(.9) rotate(-3deg)}68%{transform:scale(1.08) rotate(2deg)}82%{transform:scale(.96) rotate(-1deg)}92%{transform:scale(1.02)}100%{transform:scale(1) rotate(0)}}
 .avs-party{display:inline-block;animation:avsParty 1.6s ease-in-out infinite}
 @keyframes avsParty{0%,100%{transform:rotate(0) scale(1)}25%{transform:rotate(-12deg) scale(1.14)}75%{transform:rotate(12deg) scale(1.14)}}
 .cart-bump{animation:cartBump .4s ease}
@@ -5558,6 +5558,8 @@ async function abrirCarrito(negocioId, negocioNombre) {
   const _ents = Object.entries(cats).sort((a,b)=>{var ia=_ORD.indexOf(a[0]);var ib=_ORD.indexOf(b[0]);return (ia<0?99:ia)-(ib<0?99:ib);});
   if(_ents.length<=1){
     menu.innerHTML = promosHTML + _ents.map(([cat,items])=>items.map(_itemCardHTML).join('')).join('');
+  } else if(window.innerWidth>=1024){
+    _render2colMenu(menu, promosHTML, _ents);
   } else {
     menu.innerHTML = promosHTML + `<div style="font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:1.5px;margin:2px 0 10px">Eleg\u00ed una secci\u00f3n</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">` + _ents.map(([cat,items])=>`<div onclick="abrirSeccionMenu(&quot;${String(cat).replace(/"/g,'')}&quot;)" style="background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:16px 12px;cursor:pointer;display:flex;flex-direction:column;gap:3px;text-align:center;align-items:center"><div style="font-size:30px">${_secIco(cat)}</div><div style="font-size:15px;font-weight:800;line-height:1.2">${cat}</div><div style="font-size:11px;color:var(--mt)">${items.length} opci${items.length===1?'\u00f3n':'ones'} \u203a</div></div>`).join('') + `</div>`;
   }
@@ -8740,7 +8742,7 @@ function avisarRegistroPendiente(){
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   cargarTipoCambio();
-  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b731'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
+  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b733'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
 
   try{
     var _bub=function(node){
@@ -10326,4 +10328,4 @@ function mostrarPendienteMatchUber(solicitudId){
       </div>
 
       <!-- Footer -->
-      <div style="text-align:center;padding:14px;color:#666;font-size:11px;border-top:1px solid var(--bd);
+      <div style="text
