@@ -2807,12 +2807,14 @@ async function cobrarComisionPedido(pedidoId){
 async function finalizarPedido(pedidoId, via){
   if(!db||!pedidoId) return;
   try{
-    const {data:p}=await db.from('pedidos').select('id,comision_cobrada').eq('id',pedidoId).single();
+    const {data:p}=await db.from('pedidos').select('id,comision_cobrada,negocio_id').eq('id',pedidoId).single();
     if(!p || p.comision_cobrada) return;
     await db.from('pedidos').update({estado:'entregado',comision_cobrada:true,confirmada_por:via,fecha_completada:new Date().toISOString()}).eq('id',pedidoId).eq('comision_cobrada',false);
     const {data:chk}=await db.from('pedidos').select('comision_cobrada,confirmada_por').eq('id',pedidoId).single();
     if(!chk || !chk.comision_cobrada || chk.confirmada_por!==via) return; // otra via gano la carrera
-    await db.functions.invoke('avs-saldo',{body:{accion:'cobrar_comision_pedido',pedidoId:pedidoId}});
+    var _modelo='peaje';
+    try{ if(p.negocio_id){ const {data:ng}=await db.from('negocios').select('modelo_comision').eq('id',p.negocio_id).single(); if(ng&&ng.modelo_comision) _modelo=ng.modelo_comision; } }catch(e){}
+    if(_modelo!=='mensual'){ await db.functions.invoke('avs-saldo',{body:{accion:'cobrar_comision_pedido',pedidoId:pedidoId}}); }
     _auto45Pedido(pedidoId);
   }catch(e){console.error('finalizarPedido',e);}
 }
@@ -3293,7 +3295,7 @@ async function imprimirComanda(pedidoId){
 async function avanzarPedido(id,nuevo){
   if(!db)return;
   if(nuevo==='preparacion'){
-    try{ if(negocioActual){ var _sn=await db.from('negocios').select('saldo_avs').eq('id',negocioActual.id).single(); var _sal=parseInt(_sn&&_sn.data&&_sn.data.saldo_avs||0); if(_sal<=0){ alert('🔒 Tu crédito AVS está agotado (₡'+_sal.toLocaleString('es-CR')+').\n\nRecargá tu saldo para aceptar y preparar pedidos — AVS cobra su comisión de ese crédito.'); return; } } }catch(e){}
+    try{ if(negocioActual){ var _sn=await db.from('negocios').select('saldo_avs,modelo_comision').eq('id',negocioActual.id).single(); var _mod=(_sn&&_sn.data&&_sn.data.modelo_comision)||'peaje'; var _sal=parseInt(_sn&&_sn.data&&_sn.data.saldo_avs||0); if(_mod!=='mensual' && _sal<=0){ alert('🔒 Tu crédito AVS está agotado (₡'+_sal.toLocaleString('es-CR')+').\n\nRecargá tu saldo para aceptar y preparar pedidos — AVS cobra su comisión de ese crédito.'); return; } } }catch(e){}
     var mp='sinpe', tot=0, conc='';
     try{ var rp=await db.from('pedidos').select('metodo_pago,total,id').eq('id',id).single(); if(rp.data){ mp=rp.data.metodo_pago||'sinpe'; tot=parseInt(rp.data.total||0); conc='AVS-'+String(rp.data.id).slice(0,6).toUpperCase(); } }catch(e){}
     var msg = (mp==='efectivo')
@@ -5407,6 +5409,7 @@ let carritoItems = [];
 let carritoNegocioId = null;
 let carritoNegocioNombre = '';
 let carritoNegocioCat = '';
+let carritoNegocioSub = '';
 
 // ===== ABRIR COMERCIO DESDE LINK QR =====
 let comercioPendienteQR = null; // si el usuario llega por QR sin sesión, recordamos a qué comercio iba
@@ -5493,8 +5496,10 @@ async function abrirCarrito(negocioId, negocioNombre) {
   window._cuponAplicado = null;
   cargarCuponesCarrito();
   // Detectar categoría del negocio (para salud no aplica recoger/delivery)
-  carritoNegocioCat = (typeof _negociosCache !== 'undefined' && _negociosCache.find(n=>n.id===negocioId)||{}).categoria || '';
-  const esSalud = carritoNegocioCat === 'salud';
+  var _negObj = (typeof _negociosCache !== 'undefined' && _negociosCache.find(n=>n.id===negocioId)) || {};
+  carritoNegocioCat = _negObj.categoria || '';
+  carritoNegocioSub = _negObj.subcategoria || '';
+  const esSalud = (carritoNegocioCat === 'salud' && carritoNegocioSub !== 'farmacia');
   const bloqueEntrega = document.getElementById('bloque-entrega');
   const bloqueContacto = document.getElementById('bloque-contacto-salud');
   if (esSalud) {
@@ -5727,7 +5732,7 @@ function quitarDelCarrito(id) {
 
 var _pasoActual=1;
 function _pasoPedido(n){
-  var salud=(typeof carritoNegocioCat!=='undefined' && carritoNegocioCat==='salud');
+  var salud=(typeof carritoNegocioCat!=='undefined' && carritoNegocioCat==='salud' && carritoNegocioSub!=='farmacia');
   if(salud) n=1; if(n<1)n=1; if(n>3)n=3; _pasoActual=n;
   function show(id,on){ var e=document.getElementById(id); if(e)e.style.display=on?(id==='total-row'?'flex':'block'):'none'; }
   show('paso-resumen', n===1);
@@ -8702,7 +8707,7 @@ function avisarRegistroPendiente(){
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   cargarTipoCambio();
-  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b725'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
+  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b727'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
 
   initCarruselComercios();
   // Conectar el selector de fotos de documentos del conductor
