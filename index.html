@@ -7200,7 +7200,8 @@ function vincularDemoOculto(){
     t.dataset.demoBound = '1';
     t.style.userSelect = 'none';
     t.style.cursor = 'pointer';
-    t.addEventListener('click', tapDemoOculto);
+    t.style.touchAction = 'manipulation';
+    t.addEventListener('pointerup', tapDemoOculto);
     console.log('[DEMO] Bound to title:', t.textContent);
   });
 }
@@ -8820,7 +8821,7 @@ function avisarRegistroPendiente(){
 window.addEventListener('DOMContentLoaded',()=>{
   initSupabase();
   cargarTipoCambio();
-  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b741'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
+  try{ var _vd=document.createElement('div'); _vd.textContent='v27jun\u00b742'; _vd.style.cssText='position:fixed;bottom:2px;left:5px;font-size:9px;color:rgba(255,255,255,.32);z-index:100000;pointer-events:none;font-family:monospace'; document.body.appendChild(_vd); }catch(e){}
 
   try{
     var _bub=function(node){
@@ -10344,4 +10345,4 @@ function mostrarPendienteMatchUber(solicitudId){
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD9LzLaIH_6QLfuHaBqUqMuabnTUBf8OzA&libraries=places,geometry&callback=initMap" async defer></script>
 <!-- ============== MODAL MATCH UBER ============== -->
 <div id="matchUberModal" style="display:none;position:fixed;inset:0;background:rgba(8,15,30,0.85);backdrop-filter:blur(8px);z-index:99998;align-items:center;justify-content:center;padding:20px">
-  <div style="background:linear-gradient(135deg,#1a2540,#0d1525);border:1px solid #00d4aa;border-radius:18px;width:min(420px,94vw);max-height:92vh;overflow-y:auto;color:#
+  <div style="background:linear-gradient(135deg,#1a2540,#0d1525);border:1px solid #00d4aa;border-radius:18px;width:min(420px
